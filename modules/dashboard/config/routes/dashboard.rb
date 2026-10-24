@@ -1,1 +1,2 @@
-root "dashboard#index"
+# Workspace home
+get "/", to: "dashboard#index", as: :root

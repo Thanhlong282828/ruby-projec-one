@@ -28,3 +28,16 @@ Cơ sở triển khai Rails Engine: https://guides.rubyonrails.org/engines.html
 ## Quét bảo mật
 
 Dùng `bundle exec ruby bin/brakeman --no-pager`: wrapper tự thu thập modules có app/ và truyền --add-engines-path cho Brakeman. CI dùng cùng lệnh để quét đủ MVC của tất cả module.
+
+## Đọc route tường minh
+
+Mỗi HTTP route được khai báo bằng get/post/patch/put/delete với URL đầy đủ, controller#action và tên helper (as). Không dùng resource/resources hoặc namespace để rút gọn. File host vẫn draw các file route của module.
+
+Ví dụ modules/attendance/config/routes/attendance.rb:
+```ruby
+get   "/attendances",              to: "attendances#index",    as: :attendances
+post  "/attendances",              to: "attendances#create"
+patch "/attendances/:id/checkout", to: "attendances#checkout", as: :checkout_attendance
+```
+
+Đọc từ trái sang phải: HTTP method → URL → controller#action → helper. Named helper dùng chung URL cho các HTTP method khác nhau nên chỉ khai báo as một lần. Các đường dẫn cụ thể như /employees/new và /employees/:id/edit phải đứng trước /employees/:id khi cần tránh bắt nhầm tham số.
