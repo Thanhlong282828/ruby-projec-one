@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <title>XinViec • People OS</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %><%= csp_meta_tag %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "hrm", defer: true %>
+</head>
+<body>
+<% if current_user %>
+<aside class="sidebar">
+  <a class="brand" href="/">x<span>v</span> <small>PEOPLE OS</small></a>
+  <div class="workspace">XIN VIEC <span>WORKSPACE</span></div>
+  <nav>
+    <%= link_to "◈  Tổng quan", root_path %>
+    <%= link_to "◉  Nhân sự", employees_path %>
+    <% if current_user.staff? %><%= link_to "▦  Phòng ban", departments_path %><% end %>
+    <%= link_to "◷  Chấm công", attendances_path %>
+    <%= link_to "☷  Nghỉ phép", leave_requests_path %>
+    <% if current_user.staff? %>
+      <%= link_to "▤  Bảng lương", pay_runs_path %>
+      <%= link_to "◇  Tuyển dụng", candidates_path %>
+    <% end %>
+    <% if current_user.admin? %><%= link_to "⌁  Nhật ký hệ thống", audit_logs_path %><% end %>
+  </nav>
+  <div class="sidebar-footer"><span class="live-dot"></span> Hệ thống hoạt động<br><small>HRM / Rails / MySQL</small></div>
+</aside>
+<% end %>
+<main class="<%= current_user ? 'main' : 'auth' %>">
+<% if current_user %>
+<header class="topbar"><span>Không gian làm việc <b>/ Quản trị nhân sự</b></span><div class="account"><span class="avatar"><%= current_user.email.first.upcase %></span><span><%= current_user.email %><small><%= current_user.role.upcase %></small></span><%= button_to "Đăng xuất", session_path, method: :delete, class: "text-button" %></div></header>
+<% end %>
+<section class="content">
+<% flash.each do |type, message| %><div class="flash <%= type %>"><%= message %></div><% end %>
+<%= yield %>
+</section>
+</main>
+</body>
+</html>

@@ -1,0 +1,1 @@
+class PayRunPolicy < ApplicationPolicy; end

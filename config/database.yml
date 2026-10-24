@@ -1,0 +1,16 @@
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  host: <%= ENV.fetch("DATABASE_HOST", "127.0.0.1") %>
+  username: <%= ENV.fetch("DATABASE_USERNAME", "hrm") %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD") %>
+development:
+  <<: *default
+  database: hrm_development
+test:
+  <<: *default
+  database: hrm_test
+production:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_NAME", "hrm_production") %>

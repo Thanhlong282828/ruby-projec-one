@@ -1,0 +1,1 @@
+<div class="pagination"><% current_page = [params[:page].to_i, 1].max %><% if current_page > 1 %><%= link_to "← Trang trước", request.query_parameters.merge(page: current_page - 1) %><% end %><span>Trang <%= current_page %></span><% if records.size == 25 %><%= link_to "Trang tiếp →", request.query_parameters.merge(page: current_page + 1) %><% end %></div>

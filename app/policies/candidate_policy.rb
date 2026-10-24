@@ -1,0 +1,1 @@
+class CandidatePolicy < ApplicationPolicy; end

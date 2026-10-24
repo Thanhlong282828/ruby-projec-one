@@ -1,0 +1,56 @@
+name: xinviec-hrm
+x-app: &app
+  build: .
+  env_file: .env
+  volumes:
+    - .:/app
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+services:
+  web:
+    <<: *app
+    ports: ["127.0.0.1:3100:3000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  worker:
+    <<: *app
+    command: bundle exec sidekiq -C config/sidekiq.yml
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: hrm_development
+      MYSQL_USER: hrm
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+    volumes: ["mysql_data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8026:8025"]
+  event_sink:
+    build: services/event_sink
+    environment:
+      EVENT_SECRET: ${EVENT_SECRET}
+    volumes: ["events_data:/data"]
+volumes:
+  mysql_data:
+  redis_data:
+  events_data:

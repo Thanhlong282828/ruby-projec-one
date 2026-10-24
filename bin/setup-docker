@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+require "securerandom"
+require "fileutils"
+Dir.chdir(File.expand_path("..", __dir__)) do
+  unless File.exist?(".env")
+    contents = File.read(".env.example")
+    replacements = {
+      "replace-with-random-password" => SecureRandom.hex(24),
+      "replace-with-another-random-password" => SecureRandom.hex(24),
+      "replace-with-128-hex-characters" => SecureRandom.hex(64),
+      "replace-with-strong-admin-password" => SecureRandom.hex(12),
+      "replace-with-random-secret" => SecureRandom.hex(32)
+    }
+    replacements.each { |from, to| contents.gsub!(from, to) }
+    contents.gsub!("replace-with-32-random-characters") { SecureRandom.alphanumeric(32) }
+    File.write(".env", contents, perm: 0600)
+  end
+  commands = [
+    ["docker", "compose", "build"],
+    ["docker", "compose", "up", "-d", "--wait", "mysql", "redis", "mailpit", "event_sink"],
+    ["docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'],
+    ["docker", "compose", "run", "--rm", "web", "bundle", "exec", "rails", "db:prepare", "db:seed"],
+    ["docker", "compose", "up", "-d", "web", "worker"]
+  ]
+  commands.each { |command| abort("Setup failed") unless system(*command) }
+  puts "Open http://localhost:3100 — admin@hrm.local. Password: SEED_ADMIN_PASSWORD in .env"
+end

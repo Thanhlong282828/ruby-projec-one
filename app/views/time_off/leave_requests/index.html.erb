@@ -1,0 +1,1 @@
+<div class="page-heading"><div><div class="eyebrow">TIME OFF</div><h1>Nghỉ ngơi để đi xa hơn.</h1><p class="subtitle">Theo dõi và phê duyệt đơn nghỉ phép.</p></div><%= link_to "+ Tạo đơn", new_leave_request_path, class: "button" %></div><div class="panel"><%= render "table", requests: @requests %></div><%= render "shared/pagination", records: @requests %>

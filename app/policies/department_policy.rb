@@ -1,0 +1,1 @@
+class DepartmentPolicy < ApplicationPolicy; end

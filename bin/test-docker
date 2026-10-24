@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+# Test schema/user grant is provisioned separately; see README.
+docker compose run --rm -e RAILS_ENV=test web bundle exec rails db:prepare test
