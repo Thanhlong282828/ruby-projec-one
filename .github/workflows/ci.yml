@@ -1,0 +1,26 @@
+name: HRM CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create local secrets and start stack
+        run: ruby bin/setup-docker
+      - name: Provision isolated test database
+        run: docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'
+      - name: Test and autoload
+        run: |
+          bin/test-docker
+          docker compose run --rm event_sink python test_server.py
+          docker compose run --rm web bundle exec rails zeitwerk:check
+          docker compose run --rm web bundle exec brakeman --no-pager
+          docker compose run --rm web bundle exec bundler-audit check --update
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop stack
+        if: always()
+        run: docker compose down
