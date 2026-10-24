@@ -29,7 +29,7 @@ Tạo database test và cấp quyền riêng một lần:
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'
 bin/test-docker
 docker compose run --rm web bundle exec rails zeitwerk:check
-docker compose run --rm web bundle exec brakeman --no-pager
+docker compose run --rm web bundle exec ruby bin/brakeman --no-pager
 ```
 Database test tách khỏi development. Có CI chạy test, kiểm tra autoload và security scan.
 
@@ -42,22 +42,49 @@ docker compose run --rm web bundle exec rails hrm:purge_tokens
 ```
 Sau khi tạo tài khoản, staff liên kết tài khoản với hồ sơ nhân viên trong màn hình chỉnh sửa. Không có đăng ký công khai. Các vai trò: admin, hr, manager, employee. Admin xóa dữ liệu không có liên kết; HR quản lý nghiệp vụ; manager duyệt nghỉ toàn tổ chức; employee xem hồ sơ mình, nghỉ phép và chấm công.
 
-## Cấu trúc
+## Cấu trúc Module (thư viện) + MVC
+
 ```text
-app/controllers/{workforce,time_off,payroll,recruitment,api/v1}
-app/models                 # Active Record + validation
-app/services/{hrm,time_off,payroll}
-app/policies               # Authorization
-app/jobs, app/mailers, app/channels
-app/views                  # ERB theo module MVC
-config/initializers        # queue, scheduler, cache, middleware, encryption
-services/event_sink        # Python stdlib, HMAC receiver + SQLite dedup
-test                       # model/service/API/web/job tests
-db/migrate, db/seeds.rb
-docs                       # kiến trúc và API
+modules/
+  platform/    # Lớp nền, UI dùng chung, queue/cache/realtime/middleware
+  identity/    # Authentication, tài khoản, API token
+  workforce/   # Nhân viên, phòng ban
+  attendance/  # Chấm công
+  time_off/    # Nghỉ phép, email, thư viện Calendar
+  payroll/     # Bảng lương
+  recruitment/ # Tuyển dụng
+  audit/       # Nhật ký, Observer
+  dashboard/   # Tổng quan
+
+modules/<module>/
+  hrm_<module>.gemspec  # Thư viện local do Bundler quản lý
+  app/models/          # Model
+  app/views/           # View
+  app/controllers/     # Controller
+  app/policies/        # Phân quyền
+  app/services/        # Nghiệp vụ
+  app/jobs/, app/mailers/  # Khi module cần
+  config/routes/       # Routing do module sở hữu
+  lib/                 # Rails Engine + thư viện Ruby
+  db/migrate/          # Migration mới của module
+  test/                # Test module
+
+config/                # Host cấu hình và ghép module
+config/routes.rb       # Chỉ draw các fragment routing
+db/migrate/           # Baseline lịch sử giữ nguyên cho database hiện có
+test/integration/      # Hành trình xuyên module
+test/modules_test.rb   # Tự nạp module tests khi chạy rails test
+services/event_sink/   # Dịch vụ nhận sự kiện riêng
 ```
 
-[Kiến trúc và ma trận tính năng](docs/ARCHITECTURE.md) · [API](docs/API.md) · [Kết quả kiểm tra](docs/VERIFICATION.md)
+Mỗi module là một local gem Rails Engine được khai báo trong Gemfile. Host không còn chứa Model/View/Controller nghiệp vụ. Những lớp dùng chung nằm ở platform. Các module dùng chung MySQL, model constants và route helpers để giữ tương thích dữ liệu/API; không phải microservices độc lập. Không tạo bảng hoặc model giả cho module chỉ tổng hợp dữ liệu như dashboard.
+
+Chạy toàn bộ kiểm thử bằng `bin/test-docker`. Chạy riêng module:
+```sh
+docker compose run --rm -e RAILS_ENV=test web bundle exec rails test modules/time_off/test
+```
+
+[Hướng dẫn module và ranh giới](docs/MODULES.md) · [Kiến trúc và ma trận tính năng](docs/ARCHITECTURE.md) · [API](docs/API.md) · [Kết quả kiểm tra](docs/VERIFICATION.md)
 
 ## Phạm vi thực tế
 Có CRUD nhân sự/phòng ban, hồ sơ ứng viên và giai đoạn, một ca chấm công/ngày, nghỉ phép theo ngày lịch và số dư năm, chụp lương cơ bản/chốt kỳ lương, audit, realtime thông báo có thay đổi, email duyệt đơn và tổng hợp hằng ngày.

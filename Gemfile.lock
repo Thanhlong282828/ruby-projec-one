@@ -1,3 +1,65 @@
+PATH
+  remote: modules/attendance
+  specs:
+    hrm_attendance (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/audit
+  specs:
+    hrm_audit (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/dashboard
+  specs:
+    hrm_dashboard (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/identity
+  specs:
+    hrm_identity (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/payroll
+  specs:
+    hrm_payroll (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/platform
+  specs:
+    hrm_platform (0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/recruitment
+  specs:
+    hrm_recruitment (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/time_off
+  specs:
+    hrm_time_off (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
+  remote: modules/workforce
+  specs:
+    hrm_workforce (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -244,6 +306,15 @@ DEPENDENCIES
   brakeman
   bundler-audit
   connection_pool (~> 2.5)
+  hrm_attendance!
+  hrm_audit!
+  hrm_dashboard!
+  hrm_identity!
+  hrm_payroll!
+  hrm_platform!
+  hrm_recruitment!
+  hrm_time_off!
+  hrm_workforce!
   minitest (~> 5.25)
   mysql2 (~> 0.5)
   propshaft
