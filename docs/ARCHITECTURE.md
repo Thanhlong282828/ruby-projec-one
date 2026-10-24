@@ -1,6 +1,8 @@
 # Kiến trúc HRM
 
-Ruby on Rails 8.1 / Ruby 3.4 / MySQL 8.4. Modular monolith với microservice nhận sự kiện riêng. MVC giữ controller mỏng, nghiệp vụ đặt tại app/services, policy tách quyền truy cập. Chưa phải hệ thống microservices phân tán toàn bộ nghiệp vụ.
+Mã nguồn hiện được đóng gói thành 9 local gem Rails Engines trong `modules/`. Mỗi domain sở hữu MVC, policy, service và test; platform chứa lớp nền và UI dùng chung. Xem [quy tắc và ranh giới module](MODULES.md).
+
+Ruby on Rails 8.1 / Ruby 3.4 / MySQL 8.4. Modular monolith với microservice nhận sự kiện riêng. MVC giữ controller mỏng, nghiệp vụ đặt tại modules/<module>/app/services, policy tách quyền truy cập. Chưa phải hệ thống microservices phân tán toàn bộ nghiệp vụ.
 
 ```text
 Browser (ERB/CSS/JS) ─┐
@@ -21,7 +23,7 @@ REST client ─────────┼─ Puma → Middleware → Authentica
 - Attendance: một ca/ngày theo giờ Việt Nam; check-in/out của chính nhân viên.
 - Payroll: chụp lương cơ bản của nhân viên active; kỳ lương unique theo tháng; chốt một chiều. Không tích hợp chi trả, thuế, BHXH, prorate hay OT.
 - Recruitment: quản lý ứng viên và giai đoạn.
-- Hrm: observer, audit, event bus, transactional outbox; thư viện thuần Ruby `lib/hrm/calendar.rb` tính ngày dùng lại trong domain.
+- Hrm: observer, audit, event bus, transactional outbox; thư viện thuần Ruby `modules/time_off/lib/hrm/calendar.rb` tính ngày dùng lại trong domain.
 
 ## Tính năng kỹ thuật
 | Yêu cầu | Triển khai |

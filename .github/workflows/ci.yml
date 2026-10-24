@@ -16,7 +16,7 @@ jobs:
           bin/test-docker
           docker compose run --rm event_sink python test_server.py
           docker compose run --rm web bundle exec rails zeitwerk:check
-          docker compose run --rm web bundle exec brakeman --no-pager
+          docker compose run --rm web bundle exec ruby bin/brakeman --no-pager
           docker compose run --rm web bundle exec bundler-audit check --update
       - name: Logs on failure
         if: failure()
