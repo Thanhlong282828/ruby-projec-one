@@ -93,3 +93,7 @@ Có CRUD nhân sự/phòng ban, hồ sơ ứng viên và giai đoạn, một ca 
 
 ## Đưa lên production
 Dùng image có Gemfile.lock, build asset (`rails assets:precompile` với env phù hợp), HTTPS reverse proxy trước Puma, database/Redis private, SMTP thật, secrets manager; không dùng compose development nguyên trạng. Thiết lập `APP_HOST`, `DATABASE_NAME`, keys mã hóa, `SECRET_KEY_BASE`, `RAILS_ENV=production`; cấu hình allowed hosts/origins WebSocket. Seed demo bị khóa ở production. Backup cả database và khóa mã hóa, thử restore trước khi sử dụng dữ liệu thật.
+
+## VS Code / Cmd + click
+
+Mở thư mục gốc bằng VS Code rồi chọn **Dev Containers: Reopen in Container**. Ruby LSP tự cài trong container Ruby 3.4 để hỗ trợ Cmd+click/F12 tới định nghĩa class. Xem [hướng dẫn](docs/VSCODE.md).

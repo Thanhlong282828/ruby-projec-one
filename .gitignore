@@ -10,3 +10,5 @@
 /config/master.key
 /config/credentials/*.key
 .DS_Store
+
+/.ruby-lsp/
