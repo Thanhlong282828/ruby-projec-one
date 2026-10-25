@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Enforce explicit HTTP route declarations
+        run: ruby bin/check-routes
       - name: Create local secrets and start stack
         run: ruby bin/setup-docker
       - name: Provision isolated test database

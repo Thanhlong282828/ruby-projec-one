@@ -41,3 +41,5 @@ patch "/attendances/:id/checkout", to: "attendances#checkout", as: :checkout_att
 ```
 
 Đọc từ trái sang phải: HTTP method → URL → controller#action → helper. Named helper dùng chung URL cho các HTTP method khác nhau nên chỉ khai báo as một lần. Các đường dẫn cụ thể như /employees/new và /employees/:id/edit phải đứng trước /employees/:id khi cần tránh bắt nhầm tham số.
+
+Chạy `ruby bin/check-routes` để kiểm tra quy tắc route tường minh trên toàn bộ dự án. CI kiểm tra cú pháp Ruby và từ chối lời gọi resource/resources/namespace trong các file routing; comment và chuỗi mô tả không bị coi là lời gọi.
