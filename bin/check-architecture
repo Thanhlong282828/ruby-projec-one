@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+require "ripper"
+
+Dir.chdir(File.expand_path("..", __dir__))
+# macOS can still ship Ruby 2.6, which cannot parse modern Rails source syntax.
+if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.1")
+  warn "Using the project's Docker Ruby to check modern Ruby syntax."
+  exec("docker", "compose", "run", "--rm", "--no-deps", "web", "ruby", "bin/check-architecture")
+end
+files = Dir["modules/*/app/controllers/**/*.rb"]
+forbidden = %w[where find find_by find_by! find_each includes order limit offset count save save! update update! destroy destroy! create! update_all delete_all transaction with_lock]
+violations = []
+visit = lambda do |node, file|
+  next unless node.is_a?(Array)
+  token = node[3] if [:call, :command_call].include?(node[0])
+  if token.is_a?(Array) && token[0] == :@ident && forbidden.include?(token[1])
+    violations << "#{file}:#{token[2][0]}: move persistence/query #{token[1]} to Application + Repository"
+  end
+  node.each { |child| visit.call(child, file) if child.is_a?(Array) }
+end
+files.each do |file|
+  tree = Ripper.sexp(File.read(file))
+  tree ? visit.call(tree, file) : violations.push("#{file}: invalid Ruby syntax")
+end
+Dir["modules/*/app/views/**/*.erb"].each do |file|
+  File.foreach(file).with_index(1) do |line, number|
+    if line.match?(/\.(?:where|find_by|find_each|includes|order|save!|update!|destroy!|create!)\s*\(/)
+      violations << "#{file}:#{number}: render prepared data; move query/write out of the view"
+    end
+  end
+end
+abort(violations.join("\n")) unless violations.empty?
+puts "Architecture check passed (#{files.length} controllers; views checked for query/write calls)."

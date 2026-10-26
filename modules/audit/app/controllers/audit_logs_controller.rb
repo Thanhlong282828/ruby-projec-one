@@ -1,6 +1,5 @@
 class AuditLogsController < ApplicationController
   def index
-    authorize AuditLog
-    @logs = page(AuditLog.includes(:actor).order(id: :desc))
+    @logs = HrmAudit::Application::Queries::ListAuditLogs.new.call(actor: current_user, page: params[:page])
   end
 end

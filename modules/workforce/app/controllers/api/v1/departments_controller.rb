@@ -1,35 +1,35 @@
 module Api
   module V1
     class DepartmentsController < BaseController
-      before_action :set_department, only: [:show, :update, :destroy]
+      before_action :set_record, only: [:show, :update, :destroy]
       def index
-        authorize Department
-        render json: { data: page(policy_scope(Department).order(:id)) }
+        records = HrmWorkforce::Application::Queries::ListDepartments.new.call(actor: current_user, page: params[:page])
+        render json: { data: records }
       end
-      def show = render(json: { data: @department })
+      def show
+        render json: { data: @record }
+      end
       def create
-        department = Department.new(department_params)
-        authorize department
-        department.save!
-        render json: { data: department }, status: :created
+        record = HrmWorkforce::Application::Commands::CreateDepartment.new.call(actor: current_user, attributes: record_params)
+        render json: { data: record }, status: :created
       end
       def update
-        @department.update!(department_params)
-        render json: { data: @department }
+        HrmWorkforce::Application::Commands::UpdateDepartment.new.call(actor: current_user, record: @record, attributes: record_params)
+        render json: { data: @record }
       end
       def destroy
-        if @department.destroy
+        if HrmWorkforce::Application::Commands::DeleteDepartment.new.call(actor: current_user, record: @record)
           head :no_content
         else
-          render json: { error: "dependent_records" }, status: :conflict
+          render json: { error: "dependent_records", details: @record.errors.full_messages }, status: :conflict
         end
       end
       private
-      def set_department
-        @department = policy_scope(Department).find(params[:id])
-        authorize @department
+      def set_record
+        @record = HrmWorkforce::Application::Queries::FindDepartment.new.call(actor: current_user, id: params[:id])
+        authorize @record
       end
-      def department_params = params.require(:department).permit(:name, :code)
+      def record_params = HrmWorkforce::Application::Requests::DepartmentRequest.read(params)
     end
   end
 end

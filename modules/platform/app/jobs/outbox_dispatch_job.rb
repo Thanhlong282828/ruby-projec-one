@@ -3,9 +3,9 @@ require "openssl"
 class OutboxDispatchJob < ApplicationJob
   retry_on StandardError, wait: :polynomially_longer, attempts: 8
   def perform
-    OutboxEvent.pending.order(:id).limit(100).each do |event|
-      event.with_lock do
-        next if event.delivered_at
+    repository = Hrm::Container.resolve(HrmPlatform::Domain::Repositories::OutboxRepositoryInterface)
+    repository.pending.each do |event|
+      repository.deliver(event: event) do
         body = { id: event.id, type: event.event_type, payload: event.payload }.to_json
         uri = URI(ENV.fetch("EVENT_URL"))
         request = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
@@ -15,7 +15,6 @@ class OutboxDispatchJob < ApplicationJob
         raise "Event receiver unavailable (#{response.code})" unless response.is_a?(Net::HTTPSuccess)
         ActionCable.server.broadcast("hr_updates", { type: event.event_type, id: event.id })
         LeaveDecisionJob.perform_later(event.payload.fetch("record_id")) if event.event_type == "leave_request.reviewed"
-        event.update!(delivered_at: Time.current)
       end
     end
   end

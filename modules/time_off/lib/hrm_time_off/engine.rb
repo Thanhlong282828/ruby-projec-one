@@ -3,6 +3,11 @@ module HrmTimeOff
     engine_name "hrm_time_off"
     config.root = File.expand_path("../..", __dir__)
 
+    # Like Laravel's provider registration; re-run after Rails reloads classes.
+    config.to_prepare do
+      HrmTimeOff::Providers::TimeOffServiceProvider.new.register
+    end
+
     # Shared schema and public constants preserve existing data and route helpers.
     # Code is owned by an engine, while the host composes the enabled modules.
     config.autoload_paths << root.join("lib")

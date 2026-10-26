@@ -2,8 +2,8 @@ class SessionsController < ApplicationController
   skip_before_action :authenticate_user!, only: [:new, :create]
   def new; end
   def create
-    user = User.find_by(email: params[:email].to_s.strip.downcase, active: true)
-    if user&.authenticate(params[:password].to_s)
+    user = HrmIdentity::Application::Queries::AuthenticateUser.new.call(email: params[:email], password: params[:password])
+    if user
       reset_session
       session[:user_id] = user.id
       redirect_to root_path

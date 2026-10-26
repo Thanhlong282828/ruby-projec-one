@@ -1,39 +1,35 @@
 module Api
   module V1
     class EmployeesController < BaseController
-      before_action :set_employee, only: [:show, :update, :destroy]
+      before_action :set_record, only: [:show, :update, :destroy]
       def index
-        authorize Employee
-        render json: { data: page(policy_scope(Employee).order(:id)).map(&:public_attributes) }
+        records = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], api: true)
+        render json: { data: records.map(&:public_attributes) }
       end
       def show
-        render json: { data: @employee.public_attributes }
+        render json: { data: @record.public_attributes }
       end
       def create
-        employee = Employee.new(employee_params)
-        authorize employee
-        employee.save!
-        render json: { data: employee.public_attributes }, status: :created
+        record = HrmWorkforce::Application::Commands::CreateEmployee.new.call(actor: current_user, attributes: record_params)
+        render json: { data: record.public_attributes }, status: :created
       end
       def update
-        @employee.update!(employee_params)
-        render json: { data: @employee.public_attributes }
+        HrmWorkforce::Application::Commands::UpdateEmployee.new.call(actor: current_user, record: @record, attributes: record_params)
+        render json: { data: @record.public_attributes }
       end
       def destroy
-        if @employee.destroy
+        if HrmWorkforce::Application::Commands::DeleteEmployee.new.call(actor: current_user, record: @record)
           head :no_content
         else
-          render json: { error: "dependent_records", details: @employee.errors.full_messages }, status: :conflict
+          render json: { error: "dependent_records", details: @record.errors.full_messages }, status: :conflict
         end
       end
       private
-      def set_employee
-        @employee = policy_scope(Employee).find(params[:id])
-        authorize @employee
+      def set_record
+        @record = HrmWorkforce::Application::Queries::FindEmployee.new.call(actor: current_user, id: params[:id])
+        authorize @record
       end
-      def employee_params
-        params.require(:employee).permit(:employee_code, :full_name, :email, :job_title, :hired_on, :status, :department_id, :salary_cents, :annual_leave_days, :lock_version)
-      end
+      def record_params = HrmWorkforce::Application::Requests::EmployeeRequest.read(params, api: true)
     end
   end
 end
