@@ -14,12 +14,9 @@ class ApplicationController < ActionController::Base
   end
   private
   def current_user
-    @current_user ||= User.find_by(id: session[:user_id], active: true)
+    @current_user ||= HrmIdentity::Application::Queries::FindActiveUser.new.call(id: session[:user_id])
   end
   def authenticate_user!
     redirect_to new_session_path unless current_user
-  end
-  def page(scope)
-    scope.limit(25).offset(([params[:page].to_i, 1].max - 1) * 25)
   end
 end

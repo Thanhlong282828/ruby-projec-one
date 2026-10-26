@@ -1,36 +1,34 @@
 module Workforce
   class EmployeesController < ApplicationController
     before_action :set_employee, only: [:show, :edit, :update, :destroy]
+
     def index
-      authorize Employee
-      @employees = policy_scope(Employee).includes(:department).order(:employee_code)
-      @employees = @employees.where("full_name LIKE ? OR employee_code LIKE ?", "%#{Employee.sanitize_sql_like(params[:q])}%", "%#{Employee.sanitize_sql_like(params[:q])}%") if params[:q].present?
-      @employees = page(@employees)
+      @employees = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], search: params[:q])
     end
     def show; end
     def new
       @employee = Employee.new(hired_on: Date.current)
       authorize @employee
+      load_form_options
     end
     def create
-      @employee = Employee.new(employee_params)
-      authorize @employee
-      if @employee.save
-        redirect_to @employee, notice: "Đã tạo nhân viên."
-      else
-        render :new, status: :unprocessable_entity
-      end
+      @employee = HrmWorkforce::Application::Commands::CreateEmployee.new.call(actor: current_user, attributes: employee_params)
+      redirect_to @employee, notice: "Đã tạo nhân viên."
+    rescue ActiveRecord::RecordInvalid => error
+      @employee = error.record
+      load_form_options
+      render :new, status: :unprocessable_entity
     end
-    def edit; end
+    def edit = load_form_options
     def update
-      if @employee.update(employee_params)
-        redirect_to @employee, notice: "Đã cập nhật hồ sơ."
-      else
-        render :edit, status: :unprocessable_entity
-      end
+      HrmWorkforce::Application::Commands::UpdateEmployee.new.call(actor: current_user, record: @employee, attributes: employee_params)
+      redirect_to @employee, notice: "Đã cập nhật hồ sơ."
+    rescue ActiveRecord::RecordInvalid
+      load_form_options
+      render :edit, status: :unprocessable_entity
     end
     def destroy
-      if @employee.destroy
+      if HrmWorkforce::Application::Commands::DeleteEmployee.new.call(actor: current_user, record: @employee)
         redirect_to employees_path, notice: "Đã xóa nhân viên."
       else
         redirect_to @employee, alert: @employee.errors.full_messages.to_sentence
@@ -38,11 +36,13 @@ module Workforce
     end
     private
     def set_employee
-      @employee = policy_scope(Employee).find(params[:id])
+      @employee = HrmWorkforce::Application::Queries::FindEmployee.new.call(actor: current_user, id: params[:id])
       authorize @employee
     end
-    def employee_params
-      params.require(:employee).permit(:department_id, :user_id, :employee_code, :full_name, :email, :job_title, :hired_on, :status, :salary_cents, :annual_leave_days, :bank_account, :national_id, :lock_version)
+    def load_form_options
+      options = HrmWorkforce::Application::Queries::EmployeeFormOptions.new.call(actor: current_user)
+      @departments, @users = options.values_at(:departments, :users)
     end
+    def employee_params = HrmWorkforce::Application::Requests::EmployeeRequest.read(params)
   end
 end

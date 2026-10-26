@@ -26,12 +26,9 @@ module Api
       def current_user = @current_user
       def authenticate_token!
         raw = request.authorization.to_s.delete_prefix("Bearer ")
-        @api_token = ApiToken.valid_now.includes(:user).find_by(digest: Digest::SHA256.hexdigest(raw))
+        @api_token = HrmIdentity::Application::Queries::AuthenticateToken.new.call(raw: raw)
         @current_user = @api_token&.user
         render(json: { error: "unauthorized" }, status: :unauthorized) unless @current_user&.active?
-      end
-      def page(scope)
-        scope.limit(25).offset(([params[:page].to_i, 1].max - 1) * 25)
       end
     end
   end

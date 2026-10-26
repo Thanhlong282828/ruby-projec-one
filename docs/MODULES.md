@@ -43,3 +43,9 @@ patch "/attendances/:id/checkout", to: "attendances#checkout", as: :checkout_att
 Đọc từ trái sang phải: HTTP method → URL → controller#action → helper. Named helper dùng chung URL cho các HTTP method khác nhau nên chỉ khai báo as một lần. Các đường dẫn cụ thể như /employees/new và /employees/:id/edit phải đứng trước /employees/:id khi cần tránh bắt nhầm tham số.
 
 Chạy `ruby bin/check-routes` để kiểm tra quy tắc route tường minh trên toàn bộ dự án. CI kiểm tra cú pháp Ruby và từ chối lời gọi resource/resources/namespace trong các file routing; comment và chuỗi mô tả không bị coi là lời gọi.
+
+## Command / Query / Provider / Repository
+
+Layer nghiệp vụ mới nằm dưới lib/hrm_<module>/{application,domain,infrastructure,providers}. Mỗi Engine gọi ServiceProvider trong to_prepare; Hrm::Container lưu tên contract/implementation và tạo repository mới khi resolve. Không hard-code implementation trong controller hoặc application use case. Xem DJI_ARCHITECTURE_MAPPING.md và file .txt ở gốc để đọc luồng theo ví dụ Laravel.
+
+Model Active Record, Controller và View vẫn giữ vị trí Rails MVC. Application Request hiện làm require/permit, không thay thế toàn bộ validation của Laravel FormRequest; validation dữ liệu ở Model, quy tắc workflow ở Domain Service. Các module cùng dùng MySQL, chưa có tenant/company context.

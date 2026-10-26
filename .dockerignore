@@ -7,3 +7,7 @@ coverage
 vendor/bundle
 
 .ruby-lsp
+
+config/master.key
+
+config/credentials/*.key

@@ -3,6 +3,11 @@ module HrmAttendance
     engine_name "hrm_attendance"
     config.root = File.expand_path("../..", __dir__)
 
+    # Like Laravel's provider registration; re-run after Rails reloads classes.
+    config.to_prepare do
+      HrmAttendance::Providers::AttendanceServiceProvider.new.register
+    end
+
     # Shared schema and public constants preserve existing data and route helpers.
     # Code is owned by an engine, while the host composes the enabled modules.
     config.autoload_paths << root.join("lib")

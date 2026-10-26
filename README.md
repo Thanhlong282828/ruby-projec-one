@@ -42,6 +42,18 @@ docker compose run --rm web bundle exec rails hrm:purge_tokens
 ```
 Sau khi tạo tài khoản, staff liên kết tài khoản với hồ sơ nhân viên trong màn hình chỉnh sửa. Không có đăng ký công khai. Các vai trò: admin, hr, manager, employee. Admin xóa dữ liệu không có liên kết; HR quản lý nghiệp vụ; manager duyệt nghỉ toàn tổ chức; employee xem hồ sơ mình, nghỉ phép và chấm công.
 
+## Kiến trúc quen thuộc với Laravel DJI
+
+Mỗi module đã có ServiceProvider, Repository Interface, implementation Active Record, Application Command/Query và request allowlist. Controller/View điều phối và hiển thị; các thao tác đọc/ghi đi qua use case và repository. Xem [mapping DJI](docs/DJI_ARCHITECTURE_MAPPING.md) và [hướng dẫn .txt cho người chuyển từ Laravel](HUONG_DAN_LARAVEL_SANG_RAILS.txt).
+
+```text
+Route → Controller → Application Command/Query → Domain Repository Interface
+                                                  ↓ (ServiceProvider binding)
+                                 Infrastructure ActiveRecord Repository → Model → MySQL
+```
+
+`ruby bin/check-architecture` kiểm tra controller/view; `ruby bin/check-routes` giữ route tường minh.
+
 ## Cấu trúc Module (thư viện) + MVC
 
 ```text

@@ -11,6 +11,8 @@ jobs:
         run: ruby bin/check-routes
       - name: Create local secrets and start stack
         run: ruby bin/setup-docker
+      - name: Enforce controller and view architecture
+        run: docker compose run --rm --no-deps web ruby bin/check-architecture
       - name: Provision isolated test database
         run: docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'
       - name: Test and autoload

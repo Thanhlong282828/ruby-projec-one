@@ -1,5 +1,7 @@
 # Kiến trúc HRM
 
+Kiến trúc ứng dụng đã có Provider + Application Command/Query + Domain Repository Interface + Infrastructure Active Record. Xem [mapping DJI Laravel](DJI_ARCHITECTURE_MAPPING.md) cho quyết định và giới hạn.
+
 Mã nguồn hiện được đóng gói thành 9 local gem Rails Engines trong `modules/`. Mỗi domain sở hữu MVC, policy, service và test; platform chứa lớp nền và UI dùng chung. Xem [quy tắc và ranh giới module](MODULES.md).
 
 Ruby on Rails 8.1 / Ruby 3.4 / MySQL 8.4. Modular monolith với microservice nhận sự kiện riêng. MVC giữ controller mỏng, nghiệp vụ đặt tại modules/<module>/app/services, policy tách quyền truy cập. Chưa phải hệ thống microservices phân tán toàn bộ nghiệp vụ.
