@@ -1,0 +1,4 @@
+daily_hr_summary:
+  cron: "0 8 * * * Asia/Ho_Chi_Minh"
+  class: DailySummaryJob
+  active_job: true

@@ -1,0 +1,498 @@
+HƯỚNG DẪN ĐỌC RUBY HRM BẰNG CÁCH SO SÁNH VỚI LARAVEL
+Dự án: ruby-projec-one | Cập nhật: 26/10/2026
+Thư mục gốc: /Users/lahoathanh/Desktop/xinviec/ruby
+
+CÁCH ĐỌC
+Mỗi phần đều có: Laravel quen thuộc -> Rails đang dùng -> giải thích.
+Các đường dẫn bên dưới tính từ thư mục gốc dự án Rails.
+Ví dụ PHP là mã minh họa cách viết tương đương, không phải bản trích nguyên
+vẹn từ DJI. Ví dụ Ruby có ghi rõ khi đã rút gọn để dễ đọc.
+Đã tham khảo kiến trúc Modules/Attendance và Employee tại
+/Users/lahoathanh/Desktop/laraveldji/admin. Không sửa dự án Laravel đó.
+
+======================================================================
+1. PHP / LARAVEL / COMPOSER THÌ RUBY GỌI LÀ GÌ?
+======================================================================
+Bạn đã biết Laravel                    Bên Ruby tương ứng
+----------------------------------------------------------------------
+PHP                                    Ruby (ngôn ngữ)
+Laravel                                Ruby on Rails (framework)
+Composer package                       Gem (thư viện)
+composer.json                          Gemfile + gemspec, tùy vai trò
+composer.lock                          Gemfile.lock
+Nwidart module                         Local gem có Rails Engine ở dự án này
+Eloquent ORM                           Active Record ORM
+Blade                                  ERB
+Artisan                                bin/rails và bin/rake
+PHPUnit/Pest                            Minitest ở dự án này
+
+Gemfile của host giống danh sách dependency trong composer.json.
+File *.gemspec mô tả một gem: tên, version, dependency, file đóng gói.
+Gemfile.lock cố định phiên bản dependency, giống composer.lock.
+
+Lưu ý: cấu trúc CQRS + Repository + Container trong project là lựa chọn
+kiến trúc của project. Không phải mọi ứng dụng Rails đều bắt buộc như vậy.
+
+======================================================================
+2. modules/attendance/lib/hrm_attendance.rb GIỐNG FILE PHP NÀO?
+======================================================================
+LARAVEL:
+Bạn quen việc Composer nạp thư viện và module đăng ký ServiceProvider.
+
+RAILS: modules/attendance/lib/hrm_attendance.rb hiện chứa:
+
+  require "hrm_attendance/engine"
+
+HIỂU THEO LARAVEL:
+Đây là file đầu vào khi thư viện hrm_attendance được nạp.
+Nó yêu cầu Ruby nạp tiếp Engine. Nó không phải toàn bộ AttendanceServiceProvider.
+Rails/Bundler và cơ chế autoload phối hợp nạp mã; không nên hiểu require
+là bản thay thế một-một cho toàn bộ Composer autoload.
+
+Đối chiếu ba file để bạn khỏi nhầm:
+
+Laravel                               Rails trong project
+----------------------------------------------------------------------
+Đầu vào package/module                lib/hrm_attendance.rb
+Đăng ký module vào framework          lib/hrm_attendance/engine.rb
+AttendanceServiceProvider::register() lib/hrm_attendance/providers/
+                                      attendance_service_provider.rb
+
+Luồng lúc Rails khởi động hoặc nạp lại mã:
+Gemfile/Bundler nạp gem
+  -> hrm_attendance.rb nạp Engine
+  -> Engine gắn đường dẫn route/migration/autoload
+  -> config.to_prepare gọi AttendanceServiceProvider.new.register
+  -> provider đăng ký Interface -> Implementation vào container.
+
+Đây là luồng KHỞI ĐỘNG. Mỗi lần bấm nút chấm công không chạy lại toàn bộ
+chuỗi khởi động này. Trong development, Rails có thể nạp lại lớp khi sửa mã.
+
+======================================================================
+3. AttendanceServiceProvider PHP CỦA BẠN SANG RUBY RA SAO?
+======================================================================
+LARAVEL (ví dụ rút gọn theo kiểu bạn gửi):
+
+  class AttendanceServiceProvider extends ModuleServiceProvider
+  {
+      public function register(): void
+      {
+          $this->app->bind(
+              AttendanceWriteRepositoryInterface::class,
+              EloquentAttendanceWriteRepository::class
+          );
+      }
+  }
+
+RAILS (trích register thật, xuống dòng cho dễ đọc):
+
+  def register
+    bind "HrmAttendance::Domain::Repositories::ReadRepositoryInterface",
+         "HrmAttendance::Infrastructure::Persistence::ActiveRecordReadRepository"
+    bind "HrmAttendance::Domain::Repositories::WriteRepositoryInterface",
+         "HrmAttendance::Infrastructure::Persistence::ActiveRecordWriteRepository"
+  end
+
+Mở: modules/attendance/lib/hrm_attendance/providers/attendance_service_provider.rb
+
+SO SÁNH:
+- extends ModuleServiceProvider -> < Hrm::ServiceProvider.
+- public function register(): void -> def register ... end.
+- $this->app->bind(...) -> bind(...) của lớp cha Hrm::ServiceProvider.
+- Eloquent... -> ActiveRecord... vì Rails dùng Active Record.
+- Cùng ý nghĩa: khi cần contract này, hãy tạo implementation kia.
+
+Provider chỉ ĐĂNG KÝ cách nối lớp. Provider không thực hiện chấm công.
+Container giữ tên lớp bằng chuỗi để phù hợp cơ chế reload của Rails.
+Hrm::Container là thư viện tự viết của project, không phải container tích
+hợp sẵn của Rails có đầy đủ mọi tính năng như Laravel Container.
+
+Phần schedule/event trong PHP của bạn nằm ở đâu bên Rails?
+- Đăng ký repository: provider ở trên.
+- Event subscriber: modules/audit/lib/hrm_audit/providers/event_service_provider.rb.
+- Scheduler: modules/platform/config/schedule.yml và modules/time_off/config/schedule.yml, Sidekiq Cron; không tự nằm trong provider.
+- Route: module có file route riêng, host config/routes.rb gọi draw.
+Rails tách các trách nhiệm này ra các file; không dồn hết vào một provider.
+
+======================================================================
+4. NAMESPACE, CLASS, BIẾN, CONSTRUCTOR: ĐỌC RUBY NHƯ ĐỌC PHP
+======================================================================
+PHP                                    Ruby
+----------------------------------------------------------------------
+namespace HrmAttendance\Application;    module HrmAttendance
+                                           module Application ... end
+class A extends B                      class A < B
+$this->repository                      @repository
+new ListAttendances(...)                ListAttendances.new(...)
+public function __construct(...)       def initialize(...) ... end
+$object->handle(...)                   object.call(...) nếu lớp định nghĩa call
+ClassName::CONSTANT                     ClassName::CONSTANT
+throw new RuntimeException(...)        raise ...
+try / catch                            begin / rescue (hoặc rescue trong method)
+null / true / false                    nil / true / false
+
+Ruby module ở đây dùng để nhóm tên, gần với namespace PHP.
+Ruby module còn có thể dùng làm mixin; đừng hiểu mọi module Ruby đều là
+một module nghiệp vụ kiểu Nwidart.
+
+Ví dụ PHP:
+  $query = new ListAttendances($repository);
+  $rows = $query->handle(actor: $user, page: 1);
+
+Ruby tương đương về cách gọi:
+  query = ListAttendances.new(repository: repository)
+  rows = query.call(actor: user, page: 1)
+
+.new tạo đối tượng và chạy initialize.
+.call là phương thức bình thường do project đặt tên, gần handle() của bạn.
+actor: user là đối số có tên; actor là người đang thực hiện thao tác.
+@repository là biến của từng đối tượng, gần $this->repository.
+:employee là Symbol Ruby, thường dùng làm tên trường/association/khóa.
+
+Nếu thấy:
+  def call(actor:, at: Time.current) = @service.check_in(actor: actor, at: at)
+
+Có thể đọc thành:
+  def call(actor:, at: Time.current)
+    @service.check_in(actor: actor, at: at)
+  end
+
+Đây là cú pháp viết method một biểu thức. Ruby thường trả về biểu thức
+cuối cùng nên không nhất thiết có chữ return.
+Dấu ! hoặc ? là một phần tên method; ý nghĩa do API quy định.
+Ví dụ save! báo lỗi bằng exception khi validation thất bại; active? trả boolean.
+
+======================================================================
+5. ROUTE: Route::get() BÊN LARAVEL THÌ RAILS VIẾT GÌ?
+======================================================================
+LARAVEL (ví dụ tương đương):
+  Route::get('/attendances', [AttendancesController::class, 'index']);
+  Route::post('/attendances', [AttendancesController::class, 'store']);
+  Route::patch('/attendances/{id}/checkout',
+      [AttendancesController::class, 'checkout']);
+
+RAILS (đúng route hiện tại):
+  get   "/attendances", to: "attendances#index", as: :attendances
+  post  "/attendances", to: "attendances#create"
+  patch "/attendances/:id/checkout", to: "attendances#checkout",
+        as: :checkout_attendance
+
+Mở: modules/attendance/config/routes/attendance.rb
+Host tập hợp các route: config/routes.rb.
+
+SO SÁNH:
+- {id} trong Laravel -> :id trong Rails.
+- Controller::class, 'index' -> "attendances#index".
+- store() bên Laravel thường tương ứng create() bên Rails.
+- route('...') -> helper như attendances_path.
+- as: :attendances đặt tên helper; không phải tên file controller.
+- Project khai báo từng route, không dùng resources/resource/namespace shorthand.
+
+======================================================================
+6. CONTROLLER: NHẬN REQUEST RỒI GỌI USE CASE
+======================================================================
+LARAVEL (ví dụ tương đương):
+  public function store(Request $request)
+  {
+      $handler = app(CheckInHandler::class);
+      $handler->handle(actor: $request->user());
+      return redirect('/attendances')->with('notice', 'Đã vào ca.');
+  }
+
+RAILS (trích phần thành công của action thật):
+  def create
+    HrmAttendance::Application::Commands::CheckIn.new.call(actor: current_user)
+    redirect_to attendances_path, notice: "Đã vào ca."
+  end
+
+Mở: modules/attendance/app/controllers/attendances_controller.rb
+File thật còn có rescue để xử lý lỗi nghiệp vụ/validation.
+
+SO SÁNH:
+- $request->user() -> current_user (helper của ứng dụng).
+- redirect(...) -> redirect_to ...
+- request input -> params.
+- Controller của bạn gọi Handler; Rails này gọi Command hoặc Query.
+- Không viết SQL/save ở controller; controller trả HTML/JSON hoặc redirect.
+
+ApplicationController giống base Controller của Laravel:
+AttendancesController kế thừa nó để dùng các xử lý chung.
+
+======================================================================
+7. HANDLER/COMMAND/QUERY PHP THÌ BÊN RUBY NẰM Ở ĐÂU?
+======================================================================
+LARAVEL DJI                            RAILS HRM
+----------------------------------------------------------------------
+Application/Commands/CheckIn/           application/commands/check_in.rb
+  CheckInHandler.php
+Application/Queries/...                application/queries/list_attendances.rb
+Domain/Services/                       domain/services/
+  AttendanceCaptureService.php           attendance_capture_service.rb
+
+Các đường dẫn Rails ở phần này nằm dưới:
+modules/attendance/lib/hrm_attendance/
+
+LARAVEL (ví dụ rút gọn):
+  class CheckInHandler {
+      public function __construct(private AttendanceCaptureService $service) {}
+      public function handle($actor) {
+          return $this->service->checkIn($actor);
+      }
+  }
+
+RAILS (logic thật, lược bỏ namespace):
+  class CheckIn
+    def initialize(service: Domain::Services::AttendanceCaptureService.new)
+      @service = service
+    end
+    def call(actor:, at: Time.current)
+      @service.check_in(actor: actor, at: at)
+    end
+  end
+
+HIỂU:
+Command CheckIn điều phối thao tác; Domain Service giữ quy tắc chấm công.
+Service tìm nhân viên, khóa nhân viên, kiểm tra active/probation, chống
+chấm công trùng ngày, kiểm tra quyền, rồi gọi repository lưu record.
+
+Query chuyên đọc; Command chuyên ghi hoặc điều phối workflow.
+Application Command KHÔNG phải lệnh terminal kiểu php artisan.
+CQRS ở đây dùng chung MySQL, không có database đọc riêng/Event Sourcing.
+
+======================================================================
+8. INTERFACE + IMPLEMENTATION: SO VỚI PHP CỦA BẠN
+======================================================================
+LARAVEL (ví dụ):
+  interface AttendanceReadRepositoryInterface {
+      public function list($actor, $page = 1);
+  }
+  class EloquentAttendanceReadRepository
+      implements AttendanceReadRepositoryInterface {
+      public function list($actor, $page = 1) { /* truy vấn Eloquent */ }
+  }
+
+RAILS (lược namespace, giữ cách triển khai thật):
+  class ReadRepositoryInterface
+    def list(actor:, page: 1)
+      raise NotImplementedError
+    end
+  end
+  class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
+    # triển khai list và find! bằng Active Record + Pundit scope
+  end
+
+Mở hai file:
+modules/attendance/lib/hrm_attendance/domain/repositories/read_repository_interface.rb
+modules/attendance/lib/hrm_attendance/infrastructure/persistence/active_record_read_repository.rb
+
+SO SÁNH:
+- PHP có keyword interface/implements.
+- Ruby project này dùng lớp cha làm contract; implementation kế thừa nó.
+- Ruby không kiểm tra interface lúc biên dịch như PHP.
+- Method chưa triển khai sẽ raise NotImplementedError khi gọi.
+- Container kiểm tra implementation thuộc contract; tests kiểm tra các
+  method contract được implementation ghi đè.
+- Interface định nghĩa cần làm gì; repository thực hiện cách truy cập DB.
+
+Luồng resolve, so với Laravel:
+  app(AttendanceReadRepositoryInterface::class)
+
+Bên Ruby:
+  Hrm::Container.resolve(
+    HrmAttendance::Domain::Repositories::ReadRepositoryInterface
+  )
+
+Provider đã bind nên resolve tạo ActiveRecordReadRepository.
+Trong constructor Query, dependency mặc định được resolve như vậy.
+Có thể truyền repository: fake_repository khi test.
+Laravel thường tự inject nhờ container; Ruby này ghi rõ constructor default.
+
+======================================================================
+9. ELOQUENT -> ACTIVE RECORD; BLADE -> ERB
+======================================================================
+LARAVEL (ví dụ):
+  Attendance::with('employee')->orderByDesc('work_date')->get();
+  $attendance->saveOrFail();
+  $attendance->employee;
+
+RAILS:
+  Attendance.includes(:employee).order(work_date: :desc).to_a
+  attendance.save!
+  attendance.employee
+
+Đây chỉ là đối chiếu cú pháp ORM. Repository thật còn áp dụng Pundit scope
+và phân trang; không bỏ scope rồi dùng ví dụ trên thay cho code thật.
+
+Model thật: modules/attendance/app/models/attendance.rb
+  belongs_to :employee
+  validates :work_date, :checked_in_at, presence: true
+  validates :work_date, uniqueness: { scope: :employee_id }
+
+SO VỚI LARAVEL:
+- belongs_to :employee gần với employee() trả belongsTo(Employee::class).
+- validates presence gần rules required; Rails đặt validation tại Model.
+- uniqueness scope gần kiểm tra unique kết hợp employee_id + work_date;
+  kiểm tra model vẫn cần constraint DB để chống ghi đồng thời.
+- ActiveRecord Model kế thừa ApplicationRecord, giống Eloquent kế thừa Model.
+
+Blade:
+  @foreach ($attendances as $attendance)
+      {{ $attendance->work_date }}
+  @endforeach
+
+ERB tương đương:
+  <% @attendances.each do |attendance| %>
+    <%= attendance.work_date %>
+  <% end %>
+
+Mở View: modules/attendance/app/views/attendances/index.html.erb
+<% ... %> thực thi Ruby; <%= ... %> xuất kết quả ra HTML.
+@attendances được controller chuẩn bị; View không tự viết truy vấn.
+
+======================================================================
+10. FORMREQUEST + POLICY: KHÔNG PHẢI GỘP HẾT VÀO REQUEST
+======================================================================
+Laravel FormRequest thường có authorize(), rules(), validated().
+Rails project này chia tương ứng:
+
+Laravel                               Rails project
+----------------------------------------------------------------------
+Lọc dữ liệu từ validated()             Request class dùng require/permit
+rules(): required, format...           Model validates...
+authorize() / Policy                  Pundit Policy + kiểm tra tại use case
+Quy tắc workflow nhiều bước           Domain Service/Application Command
+
+Ví dụ request thật của module nghỉ phép:
+  params.require(:leave_request)
+        .permit(:employee_id, :starts_on, :ends_on, :reason)
+
+Mở: modules/time_off/lib/hrm_time_off/application/requests/leave_request_parameters.rb
+
+require ở đây yêu cầu nhóm tham số tồn tại; permit lọc trường được nhận.
+Chúng không thay thế đầy đủ rules(), messages(), authorize() của FormRequest.
+Cho employee_id đi qua allowlist không đồng nghĩa người dùng có quyền dùng
+employee_id đó; use case/policy vẫn phải kiểm tra quyền.
+
+Mở Policy: modules/attendance/app/policies/attendance_policy.rb
+- create?/checkout?: bản ghi phải thuộc nhân viên liên kết với user.
+- Scope: staff được xem rộng; nhân viên chỉ thấy dữ liệu của mình.
+Gần Laravel Policy + query scope, nhưng cách gọi/thư viện khác nhau.
+
+======================================================================
+11. CÙNG MỘT THAO TÁC: LARAVEL ĐI THẾ NÀO, RUBY ĐI THẾ NÀO?
+======================================================================
+A. MỞ DANH SÁCH CHẤM CÔNG
+
+Laravel, cách tổ chức tương đương:
+GET -> Route -> Controller@index -> Query Handler
+    -> Read Interface -> Eloquent Repository -> Model/MySQL -> Blade.
+
+Rails thật, mở lần lượt:
+1) modules/attendance/config/routes/attendance.rb
+   GET /attendances chọn attendances#index.
+2) modules/attendance/app/controllers/attendances_controller.rb
+   index gọi ListAttendances.new.call(actor: current_user, ...).
+3) modules/attendance/lib/hrm_attendance/application/queries/list_attendances.rb
+   Constructor resolve Read Interface; call kiểm tra quyền và gọi list.
+4) modules/attendance/lib/hrm_attendance/infrastructure/persistence/active_record_read_repository.rb
+   Áp dụng scope, includes employee, sắp xếp, phân trang và nạp thành array.
+5) modules/attendance/app/models/attendance.rb -> MySQL.
+6) modules/attendance/app/views/attendances/index.html.erb
+   Render dữ liệu @attendances.
+Controller còn gọi Workforce CurrentEmployee để biết có nhân viên liên kết.
+
+B. BẤM VÀO CA
+
+Laravel, cách tổ chức tương đương:
+POST -> Route -> Controller@store -> CheckInHandler
+     -> AttendanceCaptureService -> Write Repository -> Eloquent -> redirect.
+
+Rails thật, mở lần lượt:
+1) Route POST /attendances -> attendances#create.
+2) AttendancesController#create -> CheckIn.new.call(actor: current_user).
+3) application/commands/check_in.rb -> gọi service.check_in.
+4) domain/services/attendance_capture_service.rb -> kiểm tra nghiệp vụ/quyền.
+5) infrastructure/persistence/active_record_write_repository.rb -> lưu record.
+6) app/models/attendance.rb -> validation -> MySQL.
+7) Controller redirect về attendances_path hoặc hiển thị lỗi.
+Các file 3-5 nằm dưới modules/attendance/lib/hrm_attendance/.
+
+Interface không phải một chặng thực thi SQL nằm giữa mọi lời gọi.
+Container tạo implementation theo contract; lúc gọi repository.list/save!,
+method thực sự chạy trên đối tượng ActiveRecord...Repository.
+
+======================================================================
+12. LARAVEL MUỐN SỬA GÌ THÌ RUBY MỞ FILE NÀO?
+======================================================================
+Muốn sửa URL          -> modules/<module>/config/routes/*.rb
+Muốn sửa HTTP response-> modules/<module>/app/controllers/...rb
+Muốn sửa HTML         -> modules/<module>/app/views/...html.erb
+Muốn sửa validation   -> modules/<module>/app/models/...rb
+Muốn sửa quyền        -> modules/<module>/app/policies/...rb và use case
+Muốn sửa truy vấn     -> lib/hrm_<module>/infrastructure/persistence/...rb
+Muốn sửa workflow    -> lib/hrm_<module>/application/commands/...rb
+Muốn sửa quy tắc riêng-> lib/hrm_<module>/domain/services/...rb
+Muốn đổi implementation -> lib/hrm_<module>/providers/...service_provider.rb
+Muốn sửa schema      -> migration của module; không sửa DB thủ công
+Các đường dẫn lib trong bảng đều nằm trong modules/<module>/.
+
+Bạn không cần mở tất cả provider khi chỉ sửa một trang.
+Bắt đầu từ URL -> route -> action -> use case, rồi mới đi xuống repository.
+
+======================================================================
+13. ARTISAN, MIGRATION, JOB, TEST: SO SÁNH LỆNH VÀ FILE
+======================================================================
+Laravel                              Rails
+----------------------------------------------------------------------
+php artisan route:list               bin/rails routes
+php artisan migrate                  bin/rails db:migrate
+php artisan tinker                   bin/rails console
+php artisan test                     bin/rails test
+app/Jobs/*.php                       module app/jobs/*.rb (Active Job)
+Mailables                            module app/mailers/*.rb (Action Mailer)
+Events/Listeners                     notifications + subscriber của project
+Scheduler                            modules/platform/config/schedule.yml và modules/time_off/config/schedule.yml (Sidekiq Cron)
+Queue worker                         Sidekiq worker service
+Redis queue                          Redis backend của Sidekiq ở project
+Cache::remember(...)                 Rails.cache.fetch(...) { ... }
+Broadcast/WebSocket                  Action Cable
+Artisan custom command               lib/tasks/*.rake (tác vụ Rake)
+
+Project chạy qua Docker; từ thư mục gốc, ví dụ lệnh đọc route:
+  docker compose exec web bin/rails routes
+Kiểm thử trong database test, không dùng database development:
+  bin/test-docker
+Kiểm tra route/kiến trúc:
+  ruby bin/check-routes
+  ruby bin/check-architecture
+
+Migration có thể sửa DB. Lệnh console cũng có thể sửa dữ liệu: khi mới học,
+hãy đọc mã trước và chỉ thử thao tác ghi trên database dành cho test.
+Trong VSCode dùng Dev Container/Ruby LSP để điều hướng lớp bằng Cmd + click.
+Tên file Ruby thường snake_case; tên lớp CamelCase, được Zeitwerk ánh xạ.
+Ví dụ attendance_capture_service.rb -> AttendanceCaptureService.
+
+======================================================================
+14. BÀI TẬP ĐỌC THEO KIỂU LARAVEL
+======================================================================
+Bài 1: Tìm route POST /attendances, xác định action create.
+Nó tương ứng store() quen thuộc của Laravel.
+
+Bài 2: Từ create mở CheckIn, rồi mở AttendanceCaptureService.
+Tìm hai điều kiện: nhân viên active/probation và chưa chấm công hôm nay.
+Nó tương ứng đi Controller -> Handler -> Domain Service ở DJI.
+
+Bài 3: Tìm @repository.save! trong service, rồi mở Write Interface,
+provider và ActiveRecordWriteRepository.
+Bạn sẽ thấy hợp đồng -> đăng ký bind -> lớp thực thi thật bằng ORM.
+
+Bài 4: Từ index đi ListAttendances -> Read Repository -> View.
+Đối chiếu với Controller -> Query Handler -> Eloquent -> Blade.
+
+Khi đã đọc xong Attendance, dùng cùng cách với Workforce, TimeOff, Payroll.
+Project hiện có 9 module và 16 repository bindings. Một số module chỉ có
+contract cần thiết, không tạo Write Repository giả cho module chỉ đọc.
+Đây là nâng cấp kiến trúc Rails hiện có, không phải toàn bộ nghiệp vụ DJI
+đa công ty/ca làm/tăng ca/thuế đã được chuyển sang Ruby.
+
+Tài liệu đối chiếu nguồn DJI: docs/DJI_ARCHITECTURE_MAPPING.md.

@@ -1,0 +1,36 @@
+{
+  "name": "ruby-projec-one \u2022 Rails",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "web",
+  "workspaceFolder": "/app",
+  "runServices": [
+    "web",
+    "worker",
+    "mysql",
+    "redis",
+    "mailpit",
+    "event_sink"
+  ],
+  "shutdownAction": "none",
+  "overrideCommand": false,
+  "remoteUser": "hrm",
+  "updateRemoteUserUID": false,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Shopify.ruby-lsp"
+      ],
+      "settings": {
+        "rubyLsp.rubyVersionManager": {
+          "identifier": "none"
+        }
+      }
+    }
+  },
+  "remoteEnv": {
+    "GEM_HOME": "/home/hrm/.local/share/gem/ruby/3.4.0",
+    "GEM_PATH": "/home/hrm/.local/share/gem/ruby/3.4.0:/usr/local/bundle",
+    "BUNDLE_APP_CONFIG": "/home/hrm/.bundle",
+    "PATH": "/home/hrm/.local/share/gem/ruby/3.4.0/bin:${containerEnv:PATH}"
+  }
+}

@@ -1,0 +1,4 @@
+outbox:
+  cron: "* * * * *"
+  class: OutboxDispatchJob
+  active_job: true

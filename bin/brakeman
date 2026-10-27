@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
+
+Dir.chdir(File.expand_path("..", __dir__))
+# Explicitly include every local MVC engine in the host application scan.
+engines = Dir["modules/*"].select { |path| File.directory?("#{path}/app") }.sort
+ARGV.unshift("--force-scan", "--add-engines-path", engines.join(","))
+load Gem.bin_path("brakeman", "brakeman")
