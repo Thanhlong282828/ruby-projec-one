@@ -5,7 +5,7 @@ module Recruitment
       @candidates = HrmRecruitment::Application::Queries::ListCandidates.new.call(actor: current_user, page: params[:page])
     end
     def new
-      @candidate = Candidate.new
+      @candidate = Candidate.new(company: current_user.company)
       authorize @candidate
     end
     def create

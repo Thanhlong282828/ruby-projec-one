@@ -23,13 +23,13 @@ module HrmWorkforce
         def employee_for_leave!(actor:, id:)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##employee_for_leave!"
         end
-        def active_employees()
+        def active_employees(company_id:)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##active_employees"
         end
         def employee_count(actor:)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##employee_count"
         end
-        def department_count()
+        def department_count(actor:)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##department_count"
         end
       end

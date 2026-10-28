@@ -48,4 +48,9 @@ Chạy `ruby bin/check-routes` để kiểm tra quy tắc route tường minh tr
 
 Layer nghiệp vụ mới nằm dưới lib/hrm_<module>/{application,domain,infrastructure,providers}. Mỗi Engine gọi ServiceProvider trong to_prepare; Hrm::Container lưu tên contract/implementation và tạo repository mới khi resolve. Không hard-code implementation trong controller hoặc application use case. Xem DJI_ARCHITECTURE_MAPPING.md và file .txt ở gốc để đọc luồng theo ví dụ Laravel.
 
-Model Active Record, Controller và View vẫn giữ vị trí Rails MVC. Application Request hiện làm require/permit, không thay thế toàn bộ validation của Laravel FormRequest; validation dữ liệu ở Model, quy tắc workflow ở Domain Service. Các module cùng dùng MySQL, chưa có tenant/company context.
+Model Active Record, Controller và View vẫn giữ vị trí Rails MVC. Application Request hiện làm require/permit, không thay thế toàn bộ validation của Laravel FormRequest; validation dữ liệu ở Model, quy tắc workflow ở Domain Service. Các module cùng dùng MySQL với company_id bắt buộc, tenant scope từ actor.company_id và RBAC đọc từ database. Xem HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt để quản lý vai trò/quyền thật.
+
+
+## Company & RBAC MySQL (28/10/2026)
+
+Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.

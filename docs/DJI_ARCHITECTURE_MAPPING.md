@@ -36,7 +36,7 @@ Desktop/laraveldji/admin:
 ## Quyết định thiết kế
 
 - Giữ chuẩn Rails MVC và bảng/model hiện hữu để không phải đổi schema và URL. Các layer Ruby nằm trong lib theo namespace, được Zeitwerk nạp; không lồng app/application/hrm_attendance/application gây khó đọc.
-- Mỗi module có ServiceProvider thực sự được Engine gọi trong to_prepare. Có 16 binding repository: đọc/ghi của Workforce, Identity, Attendance, TimeOff, Payroll, Recruitment, Audit; thêm Outbox của Platform và Read của Dashboard. Dashboard không có write repository giả.
+- Mỗi module có ServiceProvider thực sự được Engine gọi trong to_prepare. Có 17 binding repository: đọc/ghi của Workforce, Identity, Attendance, TimeOff, Payroll, Recruitment, Audit; thêm Administration của Identity, Outbox của Platform và Read của Dashboard. Dashboard không có write repository giả.
 - Container nhỏ dùng string constant names, không cache repository instance; resolve kiểm tra implementation kế thừa interface. Ruby interface là abstract base class với NotImplementedError, không phải interface kiểm tra kiểu lúc biên dịch như PHP.
 - Constructor injection cho phép kiểm thử bằng fake repository. Controller web/API dùng chung Command/Query và request allowlist. Query giữ Pundit scope; Command tự kiểm tra actor/quyền.
 - CQRS ở mức application code, cùng database MySQL. Query vẫn có thể trả Active Record records và mảng đã load cho MVC; chưa áp dụng CQRS với read database riêng hoặc domain entities độc lập khỏi ORM.
@@ -47,7 +47,7 @@ Desktop/laraveldji/admin:
 
 ## Giới hạn nghiệp vụ
 
-Rails hiện là HRM một tổ chức: một ca/ngày, nghỉ phép theo ngày lịch, bảng lương cơ bản. Chưa đưa company/branch isolation, Work Profile, ca xoay, overtime, device integration, anomaly detection, bảo hiểm/thuế và payroll readiness từ DJI sang. Việc bổ sung cần schema, quyền và kiểm thử nghiệp vụ riêng; không tạo stub trả thành công để tuyên bố có tính năng.
+Rails hiện có company isolation và RBAC lưu MySQL: mỗi user thuộc một company, role tùy chỉnh, role grants và user grant/deny; xem HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt. Một ca/ngày, nghỉ phép theo ngày lịch, bảng lương cơ bản vẫn là nghiệp vụ hiện có. Chưa đưa branch isolation, Work Profile, ca xoay, overtime, device integration, anomaly detection, bảo hiểm/thuế và payroll readiness từ DJI sang. Việc bổ sung cần schema, quyền và kiểm thử nghiệp vụ riêng; không tạo stub trả thành công để tuyên bố có tính năng.
 
 ## Kiểm tra
 

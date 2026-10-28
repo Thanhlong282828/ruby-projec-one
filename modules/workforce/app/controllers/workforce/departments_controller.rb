@@ -5,7 +5,7 @@ module Workforce
       @departments = HrmWorkforce::Application::Queries::ListDepartments.new.call(actor: current_user, page: params[:page])
     end
     def new
-      @department = Department.new
+      @department = Department.new(company: current_user.company)
       authorize @department
     end
     def create

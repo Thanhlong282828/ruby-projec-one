@@ -14,7 +14,7 @@ module HrmIdentity
         def user_options(actor:)
           raise NotImplementedError, "HrmIdentity::ReadRepositoryInterface##user_options"
         end
-        def summary_recipients()
+        def summary_recipients(company_id:)
           raise NotImplementedError, "HrmIdentity::ReadRepositoryInterface##summary_recipients"
         end
       end

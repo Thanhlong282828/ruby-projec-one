@@ -1,4 +1,5 @@
 class LeaveRequest < ApplicationRecord
+  include CompanyOwned
   include ObservableRecord
   belongs_to :employee
   belongs_to :reviewer, class_name: "User", optional: true
@@ -19,4 +20,7 @@ class LeaveRequest < ApplicationRecord
     overlap = employee.leave_requests.where(status: %w[pending approved]).where("starts_on <= ? AND ends_on >= ?", ends_on, starts_on)
     errors.add(:base, "Overlapping leave request") if overlap.exists?
   end
+  before_validation { self.company_id ||= employee&.company_id }
+  validate { same_company_as(:employee, :reviewer) }
+
 end

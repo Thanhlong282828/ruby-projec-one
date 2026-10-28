@@ -1,0 +1,331 @@
+COMPANY + VAI TRÒ + PERMISSION THẬT TRONG MYSQL
+Project Ruby HRM hiện tại — cập nhật 28/10/2026
+
+1. TÓM TẮT ĐỂ BẠN ĐỐI CHIẾU VỚI LARAVEL
+
+Laravel DJI: user -> company guard + Gate/Policy -> permission -> scoped repository.
+Ruby hiện tại: current_user.company -> User#allowed?(permission_key) đọc MySQL
+             -> Pundit Policy kiểm action và company -> scoped repository.
+Node weeksevenfileone: vẫn là role/employee scope như trước; lần này không sửa Node.
+
+Company và quyền Ruby ĐÃ TRIỂN KHAI, không còn là ví dụ "chưa có".
+Đã sửa trực tiếp cùng repository Ruby, cùng MySQL development hiện có.
+Không clone project, không clone database, không reset dữ liệu hoặc đổi mật khẩu.
+Tài khoản cũ thuộc company XINVIEC. Mỗi account có một company.
+Không có company switcher hoặc nhiều membership cho một account trong bản này.
+Admin là admin TRONG COMPANY, không phải super-admin của mọi company.
+
+2. MYSQL ĐANG LƯU NHỮNG GÌ?
+
+companies
+  id, code, name, active
+  Công ty/workspace thật. Dữ liệu nghiệp vụ có company_id NOT NULL và FK.
+
+users
+  company_id, role, email, active, password_digest, ...
+  role là mã vai trò trong company, ví dụ admin/hr/manager/employee/team_lead.
+  Đã bỏ enum role cố định để có thể thêm vai trò trong database.
+  FK tổng hợp (users.company_id, users.role) -> (company_roles.company_id, key).
+  Database từ chối gán vai trò không tồn tại hoặc không thuộc company.
+  Email đăng nhập vẫn unique toàn hệ thống, không đăng nhập mơ hồ theo company.
+
+company_roles
+  id, company_id, key, name
+  Bốn vai trò khởi tạo: admin, hr, manager, employee.
+  Có thể tạo thêm recruiter/team_lead/director ngay trên web/API.
+  Cùng key của hai company là hai role rows độc lập, bộ quyền độc lập.
+
+permissions
+  id, key, name
+  29 hành động hệ thống đã định nghĩa, ví dụ employees.read_all, leave.review.
+  Danh mục hành động phải gắn với code xử lý; thêm một key tùy ý vào DB không
+  tự tạo endpoint/tính năng mới. Người quản trị chọn quyền đã hỗ trợ.
+
+role_permissions
+  company_role_id, permission_id
+  Liên kết N-N: vai trò nào có permission nào. Đây là nguồn grant thật.
+
+user_permissions
+  user_id, permission_id, granted
+  granted=true: cấp thêm; granted=false: chặn riêng, ưu tiên hơn role grant.
+  Không có row: kế thừa bộ quyền vai trò.
+
+Công thức: quyền hiệu lực = quyền vai trò + cấp riêng - chặn riêng.
+Company/user inactive thì không được dùng quyền dù grant rows vẫn còn.
+
+PermissionCatalog chỉ cấp bộ quyền ban đầu khi tạo company.
+Policy KHÔNG dùng catalog như bản clone của role->permission trong code.
+Sau khi khởi tạo, đổi role_permissions/user_permissions trong MySQL là đổi
+nguồn quyền mà User#allowed? đọc. Không có wildcard admin bỏ qua DB grant.
+
+3. BẠN BẤM Ở ĐÂU ĐỂ PHÂN QUYỀN?
+
+Đăng nhập admin của company hiện tại, mở menu mới:
+
+/manage/company
+  Đổi tên company. Không thay company_id của tài khoản hoặc dữ liệu.
+
+/manage/roles
+  Xem/sửa bộ quyền của từng vai trò trong company.
+  Cuối trang có form tạo vai trò mới, ví dụ:
+    key: recruiter
+    name: Chuyên viên tuyển dụng
+    permissions: dashboard.view, recruitment.read, recruitment.write
+  Mã key dùng chữ thường, số, dấu _, bắt đầu bằng chữ.
+  Vai trò mới chỉ có các quyền bạn chọn; không tự có mọi quyền.
+
+/manage/accounts
+  Chỉ thấy tài khoản thuộc company hiện tại.
+  Chọn "Xem / gán quyền" -> chọn role -> trạng thái active -> quyền riêng.
+  Mỗi permission có ba lựa chọn: Theo vai trò / Cấp thêm / Chặn.
+
+Ví dụ thực hành:
+  A. Tạo recruiter như trên, gán cho member1 của company.
+     User đó vào được Tuyển dụng, không tự vào được Bảng lương/Quản trị quyền.
+  B. Gán role manager cho một user.
+     Mặc định xem đơn phép company và duyệt phép, không được tự duyệt đơn mình.
+  C. Với một HR, chặn riêng payroll.read.
+     Menu Bảng lương ẩn và gọi route trực tiếp cũng bị từ chối.
+  D. Cấp employees.update nhưng không employees.sensitive.
+     Chỉ sửa dữ liệu thường; form không hiện lương/ngân hàng/giấy tờ.
+     Gửi các trường nhạy cảm trực tiếp cũng bị Command chặn.
+
+Thay đổi quyền có tác dụng với request tiếp theo và token API đã cấp trước đó.
+Không nhúng danh sách permission vào JWT để bị giữ quyền cũ tới khi hết token.
+Rails app này dùng API token opaque; actor và quyền được đọc lại từ DB.
+
+Bảo vệ tránh tự khóa hệ thống:
+- Không tự đổi role/quyền hoặc disable chính tài khoản đang dùng.
+- Admin role giữ dashboard.view, company.manage, accounts.manage, roles.manage.
+- Không chặn riêng các quyền quản trị cốt lõi trên account role admin.
+- Không hạ/khóa admin hoạt động cuối cùng của company qua quản trị tài khoản.
+- Không thể dùng ID tài khoản/role company khác để sửa quyền.
+- Role input được chuẩn hóa chữ thường/bỏ khoảng trắng; ADMIN hoặc admin có
+  khoảng trắng không vượt được bảo vệ các quyền quản trị cốt lõi.
+- Đổi role hoặc active mà không gửi permission_overrides thì giữ overrides cũ.
+- Đổi tên role mà không gửi permission_keys thì giữ bộ quyền cũ.
+
+4. QUYỀN KHỞI TẠO CỦA CÁC VAI TRÒ
+
+admin
+  29 permission trong company; vẫn phải qua company scope.
+hr
+  23 permission nghiệp vụ. Không có employees.delete, departments.delete,
+  audit.read, company.manage, accounts.manage, roles.manage.
+manager
+  dashboard.view, employees.read, departments.read,
+  attendance.read, attendance.clock, leave.read, leave.submit,
+  leave.read_all, leave.review.
+employee
+  dashboard.view, employees.read, attendance.read, attendance.clock,
+  leave.read, leave.submit.
+
+Chức danh công việc job_title (Backend Engineer, HR Specialist...) khác role.
+Không tự tăng quyền chỉ vì đổi job_title thành "Director".
+Các default trên là dữ liệu khởi tạo; có thể chỉnh trong MySQL qua UI.
+Quyền cụ thể nên được cấp theo công việc, không cần gán mọi người làm admin.
+
+29 permission keys:
+  dashboard.view
+  employees.read, employees.read_all, employees.create, employees.update,
+  employees.delete, employees.sensitive
+  departments.read, departments.create, departments.update, departments.delete
+  attendance.read, attendance.read_all, attendance.clock
+  leave.read, leave.read_all, leave.submit, leave.submit_for_others, leave.review
+  payroll.read, payroll.create, payroll.finalize
+  recruitment.read, recruitment.write
+  audit.read, realtime.read
+  company.manage, accounts.manage, roles.manage
+
+read thường chỉ bản thân; read_all là toàn company, không phải toàn database.
+Các quyền là độc lập: muốn tạo/sửa nhân sự qua form cần quyền tương ứng;
+muốn xem danh sách toàn company cấp thêm employees.read_all.
+leave.submit_for_others còn cần khả năng thấy employee mục tiêu qua scope.
+Không cho tự chấm công cho người khác chỉ vì có attendance.read_all.
+Không cho tự duyệt đơn mình chỉ vì có leave.review.
+
+5. ĐỌC LUỒNG RUBY NHƯ BẠN ĐỌC LARAVEL
+
+Ví dụ mở danh sách nhân viên:
+  config/routes.rb draw module
+  -> modules/workforce/config/routes/workforce.rb
+  -> ApplicationController authenticate_user!
+  -> Workforce::EmployeesController#index
+  -> HrmWorkforce::Application::Queries::ListEmployees
+  -> Hrm::UseCase.authorize! -> EmployeePolicy#index?
+  -> User#allowed? đọc các bảng MySQL
+  -> ActiveRecordReadRepository#employees
+  -> Pundit.policy_scope!(actor, Employee)
+  -> EmployeePolicy::Scope#resolve
+  -> WHERE company_id=actor.company_id
+  -> nếu không employees.read_all: thêm WHERE user_id=actor.id
+  -> nạp Array + associations trước View -> ERB/JSON.
+
+Ví dụ sửa quyền tài khoản:
+  PATCH /manage/accounts/:id
+  -> AdministrationController#save_account
+  -> AdministrationRequest permit role/active/permission_overrides
+  -> ManageCompanyAccess.call
+  -> ActiveRecordAdministrationRepository#update_account!
+  -> actor.allowed?("accounts.manage")
+  -> khóa company để cập nhật quản trị nhất quán
+  -> tìm User WHERE company_id=actor.company_id AND id=:id
+  -> kiểm role tồn tại trong company, quyền hợp lệ, không tự khóa admin
+  -> UPDATE users + thay user_permissions + INSERT audit_logs cùng transaction.
+
+Tại sao Ruby controller ngắn hơn action Gate/company của Laravel DJI?
+  Controller chỉ nhận HTTP và gọi UseCase.
+  Base lo đăng nhập; UseCase/Policy lo quyền action + cùng company.
+  Repository lo query scope + transaction. MySQL lo FK/unique cuối cùng.
+  KHÔNG phải cứ include Pundit ở Base là mọi action tự có quyền đúng.
+
+Company context thật:
+  current_user.company / actor.company_id.
+  Không cần tự viết CompanyContext.resolve! như ví dụ multi-membership cũ.
+  company_id trong request body/query hoặc X-Company-ID không đổi tenant.
+  Để tạo company mới và admin mới dùng provisioning CLI, không đổi user.company_id.
+
+6. FILE NÀO ĐANG LÀM GÌ?
+
+Các đường dẫn dưới đây tính từ gốc /Users/lahoathanh/Desktop/xinviec/ruby.
+
+modules/identity/app/models/company.rb
+  Company thật; khi tạo sẽ khởi tạo role/grant defaults trong MySQL.
+modules/identity/app/models/user.rb
+  belongs_to company; role động; effective_permission_keys và allowed?.
+modules/identity/app/models/company_role.rb
+  Vai trò riêng trong company; key unique theo company.
+modules/identity/app/models/permission.rb
+modules/identity/app/models/role_permission.rb
+modules/identity/app/models/user_permission.rb
+  Các bảng quyền và grant/deny thật.
+modules/identity/lib/hrm_identity/domain/permission_catalog.rb
+  Bootstrap danh mục/defaults, KHÔNG là runtime authorization mapping.
+modules/platform/app/models/concerns/company_owned.rb
+  Tenant model bắt buộc company, không cho chuyển company trên record đã lưu;
+  kiểm cùng company cho các liên kết qua model validations.
+modules/platform/app/policies/application_policy.rb
+  Base deny-by-default; same_company?; Scope#tenant.
+modules/*/app/policies/*.rb
+  Gắn action với permission key và owner/state rule phù hợp.
+modules/identity/lib/hrm_identity/application/queries/administration.rb
+modules/identity/lib/hrm_identity/application/commands/manage_company_access.rb
+modules/identity/lib/hrm_identity/application/requests/administration_request.rb
+  Query/Command/allowlist của màn quản trị.
+modules/identity/lib/hrm_identity/infrastructure/persistence/active_record_administration_repository.rb
+  Scoped DB reads/writes cho company, role, account và audit transaction.
+modules/identity/app/controllers/administration_controller.rb
+modules/identity/app/controllers/api/v1/administration_controller.rb
+modules/identity/app/views/administration/
+modules/identity/config/routes/identity.rb
+  MVC + routes quản trị thật. Route khai báo riêng, không resources shortcut.
+modules/identity/db/migrate/20261028000001_add_company_rbac.rb
+modules/identity/db/migrate/20261028000002_enforce_company_account_role.rb
+  Migration thêm/backfill company, bảng quyền, unique/FK và account role FK.
+
+17 repository bindings ở bản hiện tại: thêm Administration vào Identity.
+Vẫn 9 Engine modules; không tạo project clone hoặc một app HRM khác.
+
+7. MYSQL CHẶN CHÉO COMPANY NHƯ THẾ NÀO?
+
+Không chỉ có WHERE ở code:
+  employees(company_id,department_id) -> departments(company_id,id)
+  employees(company_id,user_id) -> users(company_id,id)
+  attendances(company_id,employee_id) -> employees(company_id,id)
+  leave_requests(company_id,employee_id/reviewer_id) -> employee/user cùng company
+  pay_runs(company_id,created_by_id) -> users(company_id,id)
+  payslips(company_id,pay_run_id/employee_id) -> run/employee cùng company
+  audit_logs(company_id,actor_id) -> users(company_id,id)
+  users(company_id,role) -> company_roles(company_id,key)
+
+Đây là composite foreign key thật của MySQL.
+Kể cả update_column bỏ validation để gán department company khác thì DB từ chối.
+Người có quyền root DB vẫn là trusted operator; RBAC ứng dụng không thay phân
+quyền server MySQL của DBA. Không cung cấp tài khoản DB root cho user HRM.
+
+Unique company-local:
+  departments(company_id,code)
+  employees(company_id,employee_code), employees(company_id,email)
+  pay_runs(company_id,period)
+Mã phòng ban, mã nhân viên và kỳ lương có thể trùng giữa hai company.
+Email đăng nhập users.email vẫn unique toàn hệ thống.
+
+8. CACHE, PAYROLL, AUDIT, EMAIL, REALTIME ĐÃ ĐƯỢC SCOPE
+
+Payroll: chỉ chụp active employee thuộc company của actor; finalize cũng kiểm tenant.
+Dashboard: key chứa company_id + user_id + digest quyền hiệu lực, TTL 30s.
+Thu quyền làm digest thay đổi, không trả cache được tạo khi còn quyền cao hơn.
+Commit thay đổi dữ liệu xóa dashboard keys trong đúng company đó.
+Audit: mỗi record/audit có company_id; giao diện audit chỉ scope company có quyền.
+Outbox: company_id NOT NULL; dispatcher gửi company_id trong signed event body.
+DailySummary: lặp từng active company, đếm pending riêng và gửi đúng recipients.
+LeaveDecisionJob: nhận record_id + company_id; query mail scoped theo company.
+Job cũ trước migration được giữ tương thích trong company XINVIEC của dữ liệu cũ.
+Action Cable: stream company_<id>_hr_updates; cần realtime.read.
+Subscription đang mở còn kiểm tra lại quyền/company trước transmit từng message.
+Company/client chọn qua params subscribe không thay stream của user.
+
+9. REST API QUẢN TRỊ
+
+GET/PATCH /api/v1/company                cần company.manage
+GET       /api/v1/accounts               cần accounts.manage
+PATCH     /api/v1/accounts/:id           cần accounts.manage, cùng company
+GET       /api/v1/roles                  cần roles.manage
+POST      /api/v1/roles                  tạo role tùy chỉnh
+PATCH     /api/v1/roles/:id              sửa bộ quyền role cùng company
+
+Mẫu payload tạo role:
+  {"role":{"key":"recruiter","name":"Tuyển dụng",
+           "permission_keys":["dashboard.view","recruitment.read","recruitment.write"]}}
+Mẫu payload gán role + quyền riêng:
+  {"account":{"role":"recruiter","active":true,
+     "permission_overrides":{"payroll.read":"grant","employees.delete":"deny"}}}
+inherit hoặc bỏ override trong form = theo role.
+API không gửi permission_overrides thì GIỮ overrides cũ; muốn reset toàn bộ
+thì gửi permission_overrides={}.
+Endpoint chỉ cấp quyền company hiện tại; không nhận company_id để đổi tenant.
+
+10. SQL ĐỌC ĐỂ TỰ KIỂM CHỨNG QUYỀN ĐANG NẰM TRONG MYSQL
+
+Danh sách user + company + role:
+  SELECT u.id,u.email,c.code AS company,u.role,r.name AS role_name
+  FROM users u
+  JOIN companies c ON c.id=u.company_id
+  JOIN company_roles r ON r.company_id=u.company_id AND r.`key`=u.role;
+
+Quyền theo vai trò:
+  SELECT c.code,r.`key` AS role_key,p.`key` AS permission_key
+  FROM company_roles r
+  JOIN companies c ON c.id=r.company_id
+  JOIN role_permissions rp ON rp.company_role_id=r.id
+  JOIN permissions p ON p.id=rp.permission_id
+  ORDER BY c.code,r.`key`,p.`key`;
+
+Quyền cấp/chặn riêng:
+  SELECT u.email,c.code,p.`key`,up.granted
+  FROM user_permissions up
+  JOIN users u ON u.id=up.user_id
+  JOIN companies c ON c.id=u.company_id
+  JOIN permissions p ON p.id=up.permission_id;
+
+Các truy vấn trên là read-only. Thao tác sửa nên đi qua UI/API để được
+validate quyền, bảo vệ admin, scope company và ghi audit atomically.
+
+11. CLI TẠO COMPANY / TÀI KHOẢN MỚI
+
+Các task chạy trong container web bằng bundle exec rails ...:
+  hrm:create_company
+    COMPANY_CODE, COMPANY_NAME, EMAIL, PASSWORD
+    Tạo company + 4 role defaults + các role grants + owner admin cùng transaction.
+  hrm:create_user
+    COMPANY_CODE, EMAIL, PASSWORD, ROLE
+    COMPANY_CODE mặc định XINVIEC. ROLE có thể là role tùy chỉnh đã tồn tại.
+  hrm:disable_user
+    EMAIL (email login unique); đây là privileged local CLI, không public endpoint.
+
+Ví dụ sau khi đặt các biến môi trường tương ứng ở terminal:
+  docker compose exec -e COMPANY_CODE -e COMPANY_NAME -e EMAIL -e PASSWORD web bundle exec rails hrm:create_company
+  docker compose exec -e COMPANY_CODE -e EMAIL -e PASSWORD -e ROLE web bundle exec rails hrm:create_user
+
+Không ghi password thật vào file hướng dẫn, Git hay log.
+Không chạy db:reset để bổ sung company/quyền; migration đã backfill dữ liệu cũ.

@@ -2,7 +2,7 @@ module HrmAttendance
   module Infrastructure
     module Persistence
       class ActiveRecordWriteRepository < Domain::Repositories::WriteRepositoryInterface
-        def build(employee:, at:) = employee.attendances.new(work_date: at.to_date, checked_in_at: at)
+        def build(employee:, at:) = employee.attendances.new(company_id: employee.company_id, work_date: at.to_date, checked_in_at: at)
         def already_checked_in?(employee:, work_date:) = employee.attendances.exists?(work_date: work_date)
         def save!(record:)
           record.save!

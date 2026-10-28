@@ -1,0 +1,5 @@
+<div class="page-heading"><div><div class="eyebrow"><%= @data[:company].code %></div><h1>Tài khoản & quyền</h1><p class="subtitle">Vai trò cấp quyền mặc định từ MySQL. Có thể cấp/chặn quyền riêng cho từng tài khoản.</p></div></div>
+<div class="panel"><table><thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+<% @data[:accounts].each do |account| %><tr><td><%= account.email %></td><td><%= account.role %></td><td><%= account.active? ? "Hoạt động" : "Đã khóa" %></td><td><%= link_to "Xem / gán quyền", administration_account_path(account) %></td></tr><% end %>
+</tbody></table></div>
+<p class="hint">Chức danh công việc (job_title) khác vai trò bảo mật. Ví dụ Backend Engineer không tự có quyền admin.</p>

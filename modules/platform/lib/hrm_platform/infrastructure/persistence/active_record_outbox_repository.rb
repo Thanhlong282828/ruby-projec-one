@@ -2,7 +2,7 @@ module HrmPlatform
   module Infrastructure
     module Persistence
       class ActiveRecordOutboxRepository < Domain::Repositories::OutboxRepositoryInterface
-        def append!(event_type:, payload:) = ::OutboxEvent.create!(event_type: event_type, payload: payload)
+        def append!(company_id:, event_type:, payload:) = ::OutboxEvent.create!(company_id: company_id, event_type: event_type, payload: payload)
         def pending(limit: 100) = ::OutboxEvent.pending.order(:id).limit(limit).to_a
         def deliver(event:)
           event.with_lock do

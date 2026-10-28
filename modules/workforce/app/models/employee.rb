@@ -1,4 +1,5 @@
 class Employee < ApplicationRecord
+  include CompanyOwned
   include ObservableRecord
   belongs_to :department
   belongs_to :user, optional: true
@@ -10,7 +11,7 @@ class Employee < ApplicationRecord
   enum :status, { active: "active", probation: "probation", inactive: "inactive" }, validate: true
   normalizes :email, with: ->(email) { email.strip.downcase }
   validates :employee_code, :full_name, :email, :job_title, :hired_on, presence: true
-  validates :employee_code, :email, uniqueness: true
+  validates :employee_code, :email, uniqueness: { scope: :company_id }
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :salary_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :annual_leave_days, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 365 }
@@ -18,4 +19,7 @@ class Employee < ApplicationRecord
   def public_attributes
     attributes.slice("id", "employee_code", "full_name", "email", "job_title", "department_id", "hired_on", "status", "lock_version")
   end
+  before_validation { self.company_id ||= department&.company_id }
+  validate { same_company_as(:department, :user) }
+
 end

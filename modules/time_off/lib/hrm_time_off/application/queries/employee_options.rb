@@ -7,6 +7,7 @@ module HrmTimeOff
         end
         def call(actor:)
           require_actor!(actor)
+          raise Pundit::NotAuthorizedError unless actor.allowed?("leave.submit") || actor.allowed?("leave.submit_for_others")
           @repository.employee_options(actor: actor)
         end
       end

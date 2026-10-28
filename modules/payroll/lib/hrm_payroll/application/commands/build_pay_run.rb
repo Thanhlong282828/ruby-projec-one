@@ -9,7 +9,7 @@ module HrmPayroll
           authorize!(actor, ::PayRun, :create?)
           @write.transaction do
             run = @write.create_run!(period: period, actor: actor)
-            @workforce.active_employees.each { |employee| @write.create_payslip!(run: run, employee: employee) }
+            @workforce.active_employees(company_id: actor.company_id).each { |employee| @write.create_payslip!(run: run, employee: employee) }
             run
           end
         end

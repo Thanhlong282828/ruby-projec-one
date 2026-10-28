@@ -1,0 +1,6 @@
+<div class="page-heading"><div><div class="eyebrow">COMPANY</div><h1><%= @data[:company].name %></h1><p class="subtitle">Mã: <%= @data[:company].code %> · Mỗi tài khoản thuộc một company; quyền admin chỉ áp dụng trong company này.</p></div></div>
+<% if @administration_error %><div class="flash alert"><%= @administration_error %></div><% end %>
+<div class="panel"><%= form_with url: administration_company_path, scope: :company, method: :patch do |form| %>
+<div class="field"><%= form.label :name, "Tên company" %><%= form.text_field :name, value: @data[:company].name, required: true %></div>
+<%= form.submit "Lưu company", class: "button" %><% end %></div>
+<p class="hint">Tạo company và admin mới bằng CLI hrm:create_company. Giao diện này không cho đổi company_id để tránh di chuyển nhầm dữ liệu.</p>
