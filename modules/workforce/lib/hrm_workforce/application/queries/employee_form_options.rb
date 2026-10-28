@@ -6,7 +6,8 @@ module HrmWorkforce
           @workforce, @identity = workforce, identity
         end
         def call(actor:)
-          authorize!(actor, ::Employee, :create?)
+          require_actor!(actor)
+          raise Pundit::NotAuthorizedError unless actor.allowed?("employees.create") || actor.allowed?("employees.update")
           @workforce.form_options(actor: actor).merge(users: @identity.user_options(actor: actor))
         end
       end

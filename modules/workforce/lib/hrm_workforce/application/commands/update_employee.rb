@@ -7,6 +7,8 @@ module HrmWorkforce
         end
         def call(actor:, record:, attributes:)
           authorize!(actor, record, :update?)
+          sensitive = %w[salary_cents bank_account national_id]
+          raise Pundit::NotAuthorizedError if !actor.allowed?("employees.sensitive") && attributes.keys.any? { |key| sensitive.include?(key.to_s) }
           @repository.update!(record: record, attributes: attributes)
         end
       end

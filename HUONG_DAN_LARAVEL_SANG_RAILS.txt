@@ -375,7 +375,7 @@ employee_id đó; use case/policy vẫn phải kiểm tra quyền.
 
 Mở Policy: modules/attendance/app/policies/attendance_policy.rb
 - create?/checkout?: bản ghi phải thuộc nhân viên liên kết với user.
-- Scope: staff được xem rộng; nhân viên chỉ thấy dữ liệu của mình.
+- Scope: luôn lọc company_id từ user; attendance.read_all xem company, attendance.read chỉ xem của mình. Quyền lưu trong MySQL, có thể cấp/chặn theo tài khoản.
 Gần Laravel Policy + query scope, nhưng cách gọi/thư viện khác nhau.
 
 ======================================================================
@@ -473,6 +473,23 @@ Tên file Ruby thường snake_case; tên lớp CamelCase, được Zeitwerk án
 Ví dụ attendance_capture_service.rb -> AttendanceCaptureService.
 
 ======================================================================
+COMPANY VÀ PERMISSION ĐÃ CÓ THẬT TRONG MYSQL — 28/10/2026
+======================================================================
+Laravel DJI: Gate/Policy + company guard + permission trong database.
+Ruby hiện tại: User.company_id -> company_roles theo users.role ->
+role_permissions -> permissions; user_permissions cấp/chặn riêng.
+User#allowed?(key) đọc MySQL, không dùng enum role cố định để cấp quyền.
+
+Mở /manage/roles để tạo/chỉnh vai trò (kể cả team_lead/recruiter tùy ý).
+Mở /manage/accounts để gán vai trò và quyền riêng cho tài khoản cùng company.
+Quyền hiệu lực = quyền vai trò + grant riêng - deny riêng.
+Company lấy từ tài khoản đã đăng nhập; không chọn tenant qua params/header.
+ApplicationController xác thực; Command/Query/Policy kiểm action + company;
+Repository scope theo company; MySQL composite FK chống liên kết chéo.
+Các tài khoản cũ thuộc company XINVIEC; không reset/clone dữ liệu.
+Đọc từng file và SQL trong HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt.
+
+======================================================================
 14. BÀI TẬP ĐỌC THEO KIỂU LARAVEL
 ======================================================================
 Bài 1: Tìm route POST /attendances, xác định action create.
@@ -490,7 +507,7 @@ Bài 4: Từ index đi ListAttendances -> Read Repository -> View.
 Đối chiếu với Controller -> Query Handler -> Eloquent -> Blade.
 
 Khi đã đọc xong Attendance, dùng cùng cách với Workforce, TimeOff, Payroll.
-Project hiện có 9 module và 16 repository bindings. Một số module chỉ có
+Project hiện có 9 module và 17 repository bindings. Một số module chỉ có
 contract cần thiết, không tạo Write Repository giả cho module chỉ đọc.
 Đây là nâng cấp kiến trúc Rails hiện có, không phải toàn bộ nghiệp vụ DJI
 đa công ty/ca làm/tăng ca/thuế đã được chuyển sang Ruby.

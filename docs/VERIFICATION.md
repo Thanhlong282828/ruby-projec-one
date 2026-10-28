@@ -1,3 +1,22 @@
+# Company + RBAC MySQL — kiểm chứng 28/10/2026
+
+- Thực hiện trực tiếp trên project Ruby hiện tại và database hrm_development, không tạo checkout/database clone.
+- Migration MySQL thêm companies, permissions, company_roles, role_permissions, user_permissions; backfill company cho dữ liệu cũ và FK tổng hợp chống liên kết chéo company, gồm users(company_id,role) -> company_roles(company_id,key).
+- Đã sao lưu development trước migration. Fingerprints các cột gốc và số dòng của 11 bảng được đối chiếu trước/sau migration: không đổi. 7 tài khoản hiện có được gắn company XINVIEC/vai trò, không đổi mật khẩu.
+- MySQL development: 1 company, 29 permission, 4 role defaults, 67 role grants; vai trò tùy chỉnh và account grant/deny tạo/sửa được qua web/API.
+- Rails/Minitest trên hrm_test: **75 tests, 335 assertions, 0 failures/errors/skips**. Gồm quyền động/deny, custom roles, company scopes, chống IDOR, composite FK thực tế, payroll snapshots, cache permission digest, mail summary scope, API token cũ sau thu quyền, actor stale, protected admin và role case/whitespace.
+- Action Cable tenant tests đạt; stream riêng từng company, permission recheck và JSON coder.
+- Zeitwerk đạt; explicit route gate đạt 10 routing files; architecture gate đạt 17 controllers và views.
+- Brakeman quét 17 controllers, 18 models, 31 templates: **0 errors, 0 security warnings**; không thêm ignore để bỏ qua privileged role input.
+- Docker web/worker build thành công; đối chiếu 225 Ruby files trong image khớp checkout, eager load và 17 bindings đạt; đọc được MySQL/grants thật, không chứa config/master.key. App/worker restart, /up HTTP 200.
+- Đăng nhập thật trên development: dashboard, /manage/company, /manage/roles, /manage/accounts đều HTTP 200, khoảng 41–192 ms trong lượt smoke đã đo. Không tạo thêm dữ liệu nghiệp vụ cho smoke này.
+- Hướng dẫn mới: HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt. Bốn TXT cũ đã sửa ngay các ô Ruby từng ghi thiếu company/single-org; phần Node vẫn mô tả đúng project Node chưa được thay đổi.
+- Phạm vi: một account thuộc một company; admin chỉ trong company. Chưa có switch nhiều membership/branch scope cho một account và không tuyên bố ngang toàn bộ nghiệp vụ DJI.
+
+Các mục bên dưới là lịch sử kiểm tra các lần trước, không phải số lượng test/bindings hiện tại (hiện 17 bindings).
+
+---
+
 # Kết quả kiểm tra local — 25/10/2026 (giờ Việt Nam)
 
 - Rails/Minitest trên MySQL: 24 tests, 82 assertions, 0 failures, 0 errors.

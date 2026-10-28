@@ -109,3 +109,8 @@ Dùng image có Gemfile.lock, build asset (`rails assets:precompile` với env p
 ## VS Code / Cmd + click
 
 Mở thư mục gốc bằng VS Code rồi chọn **Dev Containers: Reopen in Container**. Ruby LSP tự cài trong container Ruby 3.4 để hỗ trợ Cmd+click/F12 tới định nghĩa class. Xem [hướng dẫn](docs/VSCODE.md).
+
+
+## Company & RBAC MySQL (28/10/2026)
+
+Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.

@@ -11,3 +11,8 @@
 - Database-changing tests must use RAILS_ENV=test and hrm_test. Do not reset development data or copy database/secrets from the Laravel reference.
 - Desktop/laraveldji/admin is a read-only architecture reference for this Rails project. Do not modify it or claim feature parity with its multi-company HRM.
 - Keep HUONG_DAN_LARAVEL_SANG_RAILS.txt aligned with actual paths and explain new terms for someone moving from Laravel. Distinguish Application Commands from terminal/Artisan-style commands.
+
+- Company/RBAC authorization is persisted in MySQL: company_roles, permissions, role_permissions, user_permissions. Defaults in PermissionCatalog are provisioning only; do not use a role enum or wildcard admin bypass as the runtime permission source.
+- Custom roles are company-scoped database rows. Preserve users(company_id, role) -> company_roles(company_id, key) and same-company composite foreign keys. Tenant identity comes from the authenticated account, never a client-selected company_id/header.
+- User grants/denies, role edits and account administration must authorize the actor, scope target IDs to actor.company_id, preserve protected admin recovery and write audit in the same transaction.
+- Scope auxiliary reads too: form options, payroll snapshots, dashboard cache, audit, outbox metadata, scheduled summaries, decision mail and Action Cable streams. Permission revocation must affect existing credentials/subscriptions.

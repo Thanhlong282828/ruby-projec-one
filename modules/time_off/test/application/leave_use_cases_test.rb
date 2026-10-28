@@ -1,7 +1,7 @@
 require "test_helper"
 class LeaveUseCasesTest < ActiveSupport::TestCase
   class FailingEventRepository < HrmPlatform::Domain::Repositories::OutboxRepositoryInterface
-    def append!(event_type:, payload:) = raise(IOError, "outbox unavailable")
+    def append!(company_id:, event_type:, payload:) = raise(IOError, "outbox unavailable")
   end
   test "event failure rolls back review and its audit writes" do
     employee = make_employee

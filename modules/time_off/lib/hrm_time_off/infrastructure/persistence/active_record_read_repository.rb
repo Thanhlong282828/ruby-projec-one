@@ -9,11 +9,12 @@ module HrmTimeOff
         def find!(actor:, id:) = Pundit.policy_scope!(actor, ::LeaveRequest).find(id)
         def employee_options(actor:) = Pundit.policy_scope!(actor, ::Employee).order(:full_name).to_a
         def used_days(employee:, year:) = employee.leave_requests.approved.where(starts_on: Date.new(year)..Date.new(year, 12, 31)).sum { |leave| leave.days }
-        def pending_count(actor: nil)
-          scope = actor ? Pundit.policy_scope!(actor, ::LeaveRequest) : ::LeaveRequest
+        def pending_count(actor: nil, company_id: nil)
+          raise ArgumentError, "company_id is required for scheduler" unless actor || company_id
+          scope = actor ? Pundit.policy_scope!(actor, ::LeaveRequest) : ::LeaveRequest.where(company_id: company_id)
           scope.pending.count
         end
-        def find_for_mail!(id:) = ::LeaveRequest.find(id)
+        def find_for_mail!(id:, company_id:) = ::LeaveRequest.where(company_id: company_id).find(id)
       end
     end
   end

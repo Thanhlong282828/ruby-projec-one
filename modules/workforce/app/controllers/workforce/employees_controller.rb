@@ -7,7 +7,7 @@ module Workforce
     end
     def show; end
     def new
-      @employee = Employee.new(hired_on: Date.current)
+      @employee = Employee.new(company: current_user.company, hired_on: Date.current)
       authorize @employee
       load_form_options
     end
