@@ -1,9 +1,9 @@
 module HrmAttendance
   module Domain
     module Repositories
-      class WriteRepositoryInterface
+      class WriteRepositoryInterface # Bên Ruby này dùng lớp cha làm hợp đồng, vì Ruby không có keyword interface giống PHP.  |   Có nghĩa: “Repository nào nhận hợp đồng này thì phải tự viết cách save! hoạt động.” Nếu chưa viết mà gọi hàm, nó báo lỗi.
         def build(employee:, at:)
-          raise NotImplementedError, "HrmAttendance::WriteRepositoryInterface##build"
+          raise NotImplementedError, "HrmAttendance::WriteRepositoryInterface##build" 
         end
         def already_checked_in?(employee:, work_date:)
           raise NotImplementedError, "HrmAttendance::WriteRepositoryInterface##already_checked_in?"
