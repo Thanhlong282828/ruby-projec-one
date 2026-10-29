@@ -9,7 +9,7 @@ module Payroll
       @payslips = HrmPayroll::Application::Queries::ListPayslips.new.call(actor: current_user, run: @run)
     end
     def new
-      @run = PayRun.new(period: Date.current.beginning_of_month)
+      @run = PayRun.new(company: current_user.company, period: Date.current.beginning_of_month)
       authorize @run
     end
     def create

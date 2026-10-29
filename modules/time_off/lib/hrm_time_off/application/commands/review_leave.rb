@@ -12,7 +12,7 @@ module HrmTimeOff
             used = @read.used_days(employee: request.employee, year: request.starts_on.year)
             @rules.validate!(request: request, reviewer: reviewer, decision: decision, used_days: used)
             @write.review!(request: request, reviewer: reviewer, decision: decision)
-            @events.append!(event_type: "leave_request.reviewed", payload: { record_id: request.id, decision: decision })
+            @events.append!(company_id: request.company_id, event_type: "leave_request.reviewed", payload: { record_id: request.id, decision: decision })
           end
           request
         end

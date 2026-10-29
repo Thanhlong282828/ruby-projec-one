@@ -6,7 +6,10 @@ module HrmIdentity
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface))
           @repository = repository
         end
-        def create(attributes:) = @repository.create_user!(attributes: attributes)
+        def create(attributes:, company_code: "XINVIEC")
+          administration = Hrm::Container.resolve(Domain::Repositories::AdministrationRepositoryInterface)
+          @repository.create_user!(attributes: attributes.merge(company_id: administration.company_id_for_code!(code: company_code)))
+        end
         def disable(email:) = @repository.disable_user!(email: email)
         def purge_tokens = @repository.purge_expired_tokens
       end

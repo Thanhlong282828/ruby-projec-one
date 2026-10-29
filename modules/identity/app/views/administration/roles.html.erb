@@ -1,0 +1,18 @@
+<div class="page-heading"><div><div class="eyebrow"><%= @data[:company].code %></div><h1>Vai trò & bộ quyền</h1><p class="subtitle">Các thay đổi lưu trong MySQL và áp dụng cho tài khoản cùng vai trò trong company hiện tại. Quyền bị chặn riêng của tài khoản vẫn được ưu tiên.</p></div></div>
+<% if @administration_error %><div class="flash alert"><%= @administration_error %></div><% end %>
+<% @data[:roles].each do |role| %><div class="panel"><h2><%= role.name %> · <code><%= role.key %></code></h2>
+<%= form_with url: administration_role_path(role), scope: :role, method: :patch do |form| %>
+<div class="field"><%= form.label :name, "Tên hiển thị" %><%= form.text_field :name, value: role.name, required: true %></div>
+<%= hidden_field_tag "role[permission_keys][]", "" %>
+<% selected_keys = role.permissions.map(&:key) %>
+<% @data[:permissions].each do |permission| %><div class="field"><label><%= check_box_tag "role[permission_keys][]", permission.key, selected_keys.include?(permission.key) %> <code><%= permission.key %></code> — <%= permission.name %></label></div><% end %>
+<%= form.submit "Lưu quyền #{role.key}", class: "button" %><% end %></div><% end %>
+
+<div class="panel"><h2>Thêm vai trò / chức vụ bảo mật</h2>
+<p class="hint">Ví dụ team_lead, director. Vai trò mới lưu trong MySQL; không cần sửa enum hoặc clone cấu hình code. Chỉ có các quyền được chọn.</p>
+<%= form_with url: administration_roles_path, scope: :role, method: :post do |form| %>
+<div class="field"><%= form.label :key, "Mã vai trò (chữ thường, số, _)" %><%= form.text_field :key, required: true, pattern: "[a-z][a-z0-9_]*", maxlength: 64 %></div>
+<div class="field"><%= form.label :name, "Tên hiển thị" %><%= form.text_field :name, required: true %></div>
+<%= hidden_field_tag "role[permission_keys][]", "" %>
+<% @data[:permissions].each do |permission| %><div class="field"><label><%= check_box_tag "role[permission_keys][]", permission.key %> <code><%= permission.key %></code> — <%= permission.name %></label></div><% end %>
+<%= form.submit "Tạo vai trò trong MySQL", class: "button" %><% end %></div>

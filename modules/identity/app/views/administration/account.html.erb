@@ -1,0 +1,11 @@
+<div class="page-heading"><div><div class="eyebrow"><%= @data[:company].code %></div><h1><%= @data[:account].email %></h1><p class="subtitle">Quyền hiệu lực = quyền vai trò + quyền cấp riêng − quyền bị chặn riêng.</p></div></div>
+<% if @administration_error %><div class="flash alert"><%= @administration_error %></div><% end %>
+<% if @data[:account].id == current_user.id %><div class="flash">Bạn có <%= @data[:effective].size %> quyền. Không được tự thay vai trò/quyền hoặc khóa tài khoản đang đăng nhập.</div><% else %>
+<div class="panel"><%= form_with url: administration_account_path(@data[:account]), scope: :account, method: :patch do |form| %>
+<div class="field"><%= form.label :role, "Vai trò" %><%= form.select :role, @data[:roles].map { |role| ["#{role.name} (#{role.key})", role.key] }, selected: @data[:account].role %></div>
+<div class="field"><%= form.label :active, "Tài khoản hoạt động" %><%= form.check_box :active, checked: @data[:account].active? %></div>
+<table><thead><tr><th>Quyền</th><th>Giải thích</th><th>Quyền riêng</th><th>Hiện có hiệu lực</th></tr></thead><tbody>
+<% @data[:permissions].each do |permission| %><tr><td><code><%= permission.key %></code></td><td><%= permission.name %></td><td><%= select_tag "account[permission_overrides][#{permission.key}]", options_for_select([["Theo vai trò", "inherit"], ["Cấp thêm", "grant"], ["Chặn", "deny"]], @data[:overrides].key?(permission.key) ? (@data[:overrides][permission.key] ? "grant" : "deny") : "inherit") %></td><td><%= @data[:effective].include?(permission.key) ? "Có" : "Không" %></td></tr><% end %>
+</tbody></table><%= form.submit "Lưu vai trò và quyền", class: "button" %><% end %></div>
+<% end %>
+<%= link_to "Quay lại tài khoản", administration_accounts_path %>

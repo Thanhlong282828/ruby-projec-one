@@ -8,7 +8,7 @@ module HrmRecruitment
         def find!(actor:, id:)
           raise NotImplementedError, "HrmRecruitment::ReadRepositoryInterface##find!"
         end
-        def count()
+        def count(actor:)
           raise NotImplementedError, "HrmRecruitment::ReadRepositoryInterface##count"
         end
       end

@@ -28,7 +28,7 @@ module Api
         raw = request.authorization.to_s.delete_prefix("Bearer ")
         @api_token = HrmIdentity::Application::Queries::AuthenticateToken.new.call(raw: raw)
         @current_user = @api_token&.user
-        render(json: { error: "unauthorized" }, status: :unauthorized) unless @current_user&.active?
+        render(json: { error: "unauthorized" }, status: :unauthorized) unless @current_user&.active? && @current_user.company.active?
       end
     end
   end

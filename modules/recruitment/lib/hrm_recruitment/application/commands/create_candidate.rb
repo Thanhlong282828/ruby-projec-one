@@ -7,7 +7,7 @@ module HrmRecruitment
         end
         def call(actor:, attributes:)
           require_actor!(actor)
-          record = @repository.build(attributes: attributes)
+          record = @repository.build(attributes: attributes.except(:company_id, "company_id").merge(company_id: actor.company_id))
           authorize!(actor, record, :create?)
           @repository.save!(record: record)
         end

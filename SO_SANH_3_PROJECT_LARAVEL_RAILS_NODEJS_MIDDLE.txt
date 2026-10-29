@@ -77,7 +77,7 @@ quyền truy cập, failure mode, trade-off và bằng chứng kiểm thử.
 | Đường đi [THỰC TẾ]        | Module + CQRS, contracts và Eloquent persistence.          | Controller -> Command/Query -> contract -> ActiveRecord    | Controller -> MessageBus -> handler; read repository;      |
 |                           |                                                            | repository.                                                | write handler có thể gọi Sequelize trực tiếp.              |
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| Không gán kiến trúc giả   | Attendance provider bind nhiều repository interface.       | 9 Engine modules, container tự viết, 16 bindings ở bản     | Có HrmServiceProvider.js đăng ký message handlers; không   |
+| Không gán kiến trúc giả   | Attendance provider bind nhiều repository interface.       | 9 Engine modules, container tự viết, 17 bindings ở bản     | Có HrmServiceProvider.js đăng ký message handlers; không   |
 |                           |                                                            | hiện tại.                                                  | có bộ interface/write repository giống hệt Rails.          |
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -511,8 +511,12 @@ quyền truy cập, failure mode, trade-off và bằng chứng kiểm thử.
 | IDOR                      | Đổi /employees/7 sang /8 mà đọc được người khác là lỗi     | find trong policy_scope thay vì global find rồi quên       | where id + scope user/tenant; req.params không tự đáng     |
 |                           | quyền theo object.                                         | authorize; test owner A/B.                                 | tin; kiểm cả read và update.                               |
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| Tenant [THỰC TẾ]          | DJI company_id là một phần scope/domain; không chỉ hidden  | Rails hiện single-org; không tự có tenant isolation giống  | Node HRM hiện role/employee scope; không nhận là           |
-|                           | field frontend.                                            | DJI.                                                       | multi-tenant chỉ vì có modules.                            |
+| Tenant [THỰC TẾ]          | DJI company_id là một phần scope/domain; không chỉ hidden  | ĐÃ CÓ Company + RBAC MySQL. User thuộc một company; vai    | Node HRM hiện role/employee scope; không nhận là           |
+|                           | field frontend.                                            | trò và quyền đọc từ company_roles, permissions,            | multi-tenant chỉ vì có modules.                            |
+|                           |                                                            | role_permissions, user_permissions. Policy chặn action và  |                                                            |
+|                           |                                                            | repository scope theo actor.company_id; MySQL composite FK |                                                            |
+|                           |                                                            | chặn liên kết chéo. /manage/roles tạo/chỉnh vai trò;       |                                                            |
+|                           |                                                            | /manage/accounts gán quyền riêng.                          |                                                            |
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Mass assignment           | fillable/guarded + validated allowlist; vẫn phải kiểm      | permit allowlist + use-case authorization; permit(:role)   | Zod object/allowlist; không Employee.update(req.body) trực |
 |                           | quyền đổi role.                                            | không cấp quyền tự nâng role.                              | tiếp; role change chỉ staff phù hợp.                       |

@@ -7,6 +7,7 @@ module HrmDashboard
         end
         def call(actor:)
           require_actor!(actor)
+          raise Pundit::NotAuthorizedError unless actor.allowed?("dashboard.view")
           @repository.snapshot(actor: actor)
         end
       end
