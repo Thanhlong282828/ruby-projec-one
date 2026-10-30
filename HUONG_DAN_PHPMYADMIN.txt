@@ -1,0 +1,17 @@
+MYSQL VA PHPMYADMIN LOCAL
+
+URL: http://pma.test/
+Tai khoan MySQL: ruby
+Mat khau: 123456
+Database ung dung: hrm_development
+Database kiem thu: hrm_test
+
+Luong: Route -> Controller -> Command/Query -> Policy/Repository -> Active Record -> MySQL hrm_development.
+phpMyAdmin ket noi cung MySQL; khong luu mot ban sao database.
+Rails lay DATABASE_HOST, DATABASE_USERNAME, DATABASE_PASSWORD tu .env qua config/database.yml.
+Vi du: thay doi nhan vien tren web -> Rails ghi bang employees -> Refresh phpMyAdmin se thay du lieu moi.
+Quyen company/role/permission van duoc doc tu cac bang MySQL hien tai.
+Tai khoan ruby la tai khoan database, khac tai khoan admin@hrm.local dang nhap HRM.
+Khong xoa Docker volume va khong sua truc tiep password/du lieu ma hoa trong phpMyAdmin.
+
+Trong phpMyAdmin chọn server Ruby HRM (127.0.0.1:13306). Rails trong Docker vẫn kết nối mysql:3306 tới cùng database. Server MySQL local (existing) giữ nguyên kết nối cũ 3306.
