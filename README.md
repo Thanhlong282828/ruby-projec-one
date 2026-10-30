@@ -26,7 +26,7 @@ Dữ liệu nằm trong Docker volumes. Không dùng `down -v` nếu cần giữ
 ## Kiểm thử
 Tạo database test và cấp quyền riêng một lần:
 ```sh
-docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO ruby;"'
 bin/test-docker
 docker compose run --rm web bundle exec rails zeitwerk:check
 docker compose run --rm web bundle exec ruby bin/brakeman --no-pager
@@ -114,3 +114,9 @@ Mở thư mục gốc bằng VS Code rồi chọn **Dev Containers: Reopen in Co
 ## Company & RBAC MySQL (28/10/2026)
 
 Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+
+## MySQL qua phpMyAdmin (local)
+
+Mở http://pma.test/, tài khoản `ruby`, mật khẩu `123456`. Chọn database `hrm_development`: Rails đọc/ghi trực tiếp database này bằng cùng tài khoản trong `.env`; phpMyAdmin là giao diện quản trị. Database `hrm_test` dành riêng cho kiểm thử. Không nhập tài khoản này vào form đăng nhập HRM. Mật khẩu này chỉ dùng local; MySQL Ruby mở cổng 13306 chỉ trên localhost.
+
+Trong phpMyAdmin chọn server Ruby HRM (127.0.0.1:13306). Rails trong Docker vẫn kết nối mysql:3306 tới cùng database. Server MySQL local (existing) giữ nguyên kết nối cũ 3306.

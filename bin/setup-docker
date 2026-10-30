@@ -18,7 +18,7 @@ Dir.chdir(File.expand_path("..", __dir__)) do
   commands = [
     ["docker", "compose", "build"],
     ["docker", "compose", "up", "-d", "--wait", "mysql", "redis", "mailpit", "event_sink"],
-    ["docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO hrm;"'],
+    ["docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO ruby;"'],
     ["docker", "compose", "run", "--rm", "web", "bundle", "exec", "rails", "db:prepare", "db:seed"],
     ["docker", "compose", "up", "-d", "web", "worker"]
   ]
