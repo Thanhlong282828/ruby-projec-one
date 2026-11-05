@@ -14,3 +14,8 @@ class HrUpdatesChannel < ApplicationCable::Channel
     end
   end
 end
+#Đoạn code này là một Action Cable Channel có phân quyền Realtime theo công ty (Multi-Tenant Authorization) trong Ruby on Rails.
+
+# Nó nâng cao hơn hai đoạn ApplicationCable::Connection và ApplicationCable::Channel bạn gửi trước đó.
+
+# Mục đích chính: Chỉ những nhân viên có quyền realtime.read mới được nhận thông báo HRM của công ty mình. Khi có thông báo mới, hệ thống kiểm tra lại quyền trước khi gửi tới trình duyệt.

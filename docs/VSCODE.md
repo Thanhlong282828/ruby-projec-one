@@ -16,3 +16,7 @@ Nếu không nhảy được: chọn Output → Ruby LSP, kiểm tra Ruby đang 
 Nguồn: https://shopify.github.io/ruby-lsp/ và https://code.visualstudio.com/docs/devcontainers/create-dev-container
 
 Đã kiểm tra trực tiếp trên VS Code: Cmd+click ApplicationController ở AttendancesController mở đúng modules/platform/app/controllers/application_controller.rb. Ruby LSP v0.26.11 và Rails add-on v0.4.8 hoạt động với Ruby 3.4.12 trong container.
+
+## Docker restart / Cannot reconnect
+
+Web khởi động qua `bin/start-web`, tự xóa PID Rails cũ trước khi chạy Puma. File PID còn sót sau khi Docker bị tắt có thể khiến Rails báo “A server is already running” và container thoát, làm VS Code mất kết nối. Không cần xóa database/volume. Khi container đã chạy, dùng Developer: Reload Window để kết nối lại.

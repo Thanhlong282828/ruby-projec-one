@@ -1,5 +1,6 @@
-require "net/http"
-require "openssl"
+require "net/http" # net/http: Thư viện Ruby dùng để gửi HTTP Request.
+require "openssl" #  openssl: Cung cấp các chức năng mật mã, trong đó có HMAC-SHA256.
+# Tương tự PHP: use Illuminate\Support\Facades\Http;   |  Và hàm: hash_hmac('sha256', $body, $secret);
 class OutboxDispatchJob < ApplicationJob
   retry_on StandardError, wait: :polynomially_longer, attempts: 8
   def perform
@@ -19,3 +20,28 @@ class OutboxDispatchJob < ApplicationJob
     end
   end
 end
+
+#Đoạn code này là Background Job xử lý Transactional Outbox Pattern trong Ruby on Rails.
+# Đây là một phần Backend khá quan trọng trong hệ thống HRM, kết hợp nhiều kỹ thuật:
+
+# Outbox Pattern + Repository Pattern + Dependency Injection + HTTP Webhook + HMAC-SHA256 + Retry + Action Cable Realtime + Background Job Chaining.
+
+# Mục tiêu là lấy những sự kiện nghiệp vụ đã được lưu trong Outbox,
+#  gửi đến hệ thống bên ngoài, sau đó phát thông báo Realtime và kích hoạt Job tiếp theo khi cần.
+
+
+#1. Luồng hoạt động tổng thể
+              #OutboxDispatchJob.perform
+              #Sidekiq Worker thực thi Job
+                 #      v
+              #Resolve OutboxRepository
+              #Lấy repository qua DI Container
+                 #      v
+              #repository.pending
+              #Lấy các sự kiện chưa được gửi thành công
+                 #      v
+              #HTTP POST + HMAC Signature
+              #Gửi JSON đến EVENT_URL
+         #  v                            v
+      #Thất bại                         HTTP 2xx
+#Raise Exception → Retry          #Broadcast Realtime và xử lý Job liên quan

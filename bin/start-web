@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+cd /app
+# Docker may stop Rails before it removes the PID file on the bind mount.
+rm -f tmp/pids/server.pid
+exec bundle exec rails server -b 0.0.0.0 "$@"

@@ -12,6 +12,7 @@ x-app: &app
 services:
   web:
     <<: *app
+    command: ["sh", "/app/bin/start-web"]
     ports: ["127.0.0.1:3100:3000"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
