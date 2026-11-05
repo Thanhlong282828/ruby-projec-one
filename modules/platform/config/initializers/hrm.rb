@@ -14,3 +14,13 @@ end
 Rails.application.config.action_mailer.raise_delivery_errors = true
 Rails.application.config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "localhost:3100") }
 Rails.application.config.filter_parameters += [:password, :token, :authorization, :bank_account, :national_id, :salary_cents]
+# Đoạn code Ruby on Rails này đang cấu hình 6 thành phần quan trọng của Backend HRM:
+# 1. Sidekiq: Xử lý Job chạy nền.
+# 2. Redis Cache: Lưu dữ liệu cache.
+# 3. Active Record Encryption: Mã hóa dữ liệu nhạy cảm trong database.
+# 4. Action Mailer: Gửi email qua SMTP.
+# 5. Mailer URL: Cấu hình domain để tạo đường dẫn trong email.
+# 6. Filter Parameters: Che giấu thông tin nhạy cảm trong log.
+#
+# Nếu so sánh với Laravel, đây là phần cấu hình hạ tầng Backend,
+# tương tự kết hợp config/queue.php, config/cache.php, config/mail.php và cấu hình mã hóa, bảo mật log.

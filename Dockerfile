@@ -9,4 +9,4 @@ COPY . .
 RUN groupadd --gid 1000 hrm && useradd --uid 1000 --gid hrm --create-home hrm && mkdir -p tmp/pids log && chown -R hrm:hrm /app
 USER hrm
 EXPOSE 3000
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+CMD ["sh", "/app/bin/start-web"]
