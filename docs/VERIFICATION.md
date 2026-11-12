@@ -1,3 +1,13 @@
+# Quy ước Docker / kiểm chứng và release riêng — 13/11/2026
+
+AGENTS.md hợp nhất quy ước Docker: Actions build Dockerfile của repo bằng Ruby 3.4.12 / Bundler 2.6.9, full suite MySQL hrm_test, quality gates và image smoke không mount source. CI chỉ mount public CA theo compose.ci.yaml. GHCR chỉ dùng khi có yêu cầu release riêng; bản phát hành phải ghi full commit SHA và registry manifest digest, không nhầm local image ID với registry digest. Đợt này không publish/deploy hoặc đổi runtime, quyền, SQL, strict scope.
+
+Đã đọc lại log run cũ [42943473135](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/42943473135) của SHA 9b9c014: ERROR 1410 tại cấp DB, tests chưa chạy. Workflow/bootstrap hiện tại đã bỏ user hrm hardcode, GRANT theo MYSQL_USER allowlist qua MYSQL_PWD; không cần sửa lại lỗi đã được xử lý. Run [43287729963](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43287729963) trên commit `710ba310054c091b199745657211a0539cd4ae11` đã xanh cả hai job: lint 554/0, types/negative probe, full MySQL 355 tests / 2311 assertions / 0 failures/errors/skips, RBI, secrets, freshSQL, image smoke, autoload, Brakeman, audit, lockfile; required steps không skip.
+
+Lượt cập nhật quy ước này dùng branch riêng từ commit 710ba31; review/stage chỉ AGENTS.md và tài liệu kiểm chứng, giữ diff học tập bên ngoài. Các kết quả local/remote của SHA mới sẽ được bổ sung sau khi chạy; số liệu run 710ba31 ở trên là bằng chứng lịch sử, không thay cho SHA mới.
+
+---
+
 # Review và chuẩn bị branch kiểm chứng GitHub — 13/11/2026
 
 Branch `codex/verify-erp-baseline`, origin `Thanhlong282828/ruby-projec-one`. Giữ main và production ngoài phạm vi. Lựa chọn source đã kiểm chứng gồm12Engines, CQRS/contracts, Payroll snapshot/export/concurrency fixes, IAM/Leave security hiện có, SQL schema/migrations, Sorbet/RBI/tests/tooling và evidence liên quan. Tài liệu TXT đang học, mapping/roadmap không cần cho runtime/test và file make chưa review được giữ ngoài commit; docs/env-feature-map.json cần cho EnvFeatureAuditTest nên đi cùng tooling. File .DS_Store bị loại, không force-add.
