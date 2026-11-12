@@ -1,0 +1,178 @@
+{
+  "date": "2026-11-12",
+  "feature": "Finalized payroll reconciliation CSV snapshots",
+  "scope": "Artifact prerequisite, not full DJI accounting/provider export",
+  "laravel_reference": [
+    "Modules/Payroll/app/Domain/Services/ErpExportService.php",
+    "Modules/Integration/app/Domain/Services/EnterpriseDomainIntegrationBridge.php"
+  ],
+  "architecture": {
+    "style": "Rails Engine + MVC + CQRS",
+    "owner": "payroll",
+    "new_contracts": 2,
+    "total_bindings": 34,
+    "new_explicit_routes": 8,
+    "routing_files": 13,
+    "controller_files_checked": 39,
+    "download_is_command": "It writes a safe access ledger before returning bytes"
+  },
+  "database": {
+    "migration": "20261112000006_create_payroll_exports",
+    "private_backup_before_migration": true,
+    "tables": [
+      "payroll_exports",
+      "payroll_export_accesses"
+    ],
+    "constraints": [
+      "company/pay-run unique",
+      "public UUID unique",
+      "same-company pay-run/creator/export/actor composite FKs",
+      "format/version/rows/bytes/access-result CHECKs"
+    ],
+    "encrypted_columns": [
+      "payroll_exports.artifact"
+    ],
+    "permissions": [
+      "payroll.exports.read",
+      "payroll.exports.create",
+      "payroll.exports.download"
+    ],
+    "total_permissions": 73,
+    "development": {
+      "users": 7,
+      "pay_runs": 0,
+      "exports": 0,
+      "export_accesses": 0
+    },
+    "sample_business_writes": 0
+  },
+  "artifact": {
+    "format": "payroll_csv_v1",
+    "source": "Finalized pay run with finalized_at; amounts from persisted payslips and employee codes at export creation",
+    "max_rows": 2000,
+    "max_plaintext_bytes": 1048576,
+    "currency": "VND",
+    "amount_scale": 0,
+    "legacy_units": "Preserves existing integer display contract of *_cents columns; no division by 100 or source data conversion",
+    "encoding": "UTF-8 BOM, CRLF CSV, formula-safe employee cells",
+    "excluded": [
+      "full_name",
+      "email",
+      "national_id",
+      "bank_account"
+    ],
+    "immutable": "Readonly Active Record snapshot/access entries, SQL privileges remain separate",
+    "integrity": [
+      "SHA256",
+      "byte size",
+      "header",
+      "UUID each row",
+      "period each row",
+      "row count",
+      "currency/scale",
+      "integer/net relation"
+    ],
+    "identity": "One persisted v1 per company/pay run; duplicate request returns same record; API 201 new / 200 existing"
+  },
+  "authorization": [
+    "metadata requires payroll.read AND payroll.exports.read",
+    "create adds payroll.exports.create",
+    "download adds payroll.exports.download",
+    "MySQL grants, no admin bypass",
+    "same-company source/options/detail/access scopes",
+    "existing token revocation affects downloads",
+    "source rows/record reauthorization under lock",
+    "realtime requires realtime.read AND both payroll/export read grants",
+    "menu/Board conjunctive rule; old any-grant entries preserved",
+    "malformed realtime permission arrays fail closed"
+  ],
+  "access_log": {
+    "results": [
+      "allowed",
+      "integrity_failed"
+    ],
+    "atomic_audit_outbox_before_bytes": true,
+    "meaning": "Server prepared an authorized response, not proof browser saved the file",
+    "integrity_failure_log_committed_before_409": true,
+    "denied_or_foreign_source": "blocked before artifact access; no foreign-source access row"
+  },
+  "verification": {
+    "payroll_and_realtime_suite": {
+      "runs": 20,
+      "assertions": 191,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "full_hrm_test": {
+      "runs": 282,
+      "assertions": 1599,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "native_image": {
+      "runs": 28,
+      "assertions": 379,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "routes": "pass",
+    "architecture": "pass",
+    "zeitwerk": "pass",
+    "brakeman": {
+      "controllers": 38,
+      "models": 32,
+      "templates": 61,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "updated": true,
+      "advisories": 1359,
+      "db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7",
+      "known_vulnerabilities": 0
+    }
+  },
+  "docker": {
+    "packaging": "Existing dependency image plus current source; bundle check passed",
+    "csv_dependency": "Direct Payroll dependency added; csv 3.3.2 was already installed by Organization; lock metadata resolved locally",
+    "native_tests_no_source_mount": true,
+    "uid": 1000,
+    "dotenv_master_key_absent": true,
+    "web_container_preserved": "Explicit docker kill --signal=USR2 xinviec-hrm-web-1; no service-wide signal",
+    "worker_restarted": true,
+    "web_health": 200
+  },
+  "ui": {
+    "url": "/payroll/exports",
+    "month_filter_submitted_and_reset": true,
+    "menu_group": "Thời gian & tiền lương",
+    "viewport": 1280,
+    "page_width": 1280,
+    "console_errors": 0,
+    "screenshot": "private temp hrm-payroll-exports-verified.png",
+    "no_business_form_submissions": true,
+    "mobile_tested": false
+  },
+  "env_audit": {
+    "names_and_references_only": true,
+    "laravel_declared": 140,
+    "laravel_referenced": 293,
+    "ruby_declared": 19,
+    "ruby_referenced": 27,
+    "new_runtime_variable": false
+  },
+  "limitations": [
+    "No accounting journal/debit-credit/provider mapping/maker-checker",
+    "No linked outbound source bridge or automatic artifact transfer",
+    "No statutory/government filing",
+    "No amendment/reversal/v2",
+    "No immutable historical employee-code snapshot at payroll finalization",
+    "No retention/redaction/legal hold, remote receipt reconciliation or production quota tuning",
+    "Readonly/checksum are not tamper-proof against privileged SQL/key compromise"
+  ],
+  "approval_note": "Earlier attempt was not executed because approval-review quota was unavailable; after its reset the authorized writes/migration completed through the normal escalation flow.",
+  "github_push": false
+}

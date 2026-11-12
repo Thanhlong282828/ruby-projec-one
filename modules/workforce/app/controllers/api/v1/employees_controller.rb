@@ -1,7 +1,7 @@
 module Api
   module V1
     class EmployeesController < BaseController
-      before_action :set_record, only: [:show, :update, :destroy]
+      before_action :set_record, only: [ :show, :update, :destroy ]
       def index
         records = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], api: true)
         render json: { data: records.map(&:public_attributes) }

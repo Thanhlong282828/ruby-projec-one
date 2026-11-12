@@ -5,7 +5,7 @@ class CompanyPermissionsTest < ActionDispatch::IntegrationTest
     admin = make_user(:admin)
     employee = make_user
     post "/session", params: { email: admin.email, password: "StrongPassword123!" }
-    ["/manage/company", "/manage/accounts", "/manage/roles", "/manage/accounts/#{employee.id}", "/manage/accounts/#{admin.id}"].each do |path|
+    [ "/manage/company", "/manage/accounts", "/manage/roles", "/manage/accounts/#{employee.id}", "/manage/accounts/#{admin.id}" ].each do |path|
       get path
       assert_response :success, path
     end
@@ -30,7 +30,7 @@ class CompanyPermissionsTest < ActionDispatch::IntegrationTest
     headers = headers_for(admin)
     get "/api/v1/accounts", headers: headers
     assert_response :success
-    assert_not_includes response.parsed_body["data"].map { |row| row["id"] }, other.id
+    assert_not_includes response.parsed_body["data"].pluck("id"), other.id
     patch "/api/v1/accounts/#{other.id}", params: { account: { role: "employee" } }, headers: headers, as: :json
     assert_response :not_found
     patch "/api/v1/roles/#{company.company_roles.first.id}", params: { role: { permission_keys: [] } }, headers: headers, as: :json
@@ -54,7 +54,7 @@ class CompanyPermissionsTest < ActionDispatch::IntegrationTest
     headers = headers_for(admin).merge("X-Company-ID" => company.id.to_s)
     get "/api/v1/employees", params: { company_id: company.id }, headers: headers
     assert_response :success
-    assert_equal [own.id], response.parsed_body["data"].map { |row| row["id"] }
+    assert_equal([ own.id ], response.parsed_body["data"].pluck("id"))
     get "/api/v1/employees/#{other.id}", headers: headers
     assert_response :not_found
     post "/api/v1/departments", params: { department: { code: "NEW", name: "Own", company_id: company.id } }, headers: headers, as: :json
@@ -119,5 +119,4 @@ class CompanyPermissionsTest < ActionDispatch::IntegrationTest
     assert employee.reload.employee?
     assert_not employee.allowed?("accounts.manage")
   end
-
 end

@@ -1,0 +1,33 @@
+{
+  "feature": "Company-scoped branch search, effective status, keyset pagination",
+  "date": "2026-11-12",
+  "tests": {
+    "organization": {
+      "runs": 32,
+      "assertions": 176,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "focused": {
+      "runs": 4,
+      "assertions": 57
+    }
+  },
+  "gates": {
+    "architecture": "passed",
+    "routes": "passed",
+    "zeitwerk": "passed",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_audit": "no known vulnerability"
+  },
+  "browser": "Search submit, preserved keyword, clear filters and default empty state verified on localhost",
+  "development_data_changed": false,
+  "limitations": [
+    "Not branch-level ABAC",
+    "Parent select still capped at 100",
+    "Cursor is not a transaction snapshot; status date recomputed per request"
+  ],
+  "full_suite_rerun": false
+}

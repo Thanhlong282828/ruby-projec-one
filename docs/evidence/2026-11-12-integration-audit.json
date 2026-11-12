@@ -1,0 +1,168 @@
+{
+  "date": "2026-11-12",
+  "module": "Integration",
+  "increment": "Company-scoped operational audit portal",
+  "laravel_reference": {
+    "controller": "Modules/Integration/app/Presentation/Http/Controllers/IntegrationController.php#audit",
+    "repository": "Modules/Integration/app/Infrastructure/Persistence/IntegrationReadRepository.php#map",
+    "actual_source": "DJI audit page maps delivery attempts; DJI histories separately store from/to. Ruby portal aggregates existing audit metadata and safe attempt details; before/after values remain missing."
+  },
+  "architecture": {
+    "style": "Rails Engine + MVC + CQRS",
+    "new_contract": "AuditReadRepositoryInterface",
+    "total_bindings": 32,
+    "integration_contracts": 7,
+    "new_explicit_routes": [
+      "GET /integration/audit",
+      "GET /api/v1/integration/audit"
+    ],
+    "integration_routes": 30,
+    "routing_files": 13,
+    "controller_files_checked": 37
+  },
+  "database": {
+    "adapter": "MySQL",
+    "migration": "20261112000005_add_integration_audit_access",
+    "index": "audit_logs(company_id,record_type,created_at,id)",
+    "new_permission": "integration.audit.read",
+    "total_permissions": 70,
+    "integration_permissions": 8,
+    "private_backup_before_migration": true,
+    "development": {
+      "users": 7,
+      "connections": 0,
+      "inbound": 0,
+      "outbound": 0,
+      "attempts": 0,
+      "integration_audit_rows": 0
+    },
+    "development_business_writes": 0
+  },
+  "authorization": {
+    "portal_requires": [
+      "integration.read",
+      "integration.audit.read"
+    ],
+    "namespaced_policy": "Integration::AuditLogPolicy",
+    "scope": "company + four Integration record types",
+    "actor_from_client": false,
+    "global_audit_grant_distinct": true,
+    "existing_token_revocation_tested": true,
+    "direct_query_and_repository_authorization_tested": true
+  },
+  "read_model": {
+    "allowed_types": [
+      "IntegrationConnection",
+      "IntegrationWebhook",
+      "IntegrationDelivery",
+      "IntegrationDeliveryAttempt"
+    ],
+    "default_days": 30,
+    "max_days": 93,
+    "timezone": "Application Time.zone; current Asia/Ho_Chi_Minh",
+    "filter_fields": [
+      "from",
+      "to",
+      "resource",
+      "operation",
+      "record_id",
+      "before"
+    ],
+    "pagination": "25 records plus one sentinel; descending numeric ID keyset",
+    "kpi_population": "same period/resource/record, link replaces operation filter",
+    "source_lookup": "bounded per-type scoped batch queries; deleted source has no link",
+    "projection": "explicit metadata keys; real column names only in changed_fields; safe attempt HTTP/outcome fields",
+    "excluded": [
+      "arbitrary metadata values",
+      "payload",
+      "credentials",
+      "raw response body",
+      "actor contact details"
+    ],
+    "arbitrary_dynamic_constant_lookup": false,
+    "read_side_effects": false
+  },
+  "verification": {
+    "feature_tests": {
+      "runs": 13,
+      "assertions": 107,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "full_hrm_test": {
+      "runs": 264,
+      "assertions": 1402,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "native_image": {
+      "runs": 68,
+      "assertions": 575,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "routes": "pass",
+    "architecture": "pass",
+    "zeitwerk": "pass",
+    "brakeman": {
+      "controllers": 36,
+      "models": 30,
+      "templates": 59,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "updated": true,
+      "advisories": 1359,
+      "db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7",
+      "known_vulnerabilities": 0
+    }
+  },
+  "docker": {
+    "packaged_current_source_over_existing_locked_dependencies": true,
+    "gem_dependency_change_in_increment": false,
+    "standalone_tests_without_source_mount": true,
+    "uid": 1000,
+    "dotenv_master_key_absent": true,
+    "web_container_preserved_for_vscode": true,
+    "web_health": 200
+  },
+  "ui": {
+    "url": "/integration/audit",
+    "subnavigation": [
+      "Nhận sự kiện",
+      "Gửi sự kiện",
+      "Nhật ký"
+    ],
+    "operation_card_clicked_and_filters_retained": true,
+    "active_tab_aria_current": true,
+    "viewport": 1304,
+    "page_width": 1304,
+    "console_errors": 0,
+    "private_screenshot": "hrm-integration-audit-verified.png",
+    "no_sample_business_submissions": true,
+    "mobile_tested": false
+  },
+  "env_audit": {
+    "names_and_references_only": true,
+    "laravel_declared": 140,
+    "laravel_referenced": 293,
+    "ruby_declared": 19,
+    "ruby_referenced": 27,
+    "new_runtime_variable": false
+  },
+  "operational_note": "An initial service-wide SIGUSR2 interrupted one test/audit run. Those results were discarded and affected checks rerun successfully. AGENTS now requires targeting the observed long-lived web container, never one-off test/migration/scanner containers.",
+  "remaining": [
+    "audit before/after values",
+    "cryptographic tamper-evident ledger/SQL privilege hardening",
+    "CSV audit export",
+    "retention/redaction/legal hold",
+    "provider-specific adapters/OAuth/mTLS",
+    "ERP/government exports/external references",
+    "automatic business dispatch"
+  ],
+  "github_push": false
+}

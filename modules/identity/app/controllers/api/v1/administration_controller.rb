@@ -2,7 +2,7 @@ module Api
   module V1
     class AdministrationController < BaseController
       rescue_from HrmIdentity::Domain::InvalidAdministration do |error|
-        render json: { error: "invalid_access_change", details: error.message }, status: :unprocessable_entity
+        render json: { error: "invalid_access_change", details: error.message }, status: :unprocessable_content
       end
       def company
         data = query(:company)

@@ -1,0 +1,15 @@
+<div class="page-heading">
+  <div><div class="eyebrow">ATTENDANCE</div><h1>Ca làm việc.</h1><p class="subtitle">Cấu hình giờ làm và xem thử chấm công. Chưa tự phân ca hoặc tính lương.</p></div>
+  <% if policy(WorkShift).create? %><%= link_to "+ Tạo ca", new_work_shift_path, class: "button" %><% end %>
+</div>
+<div class="panel">
+  <table><thead><tr><th>Mã ca</th><th>Tên ca</th><th>Giờ làm</th><th>Phút dự kiến</th><th>Trạng thái</th></tr></thead><tbody>
+  <% @records.each do |row| %><tr>
+    <td><%= link_to row.code, work_shift_path(row) %></td><td><%= row.name %></td>
+    <td><%= row.start_time %> – <%= row.end_time %><%= " (+1 ngày)" if row.crosses_midnight? %></td>
+    <td><%= row.planned_work_minutes %></td><td><%= row.active? ? "Đang dùng" : "Ngừng dùng" %></td>
+  </tr><% end %>
+  </tbody></table>
+  <% if @records.empty? %><div class="empty">Chưa có ca làm việc. Người có quyền tạo ca có thể bắt đầu tại đây.</div><% end %>
+</div>
+<%= render "shared/pagination", records: @records %>

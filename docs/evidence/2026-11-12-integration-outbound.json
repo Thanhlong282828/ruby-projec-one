@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-12",
+  "module": "Integration",
+  "scope": "Durable outbound delivery increment; partial DJI parity",
+  "architecture": {
+    "style": "Rails Engine + MVC + CQRS",
+    "new_contracts": 3,
+    "total_bindings": 31,
+    "explicit_new_routes": 10,
+    "routing_files": 13,
+    "controller_files_checked": 35
+  },
+  "database": {
+    "adapter": "MySQL 8.4",
+    "development_users": 7,
+    "development_connections": 0,
+    "development_inbound": 0,
+    "development_outbound": 0,
+    "development_attempts": 0,
+    "total_permissions": 69,
+    "integration_permissions": 7,
+    "migrations": [
+      "20261112000003",
+      "20261112000004"
+    ],
+    "backup_before_each_migration": true,
+    "backup_storage": "private temporary files, not committed",
+    "constraints": [
+      "same-company connection/requester/attempt composite FKs",
+      "case-sensitive company/idempotency unique",
+      "event UUID unique",
+      "attempt sequence unique",
+      "status/cycle/replay/attempt/timestamp CHECKs"
+    ]
+  },
+  "security": [
+    "encrypted immutable delivery payload",
+    "revocable company-scoped MySQL permission before enqueue/retry and worker network call",
+    "permission revocation while waiting for connection lock regression",
+    "operator destination allowlist with company_ids; rechecked at delivery",
+    "public IPv4-only DNS validation/pinning; HTTPS:443 TLS verification; proxy disabled; redirects not followed",
+    "3s open/read/write, 10s transport deadline, response discarded and capped at 4096 bytes",
+    "64KiB UTF-8/schema/depth-limited envelope",
+    "HMAC timestamp.event_id.raw_body, fresh timestamp each attempt",
+    "no secret/payload in metadata, logs, Redis job arguments, audit or realtime",
+    "atomic audit/outbox/attempt state and bounded optimistic replay",
+    "restricted outbound metadata prefixes checked per realtime transmit"
+  ],
+  "delivery": {
+    "scheduler": "IntegrationDispatchJob every minute, confirmed registered in Sidekiq Cron",
+    "batch_limit": 100,
+    "max_attempts_per_cycle": 5,
+    "max_manual_replays": 10,
+    "max_total_attempts": 55,
+    "source_of_truth": "MySQL, recoverable Redis handoff",
+    "success": "HTTP 2xx with bounded response, not remote business completion",
+    "guarantee": "receiver Event ID deduplication required for network/DB commit crash window"
+  },
+  "tests": {
+    "full_hrm_test": {
+      "runs": 251,
+      "assertions": 1293,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "native_image": {
+      "runs": 55,
+      "assertions": 466,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "race_permission_wait": {
+      "runs": 1,
+      "assertions": 5,
+      "result": "pass"
+    }
+  },
+  "gates": {
+    "routes": "pass",
+    "architecture": "pass",
+    "zeitwerk": "pass",
+    "brakeman": {
+      "controllers": 34,
+      "models": 30,
+      "templates": 57,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "updated": true,
+      "advisories": 1359,
+      "db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7",
+      "known_vulnerabilities": 0
+    }
+  },
+  "docker": {
+    "compose_web_worker_build": "pass",
+    "final_source_packaging": "pass; final source copied over freshly built unchanged locked dependency image using a private temporary Dockerfile",
+    "native_bind_mount": false,
+    "uid": 1000,
+    "dotenv_master_key_absent": true,
+    "web_reload": "Puma SIGUSR2, existing VS Code container retained",
+    "worker_restarted": true,
+    "web_health": 200
+  },
+  "ui": {
+    "path": "/integration/outbound",
+    "five_cards_link_to_matching_status": true,
+    "dead_letter_card_clicked_and_filter_verified": true,
+    "viewport_width": 1280,
+    "document_width": 1280,
+    "console_errors": 0,
+    "development_business_writes": 0,
+    "screenshot": "private temp hrm-outbound-hub-verified.png, not committed",
+    "mobile_tested": false
+  },
+  "env_audit": {
+    "names_and_references_only": true,
+    "laravel_declared": 140,
+    "laravel_referenced": 293,
+    "ruby_declared": 19,
+    "ruby_referenced": 27,
+    "new_variable": "INTEGRATION_TARGETS_JSON",
+    "development_outbound_targets": 0,
+    "laravel_secret_copy": false
+  },
+  "remaining": [
+    "provider-specific business adapters/OAuth/mTLS",
+    "separate directional signing keys",
+    "ERP/government exports/external reference mapping",
+    "automatic inbound/business outbound dispatch",
+    "retention/redaction scheduling",
+    "dedicated integration audit portal",
+    "production provider sandbox/egress firewall/monitoring"
+  ],
+  "github_push": false
+}

@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+# typed: true
+
+require "open3"
+require "tempfile"
+Dir.chdir(File.expand_path("..", __dir__)) do
+  abort "Typecheck failed" unless system("bundle", "exec", "srb", "tc")
+  if ARGV.include?("--self-test")
+    # A temporary strict probe exercises the real contract; ensure removes it on every exit.
+    probe = <<~SOURCE
+      # typed: strict
+      class PayrollTypecheckProbe
+        extend T::Sig
+        sig { params(repository: HrmPayroll::Domain::Repositories::WriteRepositoryInterface, actor: User).void }
+        def self.call(repository, actor)
+          repository.finalize!(run: "invalid payroll", actor: actor) { |run| }
+        end
+      end
+    SOURCE
+    output, status = Tempfile.create([ "typecheck_probe_", ".rb" ], "sorbet") do |file|
+      file.write(probe)
+      file.flush
+      Open3.capture2e("bundle", "exec", "srb", "tc")
+    end
+    abort "Typecheck did not reject the invalid contract call" unless !status.success? && output.include?("7002") && output.include?("PayRun")
+    puts "Negative typecheck passed: invalid PayRun argument rejected (7002); temporary probe removed."
+  end
+end

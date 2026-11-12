@@ -1,0 +1,566 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "app",
+      "name": "Ứng dụng / môi trường",
+      "laravel_patterns": [
+        "APP_NAME",
+        "APP_ENV",
+        "APP_KEY",
+        "APP_DEBUG",
+        "APP_URL",
+        "APP_ORIGIN_PORT",
+        "TRUSTED_PROXIES",
+        "APP_LOCALE",
+        "APP_FALLBACK_LOCALE",
+        "APP_FAKER_LOCALE",
+        "PHP_CLI_SERVER_WORKERS",
+        "BCRYPT_ROUNDS",
+        "HASH_DRIVER",
+        "APP_PREVIOUS_KEYS"
+      ],
+      "ruby_keys": [
+        "RAILS_ENV",
+        "APP_HOST",
+        "SECRET_KEY_BASE",
+        "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY",
+        "ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY",
+        "ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT",
+        "WEB_CONCURRENCY",
+        "RAILS_MAX_THREADS"
+      ],
+      "status": "different",
+      "comparison": "Rails có cấu hình môi trường, Puma, bcrypt và bộ khóa riêng; APP_KEY không tương đương duy nhất SECRET_KEY_BASE. Locale/debug/proxy không phải biến Laravel dùng nguyên tên.",
+      "ruby_evidence": [
+        "config/application.rb",
+        "config/environments/production.rb",
+        "config/puma.rb",
+        "modules/platform/config/initializers/hrm.rb"
+      ]
+    },
+    {
+      "id": "database",
+      "name": "MySQL / bảo vệ môi trường DB",
+      "laravel_patterns": [
+        "DB_",
+        "LOCAL_MAIN_DATABASE",
+        "VPS_PRODUCTION_DATABASE",
+        "DQ_STAGING_DATABASE",
+        "PROTECTED_DATABASE_NAMES",
+        "REQUIRE_TESTING_DATABASE_SUFFIX",
+        "MYSQL_ATTR_SSL_CA"
+      ],
+      "ruby_keys": [
+        "DATABASE_HOST",
+        "DATABASE_USERNAME",
+        "DATABASE_PASSWORD",
+        "DATABASE_NAME",
+        "MYSQL_ROOT_PASSWORD"
+      ],
+      "status": "partial",
+      "comparison": "MySQL đã có; development/test được cố định riêng. Chưa có toàn bộ guard database/release/DQ của DJI; DATABASE_PORT chưa được code đọc.",
+      "ruby_evidence": [
+        "config/database.yml",
+        "compose.yaml",
+        "bin/test-docker"
+      ]
+    },
+    {
+      "id": "session",
+      "name": "Đăng nhập / phiên",
+      "laravel_patterns": [
+        "SESSION_"
+      ],
+      "ruby_keys": [],
+      "status": "different",
+      "comparison": "Rails cookie mã hóa chứa login_token; MySQL login_sessions chỉ lưu digest, thu hồi được, hạn 8 giờ. Cookie HttpOnly/SameSite/Secure production nằm trong code; không phải copy SESSION_DRIVER.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/session_store.rb",
+        "modules/identity/app/models/login_session.rb"
+      ]
+    },
+    {
+      "id": "queue",
+      "name": "Queue / worker / Horizon",
+      "laravel_patterns": [
+        "QUEUE_",
+        "REDIS_QUEUE_",
+        "HORIZON_",
+        "SQS_",
+        "BEANSTALKD_"
+      ],
+      "ruby_keys": [
+        "REDIS_URL"
+      ],
+      "status": "partial",
+      "comparison": "ActiveJob + Sidekiq + Redis và scheduler đã có. Không có Horizon Laravel, chưa có trang vận hành queue tương đương DJI. Chưa có adapter SQS/Beanstalkd; không chuyển backend bằng cách chép biến.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/sidekiq.rb",
+        "config/sidekiq.yml"
+      ]
+    },
+    {
+      "id": "cache",
+      "name": "Cache / Redis / Memcached",
+      "laravel_patterns": [
+        "CACHE_",
+        "MEMCACHED_",
+        "REDIS_",
+        "DYNAMODB_"
+      ],
+      "ruby_keys": [
+        "REDIS_URL",
+        "CACHE_REDIS_URL",
+        "CABLE_REDIS_URL"
+      ],
+      "status": "partial",
+      "comparison": "Redis cache/queue/cable tách URL và namespace. Redis URL có thể chứa auth; không in/copy URL thật. Memcached không được triển khai. Chưa có DynamoDB cache.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/hrm.rb",
+        "config/cable.yml"
+      ]
+    },
+    {
+      "id": "mail",
+      "name": "Mail / SMTP / thông báo",
+      "laravel_patterns": [
+        "MAIL_",
+        "POSTMARK_",
+        "RESEND_",
+        "SLACK_"
+      ],
+      "ruby_keys": [
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_USERNAME",
+        "SMTP_PASSWORD",
+        "APP_HOST",
+        "MAIL_FROM"
+      ],
+      "status": "partial",
+      "comparison": "SMTP/Mailpit và tùy chọn username/password STARTTLS có code; biến auth chưa có trong template. LeaveMailer đọc MAIL_FROM, nhưng ApplicationMailer chung vẫn dùng sender mẫu; tên sender chưa cấu hình. Postmark/Resend/Slack chưa có adapter.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/hrm.rb",
+        "modules/platform/app/mailers/application_mailer.rb",
+        "modules/time_off/app/mailers/leave_mailer.rb"
+      ]
+    },
+    {
+      "id": "realtime",
+      "name": "Realtime / Reverb",
+      "laravel_patterns": [
+        "BROADCAST_",
+        "REVERB_",
+        "VITE_REVERB_",
+        "PUSHER_",
+        "ABLY_KEY"
+      ],
+      "ruby_keys": [
+        "CABLE_REDIS_URL"
+      ],
+      "status": "different",
+      "comparison": "Action Cable + Redis thay Reverb; kiểm phiên/quyền/company khi truyền. Không tương thích trực tiếp Reverb app key/protocol.",
+      "ruby_evidence": [
+        "config/cable.yml",
+        "modules/platform/app/channels/hr_updates_channel.rb"
+      ]
+    },
+    {
+      "id": "storage",
+      "name": "Lưu trữ / S3 / Supabase / GCS",
+      "laravel_patterns": [
+        "FILESYSTEM_",
+        "AWS_",
+        "SUPABASE_",
+        "GCS_",
+        "DOCUMENT_STORAGE_",
+        "EMPLOYEE_DOCUMENT_STORAGE_",
+        "DOCUMENT_TEMPORARY_URL_",
+        "LEAVE_ATTACHMENT_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có module Document/Active Storage upload, private bucket, signed URL và adapter S3/Supabase/GCS. Không dùng key DJI cho Ruby.",
+      "ruby_evidence": [
+        "config/application.rb (Active Storage chưa bật)",
+        "docs/dji-parity-inventory.json"
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Avatar / media / Cloudflare Images",
+      "laravel_patterns": [
+        "EMPLOYEE_AVATAR_",
+        "MEDIA_",
+        "CLOUDFLARE_IMAGES_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có upload avatar/media, giới hạn dung lượng và Cloudflare Images adapter.",
+      "ruby_evidence": [
+        "docs/dji-parity-inventory.json"
+      ]
+    },
+    {
+      "id": "document_security",
+      "name": "Tài liệu / antivirus / đối soát",
+      "laravel_patterns": [
+        "DOCUMENT_CLAMAV_",
+        "EMPLOYEE_CLAMAV_",
+        "DOCUMENT_RECONCILIATION_",
+        "ALERT_DOCUMENT_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có ClamAV, kiểm độ mới signature, quarantine, reconciliation job/batch và cảnh báo storage. Đây là dependency bắt buộc trước upload production.",
+      "ruby_evidence": [
+        "docs/dji-parity-inventory.json"
+      ]
+    },
+    {
+      "id": "identity_providers",
+      "name": "OAuth / điện thoại / Passport",
+      "laravel_patterns": [
+        "GOOGLE_",
+        "FACEBOOK_",
+        "PHONE_VERIFICATION_",
+        "PASSPORT_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Ruby hiện đăng nhập email/password và opaque API token. Chưa có Google/Facebook OAuth, OTP điện thoại hay Passport OAuth2 authorization server.",
+      "ruby_evidence": [
+        "modules/identity/app/models/api_token.rb",
+        "modules/identity/app/controllers/sessions_controller.rb"
+      ]
+    },
+    {
+      "id": "edge_security",
+      "name": "Cloudflare / DDoS / WAF",
+      "laravel_patterns": [
+        "CLOUDFLARE_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Có rate limit đăng nhập Redis và security headers ở app; chưa có Cloudflare DDoS monitoring hoặc tự thay chế độ zone. Rate limit app không thay WAF/edge DDoS.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/rack_attack.rb",
+        "modules/platform/config/initializers/security_headers.rb"
+      ]
+    },
+    {
+      "id": "secret_manager",
+      "name": "Secret manager",
+      "laravel_patterns": [
+        "GCP_",
+        "SECRET_MANAGER_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Có khóa môi trường và Rails encryption; chưa có adapter Google Secret Manager/keyless secret access. Không coi env file là secret-manager service.",
+      "ruby_evidence": [
+        "modules/platform/config/initializers/hrm.rb"
+      ]
+    },
+    {
+      "id": "maintenance",
+      "name": "Maintenance / release",
+      "laravel_patterns": [
+        "APP_MAINTENANCE_",
+        "RELEASE_",
+        "VAPOR_MAINTENANCE_MODE"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có maintenance mode, deployment revision và quy trình release parity DJI. Dừng container không tương đương maintenance response an toàn.",
+      "ruby_evidence": [
+        "docs/erp-porting-roadmap.json"
+      ]
+    },
+    {
+      "id": "frontend",
+      "name": "Frontend / Vite",
+      "laravel_patterns": [
+        "VITE_"
+      ],
+      "ruby_keys": [],
+      "status": "different",
+      "comparison": "Ruby dùng ERB + Propshaft + JavaScript hiện có; không dùng Vite. Biến frontend phải được xem là công khai, không đặt server secret trong đó.",
+      "ruby_evidence": [
+        "modules/platform/app/views/layouts/application.html.erb",
+        "modules/platform/config/initializers/assets.rb"
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Logging / health / backup / SLO",
+      "laravel_patterns": [
+        "LOG_",
+        "ERROR_TRACKING_",
+        "HEALTH_",
+        "BACKUP_",
+        "ARTIFACT_",
+        "VPS_MONITORING_",
+        "OPERATIONS_",
+        "SCHEDULER_",
+        "SLO_",
+        "OBSERVABILITY_",
+        "ALERT_",
+        "PAPERTRAIL_"
+      ],
+      "ruby_keys": [
+        "RAILS_LOG_LEVEL"
+      ],
+      "status": "partial",
+      "comparison": "Có logs, request ID, health web/receiver và scheduler. Chưa có SLO/alert/metrics backend, error-tracker, backup-retention hay operations cockpit đầy đủ. Backup thủ công không phải policy tự động.",
+      "ruby_evidence": [
+        "config/environments/production.rb",
+        "modules/platform/config/routes/platform.rb",
+        "docs/VERIFICATION.md"
+      ]
+    },
+    {
+      "id": "auth_options",
+      "name": "Guard / password reset",
+      "laravel_patterns": [
+        "AUTH_"
+      ],
+      "ruby_keys": [],
+      "status": "partial",
+      "comparison": "Có authentication/session/API token riêng; chưa có cơ chế lựa chọn guard/model/password broker và password-reset workflow tương đương Laravel.",
+      "ruby_evidence": [
+        "modules/identity/app/models/user.rb"
+      ]
+    },
+    {
+      "id": "audit_options",
+      "name": "Audit / activity log",
+      "laravel_patterns": [
+        "ACTIVITYLOG_"
+      ],
+      "ruby_keys": [],
+      "status": "different",
+      "comparison": "Ruby có AuditLog + Observer và outbox transaction; không dùng Spatie Activitylog hoặc các biến buffer của package Laravel.",
+      "ruby_evidence": [
+        "modules/audit/app/services/hrm/record_observer.rb"
+      ]
+    },
+    {
+      "id": "feature_flags",
+      "name": "Feature flags runtime",
+      "laravel_patterns": [
+        "FEATURE_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có feature-flag runtime/release gating tương đương DJI. Một số capability như email/realtime/audit đã có nhưng không đồng nghĩa flag engine đã port.",
+      "ruby_evidence": [
+        "docs/dji-parity-inventory.json"
+      ]
+    },
+    {
+      "id": "commerce",
+      "name": "Commerce / CRM / tồn kho",
+      "laravel_patterns": [
+        "COMMERCE_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa port các nghiệp vụ Commerce/CRM/Inventory và ngưỡng cấu hình. Đặt biến env không tạo quy tắc cart/low-stock/customer risk.",
+      "ruby_evidence": [
+        "docs/erp-porting-roadmap.json"
+      ]
+    },
+    {
+      "id": "data_lifecycle",
+      "name": "Retention / data disposal",
+      "laravel_patterns": [
+        "DATA_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Chưa có data lifecycle/disposal/dry-run governance của DJI; purge credential hết hạn không tương đương xóa dữ liệu nghiệp vụ theo retention.",
+      "ruby_evidence": [
+        "modules/identity/app/jobs/purge_credentials_job.rb"
+      ]
+    },
+    {
+      "id": "api_docs",
+      "name": "OpenAPI / Swagger",
+      "laravel_patterns": [
+        "L5_"
+      ],
+      "ruby_keys": [],
+      "status": "missing",
+      "comparison": "Có REST API và route tường minh nhưng chưa có OpenAPI spec/Swagger UI/generation và UI authorization persistence.",
+      "ruby_evidence": [
+        "config/routes.rb"
+      ]
+    },
+    {
+      "id": "module_metadata",
+      "name": "Module / package metadata",
+      "laravel_patterns": [
+        "MODULE_"
+      ],
+      "ruby_keys": [],
+      "status": "different",
+      "comparison": "Ruby khai báo authors/version/dependencies trong gemspec của từng Rails Engine, không dùng module-generator ENV Laravel.",
+      "ruby_evidence": [
+        "modules/onboarding/hrm_onboarding.gemspec"
+      ]
+    }
+  ],
+  "overrides": {
+    "APP_ENV": {
+      "ruby_keys": [
+        "RAILS_ENV"
+      ],
+      "note": "Chọn môi trường Rails; Docker env_file nạp biến, không tự động đọc .env trong Rails native."
+    },
+    "APP_KEY": {
+      "ruby_keys": [
+        "SECRET_KEY_BASE",
+        "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY",
+        "ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY",
+        "ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"
+      ],
+      "note": "Mục đích khóa khác nhau. Không copy APP_KEY, không đổi khóa đang dùng để tránh mất khả năng giải mã/session."
+    },
+    "APP_URL": {
+      "ruby_keys": [
+        "APP_HOST"
+      ],
+      "note": "APP_HOST là host/cổng, không phải chuỗi URL có scheme. Production host/origin/TLS có cấu hình riêng."
+    },
+    "DB_HOST": {
+      "ruby_keys": [
+        "DATABASE_HOST"
+      ]
+    },
+    "DB_USERNAME": {
+      "ruby_keys": [
+        "DATABASE_USERNAME"
+      ]
+    },
+    "DB_PASSWORD": {
+      "ruby_keys": [
+        "DATABASE_PASSWORD"
+      ]
+    },
+    "DB_PORT": {
+      "ruby_keys": [],
+      "status": "missing",
+      "note": "Ruby chưa đọc DATABASE_PORT; mysql2 dùng port mặc định trong network Docker. Port publish ngoài host không phải port app trong Docker."
+    },
+    "DB_DATABASE": {
+      "ruby_keys": [
+        "DATABASE_NAME"
+      ],
+      "status": "partial",
+      "note": "DATABASE_NAME chỉ production; development=hrm_development và test=hrm_test được cố định để tách DB."
+    },
+    "MAIL_HOST": {
+      "ruby_keys": [
+        "SMTP_HOST"
+      ]
+    },
+    "MAIL_PORT": {
+      "ruby_keys": [
+        "SMTP_PORT"
+      ]
+    },
+    "MAIL_USERNAME": {
+      "ruby_keys": [
+        "SMTP_USERNAME"
+      ]
+    },
+    "MAIL_PASSWORD": {
+      "ruby_keys": [
+        "SMTP_PASSWORD"
+      ]
+    },
+    "MAIL_FROM_ADDRESS": {
+      "ruby_keys": [
+        "MAIL_FROM"
+      ],
+      "status": "partial",
+      "note": "LeaveMailer đọc MAIL_FROM; ApplicationMailer chung còn sender mẫu cố định. Không có ENV tên MAIL_FROM_ADDRESS thực thi ở base Mailer; ví dụ trong comment không được tính."
+    },
+    "MAIL_FROM_NAME": {
+      "ruby_keys": [],
+      "status": "missing",
+      "note": "Chưa có ENV tên người gửi chung; MAIL_FROM của LeaveMailer chỉ là địa chỉ."
+    },
+    "QUEUE_CONNECTION": {
+      "ruby_keys": [
+        "REDIS_URL"
+      ],
+      "note": "Adapter được gắn cố định Sidekiq trong initializer; không phải biến QUEUE_CONNECTION dùng nguyên tên."
+    },
+    "CACHE_STORE": {
+      "ruby_keys": [
+        "CACHE_REDIS_URL"
+      ],
+      "note": "Redis cache được initializer gắn; test được ghi đè memory_store."
+    },
+    "BROADCAST_CONNECTION": {
+      "ruby_keys": [
+        "CABLE_REDIS_URL"
+      ],
+      "note": "Action Cable thay Reverb; runtime authorization vẫn cần policy/company."
+    },
+    "LOG_LEVEL": {
+      "ruby_keys": [
+        "RAILS_LOG_LEVEL"
+      ]
+    },
+    "MYSQL_ATTR_SSL_CA": {
+      "ruby_keys": [],
+      "status": "missing",
+      "note": "database.yml chưa đọc CA/TLS option. TLS HTTPS của web không tự mã hóa kết nối MySQL; production cần thiết kế cấu hình DB TLS riêng."
+    },
+    "APP_PREVIOUS_KEYS": {
+      "ruby_keys": [],
+      "status": "missing",
+      "note": "Chưa có cấu hình previous keys/rotation tương đương; không đổi khóa đang mã hóa dữ liệu hiện tại."
+    },
+    "VAPOR_MAINTENANCE_MODE": {
+      "ruby_keys": [],
+      "status": "different",
+      "note": "Laravel Vapor không phải nền tảng runtime của Rails; maintenance mode Ruby vẫn chưa triển khai."
+    }
+  },
+  "ruby_key_notes": {
+    "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY": "Khóa mã hóa trường Active Record: national_id/bank_account và Integration signing secret/payload/review notes; không thay tùy tiện khi đã có ciphertext.",
+    "ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY": "Khóa dành cho chế độ deterministic nếu sử dụng; không đồng nghĩa các trường hiện tại đều mã hóa deterministic.",
+    "ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT": "Salt dẫn xuất khóa Active Record; phải giữ cùng bộ khóa khi restore/giải mã.",
+    "APP_HOST": "Host/cổng dùng cho URL mail và production host/origin allowlist; không copy nguyên APP_URL có scheme.",
+    "BUNDLE_GEMFILE": "Đường dẫn Gemfile để Bundler nạp package; biến bootstrap, không phải nghiệp vụ ERP.",
+    "CABLE_REDIS_URL": "Redis cho pub/sub Action Cable; không công khai URL/credential cho frontend.",
+    "CACHE_REDIS_URL": "Redis cache và throttle; namespace tách theo chức năng, khác queue store.",
+    "CI": "Dùng bật eager loading trong test; không phải feature flag nghiệp vụ.",
+    "DATABASE_HOST": "Địa chỉ MySQL mà process app kết nối; tên service Docker khác hostname bên Mac.",
+    "DATABASE_NAME": "Chỉ được config database.yml đọc cho production; development/test dùng DB cố định riêng.",
+    "DATABASE_PASSWORD": "Mật khẩu user MySQL của app; không phải password đăng nhập UI ERP.",
+    "DATABASE_USERNAME": "User MySQL của app; phải tách quyền runtime và migration ở production.",
+    "EVENT_SECRET": "Khóa HMAC giữa OutboxDispatchJob và receiver nội bộ; khác khóa mã hóa dữ liệu/cookie.",
+    "EVENT_URL": "Receiver nội bộ của OutboxDispatchJob, khác Integration Hub và INTEGRATION_TARGETS_JSON theo company; không nhận URL client.",
+    "MAIL_FROM": "Sender của LeaveMailer; không có trong template hiện tại. Base ApplicationMailer vẫn có sender mẫu riêng.",
+    "MYSQL_ROOT_PASSWORD": "Credential quản trị MySQL container/bootstrap; app không dùng user root làm tài khoản nghiệp vụ.",
+    "PIDFILE": "File ghi PID Puma; không liên quan dữ liệu MySQL.",
+    "PORT": "Cổng Puma lắng nghe trong process/container; khác port publish bên Mac.",
+    "RAILS_ENV": "Môi trường Rails; framework xử lý convention. Không trộn development/test/production DB.",
+    "RAILS_LOG_LEVEL": "Mức log production. Không bật debug dữ liệu nhạy cảm trên môi trường public.",
+    "RAILS_MAX_THREADS": "Số thread Puma và pool Active Record trong cấu hình hiện tại; cần tính thêm worker/concurrency khi scale.",
+    "REDIS_URL": "Queue backend Sidekiq và scheduler; không nhầm với Redis URL của cache/cable.",
+    "SECRET_KEY_BASE": "Secret framework cho signed/encrypted cookies; không thay thế ba khóa Active Record Encryption.",
+    "SEED_ADMIN_PASSWORD": "Input của db/seeds bootstrap; không phải nguồn kiểm tra password khi đăng nhập runtime.",
+    "SMTP_HOST": "Máy chủ SMTP; local Mailpit không chứng minh gửi email Internet production thành công.",
+    "SMTP_PORT": "Cổng SMTP; cần khớp chế độ TLS/STARTTLS của provider.",
+    "SMTP_USERNAME": "Có code đọc nhưng chưa khai báo ở env/template; nếu đặt thì nhánh SMTP auth yêu cầu SMTP_PASSWORD.",
+    "SMTP_PASSWORD": "Secret SMTP auth; không xuất log/frontend hoặc copy credential mail Laravel sang Ruby.",
+    "INTEGRATION_TARGETS_JSON": "Operator allowlist target ID -> {url, company_ids}; per-company public HTTPS destination, default empty disables outbound; checked again by worker, never browser-supplied URL or copied Laravel credential."
+  }
+}

@@ -1,0 +1,22 @@
+<%= render "integration/shared/navigation" %>
+<div class="page-heading"><div><div class="eyebrow">ERP / INTEGRATION HUB</div><h1>Hàng đợi gửi webhook</h1><p class="subtitle">Theo dõi sự kiện gửi, lần thử lại và sự kiện cần xử lý.</p></div><%= link_to "← Hộp thư nhận", "/integration", class: "button secondary" %></div>
+<div class="stats">
+  <% {"queued" => "Chờ gửi", "retry_wait" => "Chờ thử lại", "delivered" => "Đã gửi", "dead_letter" => "Dead-letter", "blocked" => "Bị chặn"}.each do |status, label| %>
+    <%= link_to "/integration/outbound?status=#{status}", class: "stat metric-card" do %><small><%= label %></small><strong><%= @workspace[:counts].fetch(status, 0) %></strong><span>Mở dữ liệu nguồn ↗</span><% end %>
+  <% end %>
+</div>
+<div class="panel"><div class="panel-heading"><h2>Lịch sử gửi</h2><%= link_to "Tất cả", "/integration/outbound" %></div>
+<% if @workspace[:records].empty? %><p class="empty">Chưa có yêu cầu gửi phù hợp.</p><% else %>
+<table><thead><tr><th>Event ID / kết nối</th><th>Đích</th><th>Trạng thái</th><th>Số lần gửi</th><th></th></tr></thead><tbody>
+<% @workspace[:records].each do |record| %><tr><td><%= record.event_id %><br><small><%= record.integration_connection.code %></small></td><td><%= record.target_key %></td><td><%= delivery_status_label(record.status) %></td><td><%= record.attempt_count %></td><td><%= link_to "Chi tiết →", "/integration/outbound/#{record.id}" %></td></tr><% end %>
+</tbody></table><% end %>
+<div class="pagination"><% if @workspace[:page] > 1 %><%= link_to "← Trước", "/integration/outbound?page=#{@workspace[:page] - 1}&status=#{@workspace[:status]}" %><% end %><span>Trang <%= @workspace[:page] %></span><% if @workspace[:next_page] %><%= link_to "Tiếp →", "/integration/outbound?page=#{@workspace[:page] + 1}&status=#{@workspace[:status]}" %><% end %></div></div>
+<% if policy(IntegrationDelivery).create? %><div class="panel"><h2>Xếp hàng sự kiện mới</h2>
+<% if @workspace[:targets].empty? || @workspace[:connections].empty? %><p class="empty">Cần kết nối đang bật và đích HTTPS do quản trị máy chủ cấu hình. Chưa bật gửi ra ngoài.</p><% else %>
+<%= form_with url: "/integration/outbound", scope: :delivery do |form| %>
+<div class="form-grid"><div class="field"><%= form.label :connection_id, "Kết nối" %><%= form.select :connection_id, @workspace[:connections].map { |connection| [connection.name, connection.id] } %></div>
+<div class="field"><%= form.label :target_key, "Đích đã được cho phép" %><%= form.select :target_key, @workspace[:targets] %></div>
+<div class="field"><%= form.label :idempotency_key, "Mã chống tạo trùng (giữ nguyên khi gửi lại yêu cầu)" %><%= form.text_field :idempotency_key, required: true, maxlength: 100 %></div>
+<div class="field"><%= form.label :body, 'JSON: {"event_type":"external.notification","payload":{}}' %><%= form.text_area :body, required: true, rows: 6 %></div></div><%= form.submit "Lưu hàng đợi", class: "button" %><% end %>
+<% end %></div><% end %>
+<p class="hint">Đã gửi nghĩa là đích trả HTTP 2xx; chưa chứng minh nghiệp vụ bên nhận đã hoàn tất. Mọi lần thử giữ cùng Event ID.</p>

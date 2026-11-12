@@ -7,7 +7,7 @@ class WebTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
     post "/session", params: { email: user.email, password: "StrongPassword123!" }
     assert_redirected_to root_path
-    ["/", "/employees", "/employees/new", "/employees/#{employee.id}", "/employees/#{employee.id}/edit", "/departments", "/departments/new", "/leave_requests", "/leave_requests/new", "/attendances", "/pay_runs", "/pay_runs/new", "/candidates", "/candidates/new", "/audit_logs"].each do |path|
+    [ "/", "/employees", "/employees/new", "/employees/#{employee.id}", "/employees/#{employee.id}/edit", "/departments", "/departments/new", "/leave_requests", "/leave_requests/new", "/attendances", "/pay_runs", "/pay_runs/new", "/candidates", "/candidates/new", "/audit_logs" ].each do |path|
       get path
       assert_response :success, path
     end
@@ -18,7 +18,7 @@ class WebTest < ActionDispatch::IntegrationTest
   test "ordinary employees cannot access admin screens" do
     employee = make_employee
     post "/session", params: { email: employee.user.email, password: "StrongPassword123!" }
-    ["/departments", "/pay_runs", "/candidates", "/audit_logs", "/employees/new"].each do |path|
+    [ "/departments", "/pay_runs", "/candidates", "/audit_logs", "/employees/new" ].each do |path|
       get path
       assert_response :forbidden, path
     end

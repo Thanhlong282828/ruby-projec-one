@@ -3,6 +3,7 @@ module HrmWorkforce
     module Queries
       class EmployeeFormOptions < Hrm::UseCase
         def initialize(workforce: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface), identity: Hrm::Container.resolve(HrmIdentity::Domain::Repositories::ReadRepositoryInterface))
+          super()
           @workforce, @identity = workforce, identity
         end
         def call(actor:)

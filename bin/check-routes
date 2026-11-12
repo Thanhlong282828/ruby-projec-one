@@ -3,7 +3,7 @@
 require "ripper"
 
 Dir.chdir(File.expand_path("..", __dir__))
-files = (["config/routes.rb"] + Dir["config/routes/**/*.rb", "modules/*/config/routes.rb", "modules/*/config/routes/**/*.rb"]).sort
+files = ([ "config/routes.rb" ] + Dir["config/routes/**/*.rb", "modules/*/config/routes.rb", "modules/*/config/routes/**/*.rb"]).sort
 forbidden = %w[resource resources namespace]
 violations = []
 
@@ -11,9 +11,9 @@ visit = lambda do |node, file|
   next unless node.is_a?(Array)
 
   token = case node[0]
-          when :command, :fcall, :vcall then node[1]
-          when :call, :command_call then node[3]
-          end
+  when :command, :fcall, :vcall then node[1]
+  when :call, :command_call then node[3]
+  end
   if token.is_a?(Array) && token[0] == :@ident && forbidden.include?(token[1])
     violations << "#{file}:#{token[2][0]}: replace #{token[1]} with explicit HTTP routes"
   end

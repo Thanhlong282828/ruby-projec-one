@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 require "ripper"
+require "yaml"
 
-Dir.chdir(File.expand_path("..", __dir__))
+Dir.chdir(ARGV.fetch(0, File.expand_path("..", __dir__)))
 # macOS can still ship Ruby 2.6, which cannot parse modern Rails source syntax.
 if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.1")
   warn "Using the project's Docker Ruby to check modern Ruby syntax."
@@ -12,7 +13,7 @@ forbidden = %w[where find find_by find_by! find_each includes order limit offset
 violations = []
 visit = lambda do |node, file|
   next unless node.is_a?(Array)
-  token = node[3] if [:call, :command_call].include?(node[0])
+  token = node[3] if [ :call, :command_call ].include?(node[0])
   if token.is_a?(Array) && token[0] == :@ident && forbidden.include?(token[1])
     violations << "#{file}:#{token[2][0]}: move persistence/query #{token[1]} to Application + Repository"
   end
@@ -29,5 +30,50 @@ Dir["modules/*/app/views/**/*.erb"].each do |file|
     end
   end
 end
+# Ignore comments (including the Laravel learning examples) while checking real references.
+code_for = lambda do |file|
+  # rubocop:disable Rails/Pluck -- This check runs standalone without ActiveSupport.
+  Ripper.lex(File.read(file)).reject { |token| token[1] == :on_comment }.map { |token| token[2] }.join
+  # rubocop:enable Rails/Pluck
+end
+manifest = YAML.safe_load_file("config/engine_boundaries.yml")
+boundaries = manifest.fetch("engines")
+engines = Dir["modules/*/lib/*/engine.rb"].map { |file| file.split("/")[1] }.sort
+violations << "Engine manifest does not match the installed 12 engines" unless engines == boundaries.keys.sort && engines.size == 12
+files.each do |file|
+  code = code_for.call(file)
+  manifest.fetch("controller_rescue_exceptions").each_key do |exception|
+    code = code.gsub(/rescue_from\s+#{Regexp.escape(exception)}\b/, "rescue_from LegacyTransportUnavailable")
+  end
+  violations << "#{file}: controllers must use Command/Query, not repositories/container/infrastructure" if code.match?(/::(?:Infrastructure|Repositories)::|Hrm::Container/)
+end
+bindings = {}
+Dir["modules/*/lib/*/providers/*.rb"].each do |file|
+  code = code_for.call(file)
+  code.scan(/\bbind\s+"([^"]+)",\s*"([^"]+)"/).each do |contract, implementation|
+    owner = contract.split("::").first
+    provider_owner = "Hrm" + file.split("/")[1].split("_").map(&:capitalize).join
+    violations << "#{file}: provider may only bind its own engine contracts" unless owner == provider_owner
+
+    violations << "#{file}: repository binding crosses ownership" unless implementation.start_with?("#{owner}::Infrastructure::")
+    violations << "#{file}: duplicate binding #{contract}" if bindings.key?(contract)
+    bindings[contract] = implementation
+  end
+end
+Dir["modules/*/lib/*/domain/repositories/*_interface.rb"].each do |file|
+  owner = file.split("/")[3].split("_").map(&:capitalize).join
+  name = File.basename(file, ".rb").split("_").map(&:capitalize).join
+  contract = "#{owner}::Domain::Repositories::#{name}"
+  violations << "#{file}: missing explicit provider binding" unless bindings.key?(contract)
+end
+Dir["modules/*/lib/**/*.rb"].each do |file|
+  engine = file.split("/")[1]
+  own_namespace = "Hrm" + engine.split("_").map(&:capitalize).join
+  code_for.call(file).scan(/\b(Hrm[A-Z]\w*)::(Application|Domain|Infrastructure|Providers)::/).each do |target, layer|
+    next if target == own_namespace
+    violations << "#{file}: forbidden cross-engine #{layer} dependency on #{target}" if %w[Infrastructure Providers].include?(layer)
+    violations << "#{file}: undeclared dependency on #{target}" unless boundaries.fetch(engine).include?(target)
+  end
+end
 abort(violations.join("\n")) unless violations.empty?
-puts "Architecture check passed (#{files.length} controllers; views checked for query/write calls)."
+puts "Architecture check passed (#{files.length} controllers; #{engines.length} engines; #{bindings.length} provider bindings; views and engine boundaries checked)."

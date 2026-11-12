@@ -1,0 +1,10 @@
+<% record = @export[:record] %>
+<div class="page-heading"><div><div class="eyebrow">PAYROLL / CSV SNAPSHOT</div><h1>Kỳ lương <%= record.period.strftime("%m/%Y") %></h1><p class="subtitle"><%= record.public_id %></p></div><%= link_to "← Tệp xuất", "/payroll/exports", class: "button secondary" %></div>
+<div class="panel"><dl class="details"><div><dt>Nhân viên</dt><dd><%= record.employee_count %></dd></div><div><dt>Kích thước</dt><dd><%= number_to_human_size(record.byte_size) %></dd></div><div><dt>Định dạng</dt><dd>payroll_csv_v1 · VND nguyên đơn vị</dd></div><div><dt>Tạo lúc</dt><dd><%= record.created_at %></dd></div></dl>
+<p class="hint">SHA-256: <%= record.checksum %></p><p><%= link_to "Mở kỳ lương nguồn →", "/pay_runs/#{record.pay_run_id}" %></p>
+<% if policy(record).download? %><%= link_to "Tải CSV đã kiểm tra", "/payroll/exports/#{record.id}/download", class: "button" %><% end %>
+<% if policy(record).notify? && policy(IntegrationDelivery).create? %><p><%= link_to "Thông báo snapshot qua Integration →", "/integration/payroll-exports/#{record.id}", class: "button secondary" %></p><% end %>
+<p class="hint">Tệp chứa số liệu lương nhạy cảm. Chỉ chia sẻ qua kênh được công ty cho phép.</p></div>
+<div class="panel"><h2>Lịch sử cấp tệp gần nhất</h2>
+<% if @export[:accesses].empty? %><p class="empty">Chưa có lượt cấp tệp.</p><% else %><table><thead><tr><th>Thời điểm</th><th>Tài khoản</th><th>Kết quả</th></tr></thead><tbody><% @export[:accesses].each do |entry| %><tr><td><%= entry.created_at %></td><td>#<%= entry.actor_id %></td><td><%= entry.result == "allowed" ? "Đã kiểm tra và cấp tệp" : "Chặn do toàn vẹn tệp" %></td></tr><% end %></tbody></table><% end %>
+<p class="hint">Ghi khi server chuẩn bị cấp tệp; không xác nhận trình duyệt đã lưu xong. Tối đa 25 lượt mới nhất.</p></div>

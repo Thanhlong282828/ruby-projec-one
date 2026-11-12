@@ -1,0 +1,20 @@
+<h1>Cây tổ chức</h1>
+<p class="subtitle">
+  Đơn vị tổ chức thuộc công ty <%= current_user.company.name %>.
+  Chỉnh đơn vị cha trong màn hình đơn vị; không cho phép vòng lặp hoặc đảo thứ bậc.
+</p>
+<div class="panel">
+  <% @nodes.each do |node| %>
+    <p>
+      <%= "↳ " * node[:depth] %>
+      <%= link_to "#{node[:code]} — #{node[:name]}", node[:source] %>
+      <span class="badge"><%= node[:unit_type] %></span>
+    </p>
+  <% end %>
+  <% if @nodes.empty? %>
+    <div class="empty">
+      Chưa có đơn vị tổ chức.
+      <%= link_to "Mở danh sách đơn vị →", "/organization/organization-units" %>
+    </div>
+  <% end %>
+</div>

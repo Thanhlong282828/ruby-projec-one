@@ -1,0 +1,10 @@
+<div class="page-heading"><div><div class="eyebrow">ACCOUNT / SECURITY</div><h1>Phiên đăng nhập của tôi</h1><p class="subtitle">Kiểm soát các phiên web thuộc định danh đăng nhập của bạn, kể cả phiên đang chọn công ty khác.</p></div></div>
+<div class="panel"><h2>Các phiên web chưa hết hạn</h2><p class="hint">Mỗi lần đăng nhập trình duyệt tạo một phiên riêng. Hiển thị 25 phiên mỗi trang, mới nhất trước. Bạn có thể đăng xuất những phiên không còn sử dụng.</p>
+<ul class="session-list">
+<% @workspace[:records].each do |record| %><li class="session-card">
+<div class="session-card-heading"><strong>Phiên #<%= record[:id] %></strong><% if record[:current] %><span class="badge">Phiên hiện tại</span><% else %><%= button_to "Đăng xuất phiên này", "/my/sessions/#{record[:id]}", method: :delete, class: "danger" %><% end %></div>
+<dl class="session-facts"><div><dt>Công ty đang chọn</dt><dd><%= record[:company_name] %> · #<%= record[:company_id] %></dd></div><div><dt>Đăng nhập lúc</dt><dd><%= record[:created_at].strftime("%d/%m/%Y %H:%M") %></dd></div><div><dt>Hết hạn lúc</dt><dd><%= record[:expires_at].strftime("%d/%m/%Y %H:%M") %></dd></div></dl>
+<% if record[:current] %><p class="hint">Dùng Đăng xuất trên thanh tài khoản để đóng phiên này.</p><% end %>
+</li><% end %></ul>
+<div class="pagination"><%= link_to "Làm mới / Trang đầu", "/my/sessions" %><% if @workspace[:next_before] %><%= link_to "Phiên cũ hơn →", {before: @workspace[:next_before]} %><% end %></div>
+<p class="hint">Sau khi đăng xuất một phiên, phiên đó sẽ bị yêu cầu đăng nhập lại ở lần truy cập tiếp theo. Các thao tác đang xử lý có thể hoàn tất. Nếu nghi mật khẩu bị lộ, hãy đổi mật khẩu và kiểm tra lại các phiên.</p></div>

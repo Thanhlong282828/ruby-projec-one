@@ -3,6 +3,7 @@ module HrmDashboard
     module Queries
       class Overview < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:)

@@ -1,0 +1,45 @@
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">ATTENDANCE</div>
+    <h1>Phân ca nhân viên.</h1>
+    <p class="subtitle">Ca cố định theo khoảng hiệu lực; chưa áp dụng ngày nghỉ hoặc ca xoay.</p>
+  </div>
+  <div class="toolbar">
+    <%= link_to "Lịch công →", employee_shift_schedule_path, class: "button secondary" %>
+    <% if policy(EmployeeShiftAssignment).create? %>
+      <%= link_to "+ Phân ca", new_shift_assignment_path, class: "button" %>
+    <% end %>
+  </div>
+</div>
+<div class="panel">
+  <table>
+    <thead><tr><th>Nhân viên</th><th>Ca</th><th>Từ</th><th>Đến</th><th></th></tr></thead>
+    <tbody>
+      <% @data[:rows].each do |row| %>
+        <tr>
+          <td>
+            <% if row[:employee_path] %>
+              <%= link_to row[:employee_name], row[:employee_path] %>
+            <% else %>
+              <%= row[:employee_name] %>
+            <% end %>
+          </td>
+          <td>
+            <% if row[:shift_path] %>
+              <%= link_to row[:shift_code], row[:shift_path] %>
+            <% else %>
+              <%= row[:shift_code] %>
+            <% end %>
+          </td>
+          <td><%= row[:effective_from] %></td>
+          <td><%= row[:effective_to] || "Chưa kết thúc" %></td>
+          <td><%= link_to "Chi tiết →", shift_assignment_path(row[:id]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @data[:rows].empty? %>
+    <div class="empty">Chưa có phân ca trong phạm vi được xem.</div>
+  <% end %>
+</div>
+<%= render "shared/pagination", records: @data[:rows] %>

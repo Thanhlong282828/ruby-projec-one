@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# Read-only checks. Run in the application's Ruby 3.4 environment.
+Dir.chdir(File.expand_path("..", __dir__)) do
+  checks = [
+    [ "bundle", "exec", "rubocop" ],
+    [ "ruby", "bin/check-routes" ],
+    [ "ruby", "bin/check-architecture" ],
+    [ "ruby", "bin/typecheck" ],
+    [ "ruby", "bin/check-secrets" ],
+    [ { "RAILS_ENV" => "test" }, "ruby", "bin/check-rbi" ],
+    [ "bundle", "exec", "rails", "zeitwerk:check" ],
+    [ "bundle", "exec", "ruby", "bin/brakeman", "--no-pager" ],
+    [ "bundle", "exec", "bundler-audit", "check", "--update" ]
+  ]
+  checks.each do |command|
+    label = command.reject { |part| part.is_a?(Hash) }.join(" ")
+    abort("Quality check failed: #{label}") unless system(*command)
+  end
+end

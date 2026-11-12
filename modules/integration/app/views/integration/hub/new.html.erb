@@ -1,0 +1,11 @@
+<div class="page-heading"><div><div class="eyebrow">INTEGRATION</div><h1>Tạo kết nối webhook</h1></div><%= link_to "← Hub", "/integration" %></div>
+<div class="panel">
+  <%= form_with url: "/integration/connections", scope: :integration_connection do |form| %>
+    <div class="form-grid">
+      <div class="field"><%= form.label :code, "Mã kết nối" %><%= form.text_field :code, required: true, maxlength: 30 %></div>
+      <div class="field"><%= form.label :name, "Tên hệ thống" %><%= form.text_field :name, required: true, maxlength: 150 %></div>
+    </div>
+    <p class="hint">Khóa được tạo ở máy chủ và hiển thị một lần. Kết nối ban đầu tạm dừng; chỉ bật sau khi lưu khóa vào nơi an toàn và cấu hình bên gửi.</p>
+    <div class="form-actions"><%= form.submit "Tạo kết nối" %></div>
+  <% end %>
+</div>

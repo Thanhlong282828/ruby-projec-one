@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-11",
+  "scope": "Attendance period report + open-session check-in guard",
+  "tests": {
+    "runs": 118,
+    "assertions": 520,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "gates": {
+    "explicit_routes": 11,
+    "architecture_controllers": 23,
+    "zeitwerk": "PASS",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "brakeman_models": 22,
+    "brakeman_templates": 37
+  },
+  "browser": {
+    "web_report": "PASS",
+    "submit_date_filter": "PASS",
+    "width": 1280,
+    "page_width": 1280,
+    "console_errors": 0,
+    "mobile": "NOT_VERIFIED",
+    "operational_rows_created": 0
+  },
+  "database": {
+    "schema_changes": false,
+    "development_writes": false,
+    "permissions": "existing attendance.read / attendance.read_all, MySQL-scoped"
+  },
+  "limits": [
+    "Elapsed time only; not payroll hours",
+    "No shift calendars/breaks/overtime approval/event pairing yet",
+    "No unique DB constraint for single open attendance; public check-in command serializes on employee row lock"
+  ],
+  "docker": {
+    "native_web_worker_build": "PASS",
+    "standalone_image_eager_load_report_guard": "PASS"
+  }
+}

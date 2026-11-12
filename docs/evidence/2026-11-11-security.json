@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-11",
+  "scope": "Authentication/session and dependency security hardening; not a full penetration test",
+  "tests": {
+    "runs": 141,
+    "assertions": 630,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "database": "hrm_test"
+  },
+  "dependencies": {
+    "rails": "8.1.4.1",
+    "rack": "3.2.8",
+    "nokogiri": "1.19.7",
+    "loofah": "2.25.3",
+    "rails-html-sanitizer": "1.7.2",
+    "advisory_db_commit": "38f94284b05c2052b13a4922a86cc7cffb2266e2",
+    "known_advisories_after": 0,
+    "lockfile_platforms": [
+      "aarch64-linux-gnu",
+      "x86_64-linux-gnu"
+    ],
+    "x86_build": "NOT_RUN"
+  },
+  "gates": {
+    "explicit_route_files": 11,
+    "architecture_controllers_and_concerns": 24,
+    "zeitwerk": "PASS",
+    "brakeman_controllers": 23,
+    "brakeman_models": 23,
+    "brakeman_templates": 37,
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "equivalent_path_throttle_regression": "PASS"
+  },
+  "development": {
+    "backup_before_migration": true,
+    "migration": "20261111000003_create_login_sessions",
+    "existing_users": 7,
+    "passwords_changed": false,
+    "business_rows_created": 0,
+    "web_worker_restarted_without_container_recreation": true,
+    "cleanup_schedule_registered": true
+  },
+  "browser": {
+    "existing_account_login": "PASS",
+    "cable_connected": "PASS",
+    "logout_then_protected_page_redirect": "PASS",
+    "console_errors": 0
+  },
+  "headers_live": [
+    "Cache-Control: private, no-store",
+    "Content-Security-Policy: form-action self; frame-ancestors none; object-src none",
+    "Permissions-Policy: camera/microphone/geolocation/payment disabled",
+    "Cross-Origin-Opener-Policy: same-origin",
+    "X-Content-Type-Options: nosniff",
+    "Referrer-Policy: strict-origin-when-cross-origin"
+  ],
+  "limits": [
+    "No MFA/passkey or independent pentest",
+    "No idle timeout; absolute DB expiry 8h",
+    "Account throttling can temporarily deny login to targeted accounts",
+    "Credential invalidation callback does not cover direct SQL bypass",
+    "TLS/proxy/WAF/least-privilege production DB and backup restore not verified",
+    "Dependabot configuration prepared; remote CI not run"
+  ],
+  "docker": {
+    "native_web_worker_build": "PASS",
+    "standalone_final_image_eager_load": "PASS",
+    "patched_rails_rack_verified": true,
+    "login_session_table_readable": true,
+    "master_key_in_image": false,
+    "local_health_http": 200
+  }
+}

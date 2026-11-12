@@ -1,5 +1,21 @@
-<div class="page-heading"><div><div class="eyebrow">WORKSPACE OVERVIEW</div><h1>Mỗi ngày, cùng phát triển.</h1><div class="subtitle">Tổng quan đội ngũ • <%= Date.current.strftime("%d / %m / %Y") %></div></div><% if current_user.allowed?("employees.create") %><%= link_to "+ Thêm nhân viên", new_employee_path, class: "button" %><% end %></div>
-<div class="stats"><% [["Nhân sự đang làm việc", :employees, "Hồ sơ nhân viên"], ["Phòng ban", :departments, "Cơ cấu tổ chức"], ["Đơn nghỉ chờ duyệt", :pending, "Cần xử lý"], ["Ứng viên", :candidates, "Nguồn lực tương lai"]].each do |label, key, caption| %><article class="stat"><small><%= label %></small><strong><%= @stats[key] %></strong><span><%= caption %> ↗</span></article><% end %></div>
-<div class="hero"><div><div class="eyebrow">PEOPLE FIRST, ALWAYS</div><h2>Một đội ngũ gắn kết.<br>Một hành trình vững vàng.</h2><p>Không gian chung để quản lý hồ sơ, theo dõi thời gian và chăm sóc trải nghiệm của từng thành viên.</p></div><%= link_to "Khám phá đội ngũ ↗", employees_path, class: "button" %></div>
-<div class="panel"><div class="panel-heading"><h2>Nghỉ phép gần đây</h2><%= link_to "Xem tất cả →", leave_requests_path %></div><%= render "time_off/leave_requests/table", requests: @requests %></div>
+<div class="page-heading">
+  <div><div class="eyebrow">ERP / WORKSPACE</div><h1>Dashboard tổng</h1><div class="subtitle"><%= current_user.company.name %> • <%= Date.current.strftime("%d / %m / %Y") %> • Dữ liệu theo quyền của bạn</div></div>
+  <% if current_user.allowed?("employees.create") %><%= link_to "+ Thêm nhân viên", new_employee_path, class: "button" %><% end %>
+</div>
+<div class="stats" aria-label="Chỉ số nghiệp vụ">
+  <% [["Hồ sơ nhân viên", :employees, employees_path, policy(Employee).index?], ["Phòng ban", :departments, departments_path, policy(Department).index?], ["Đơn nghỉ phép", :leaves, leave_requests_path, policy(LeaveRequest).index?], ["Ứng viên", :candidates, candidates_path, policy(Candidate).index?], ["Hồ sơ tiếp nhận", :onboarding, "/onboarding/cases", policy(OnboardingCase).index?], ["Sự kiện webhook", :webhooks, "/integration", policy(IntegrationWebhook).index?]].each do |label, key, path, visible| %>
+    <% if visible %><%= link_to path, class: "stat metric-card", aria: { label: "#{label}: #{@stats[key]}. Mở dữ liệu nguồn" } do %><small><%= label %></small><strong><%= @stats[key] %></strong><span>Mở danh sách dữ liệu nguồn ↗</span><% end %><% end %>
+  <% end %>
+</div>
+<div class="hero"><div><div class="eyebrow">MỘT KHÔNG GIAN, NHIỀU NGHIỆP VỤ</div><h2>Công việc rõ ràng.<br>Dữ liệu trong tầm tay.</h2><p>Chọn nhóm nghiệp vụ bên dưới để đi tới chức năng đang hoạt động. Chỉ số được cập nhật qua bộ nhớ đệm tối đa 30 giây; danh sách nguồn hiển thị dữ liệu mới nhất.</p></div><a href="#workspace-board" class="button">Mở bảng nghiệp vụ ↓</a></div>
+<section class="workspace-board" id="workspace-board" aria-labelledby="board-title">
+  <div class="panel-heading"><h2 id="board-title">Board nghiệp vụ</h2><span class="hint">Các chức năng được cấp quyền</span></div>
+  <div class="erp-grid">
+    <% erp_navigation_groups.each do |group| %>
+      <article class="panel module-widget"><div class="eyebrow">WORKSPACE</div><h2><%= group[:name] %></h2><ul class="workspace-links"><% group[:entries].each do |label, path, _| %><li><%= link_to path do %><span><%= label %></span><span aria-hidden="true">↗</span><% end %></li><% end %></ul></article>
+    <% end %>
+  </div>
+</section>
+<section class="panel" aria-labelledby="getting-started-title"><div class="panel-heading"><h2 id="getting-started-title">Onboarding không gian làm việc</h2><span class="badge">Hướng dẫn bắt đầu</span></div><p class="hint">Chọn một chức năng trong Board để xem dữ liệu, sau đó tạo hoặc cập nhật khi bạn có quyền. Quy trình tiếp nhận nhân viên và checklist nằm trong nhóm Tuyển dụng & tiếp nhận.</p><ol class="getting-started"><li>Xác nhận công ty đang làm việc ở thanh trên.</li><li>Mở nhóm nghiệp vụ theo công việc của bạn.</li><li>Bấm KPI để kiểm tra danh sách nguồn trước khi xử lý.</li></ol></section>
+<% if policy(LeaveRequest).index? %><div class="panel"><div class="panel-heading"><h2>Nghỉ phép gần đây</h2><%= link_to "Mở danh sách nguồn →", leave_requests_path %></div><p class="hint"><%= @stats[:pending] %> đơn chờ duyệt trong phạm vi dữ liệu của bạn.</p><%= render "time_off/leave_requests/table", requests: @requests %></div><% end %>
 <% if current_user.allowed?("realtime.read") %><div class="connected" data-realtime>○ Đang kết nối…</div><% end %>

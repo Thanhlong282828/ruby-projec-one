@@ -1,0 +1,18 @@
+<div class="page-heading"><div><div class="eyebrow">INTEGRATION / INBOX #<%= @webhook.id %></div><h1><%= @webhook.event_type %></h1></div><%= link_to "← Hub", "/integration" %></div>
+<div class="panel">
+  <dl class="details"><div><dt>Kết nối</dt><dd><%= link_to @webhook.integration_connection.code, "/integration/connections/#{@webhook.integration_connection_id}" %></dd></div><div><dt>Event ID</dt><dd><%= @webhook.event_id %></dd></div><div><dt>Trạng thái</dt><dd><%= integration_status_label(@webhook.status) %></dd></div><div><dt>Nhận lúc</dt><dd><%= @webhook.created_at %></dd></div></dl>
+  <% if policy(@webhook).payload? %><p><%= link_to "Mở nội dung được bảo vệ →", "/integration/inbox/#{@webhook.id}/payload" %></p><% end %>
+</div>
+<% if policy(@webhook).update? && @webhook.status == "received" %>
+  <div class="panel"><h2>Kết quả kiểm tra</h2>
+    <%= form_with url: "/integration/inbox/#{@webhook.id}/review", method: :patch do |form| %>
+      <%= form.hidden_field :lock_version, value: @webhook.lock_version %>
+      <div class="field"><%= form.label :decision, "Quyết định" %><%= form.select :decision, [["Đã xác nhận", "acknowledged"], ["Từ chối", "rejected"]] %></div>
+      <div class="field"><%= form.label :note, "Ghi chú (mã hóa)" %><%= form.text_area :note, maxlength: 1000 %></div>
+      <p class="hint">Chỉ ghi nhận đã kiểm tra sự kiện. Không tự áp dụng thay đổi nghiệp vụ. Quyết định đã lưu không sửa lại được.</p>
+      <div class="form-actions"><%= form.submit "Lưu kết quả" %></div>
+    <% end %>
+  </div>
+<% end %>
+
+<% if policy([:integration, AuditLog]).index? %><p><%= link_to "Xem nhật ký bản ghi này →", "/integration/audit?resource=inbound&record_id=#{@webhook.id}" %></p><% end %>

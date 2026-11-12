@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-12",
+  "scope": "ERP workspace and partial DJI Onboarding port; signed internal webhook hardening",
+  "architecture": {
+    "style": "Local Rails Engines + MVC + CQRS",
+    "repository_contracts": 25,
+    "explicit_route_files": 12,
+    "controller_files_checked": 30
+  },
+  "database": {
+    "engine": "MySQL",
+    "permissions": 62,
+    "development_users": 7,
+    "development_onboarding_cases": 0,
+    "development_work_shifts": 0,
+    "development_shift_assignments": 0,
+    "private_mysql_backup_before_migration": true,
+    "private_receiver_backup_before_protocol_upgrade": true,
+    "laravel_database_copied": false
+  },
+  "tests": {
+    "rails": {
+      "runs": 196,
+      "assertions": 935,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "database": "hrm_test"
+    },
+    "targeted_final": {
+      "runs": 13,
+      "assertions": 81,
+      "failures": 0,
+      "errors": 0
+    },
+    "receiver": {
+      "runs": 8,
+      "result": "PASS on host and Python Docker image"
+    }
+  },
+  "checks": {
+    "zeitwerk": "PASS",
+    "routes": "PASS",
+    "architecture": "PASS",
+    "brakeman": {
+      "controllers": 29,
+      "models": 26,
+      "templates": 49,
+      "errors": 0,
+      "warnings": 0
+    },
+    "dependency_audit": {
+      "result": "No known advisories",
+      "advisory_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7"
+    },
+    "docker_build": "PASS web/worker/event_sink",
+    "standalone_image": "PASS eager load, contracts, employee history guard, schema/helper and master.key exclusion",
+    "health": {
+      "web": 200,
+      "receiver": 200
+    }
+  },
+  "browser": {
+    "result": "PASS existing approved local admin session",
+    "checked": [
+      "Dashboard KPI click to actual employee source list",
+      "Onboarding Board and create form, no business data submitted",
+      "Vietnamese status labels",
+      "all 5 metric hrefs present",
+      "viewport/page width 1280; no page overflow",
+      "no browser console errors"
+    ],
+    "mobile": "not verified"
+  },
+  "security": [
+    "MySQL own/company RBAC with revocation",
+    "immutable onboarding employee/start date; row lock and optimistic version",
+    "required checklist gates completion; terminal states immutable through commands",
+    "audit and outbox in transaction; employee history restricts deletion",
+    "HMAC timestamp.raw_body, 300-second freshness, 64 KiB/type/schema bounds",
+    "durable duplicate ID digest and conflicting content rejection",
+    "existing encrypted Employee national_id/bank_account and session protections preserved"
+  ],
+  "limitations": [
+    "47 DJI modules not fully ported",
+    "Onboarding recruitment links, buddy/owner, provisioning, dependency/due-date templates and probation approval absent",
+    "Board displays newest 100 cases; counts cover all scoped cases",
+    "Internal webhook receiver is not DJI Integration management/public provider endpoint",
+    "Encryption protects selected fields, not entire MySQL database",
+    "No GitHub push or remote CI executed"
+  ]
+}

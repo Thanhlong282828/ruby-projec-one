@@ -1,6 +1,6 @@
 module Workforce
   class EmployeesController < ApplicationController
-    before_action :set_employee, only: [:show, :edit, :update, :destroy]
+    before_action :set_employee, only: [ :show, :edit, :update, :destroy ]
 
     def index
       @employees = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], search: params[:q])
@@ -11,25 +11,25 @@ module Workforce
       authorize @employee
       load_form_options
     end
+    def edit = load_form_options
     def create
       @employee = HrmWorkforce::Application::Commands::CreateEmployee.new.call(actor: current_user, attributes: employee_params)
-      redirect_to @employee, notice: "Đã tạo nhân viên."
+      redirect_to @employee, notice: I18n.t("hrm_quality.messages.da_tao_nhan_vien")
     rescue ActiveRecord::RecordInvalid => error
       @employee = error.record
       load_form_options
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-    def edit = load_form_options
     def update
       HrmWorkforce::Application::Commands::UpdateEmployee.new.call(actor: current_user, record: @employee, attributes: employee_params)
-      redirect_to @employee, notice: "Đã cập nhật hồ sơ."
+      redirect_to @employee, notice: I18n.t("hrm_quality.messages.da_cap_nhat_ho_so")
     rescue ActiveRecord::RecordInvalid
       load_form_options
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
     def destroy
       if HrmWorkforce::Application::Commands::DeleteEmployee.new.call(actor: current_user, record: @employee)
-        redirect_to employees_path, notice: "Đã xóa nhân viên."
+        redirect_to employees_path, notice: I18n.t("hrm_quality.messages.da_xoa_nhan_vien")
       else
         redirect_to @employee, alert: @employee.errors.full_messages.to_sentence
       end

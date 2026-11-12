@@ -7,6 +7,6 @@ class ApplicationJob < ActiveJob::Base
 end
 
 
-#Đoạn code này trong Ruby on Rails là ApplicationJob, lớp cha dùng chung cho các Background Jobs (tác vụ chạy nền).
+# Đoạn code này trong Ruby on Rails là ApplicationJob, lớp cha dùng chung cho các Background Jobs (tác vụ chạy nền).
 
-#Nó tương đương với việc bạn tạo một BaseJob trong Laravel để các Job khác kế thừa.
+# Nó tương đương với việc bạn tạo một BaseJob trong Laravel để các Job khác kế thừa.

@@ -14,19 +14,19 @@ end
 
 # Trong hệ thống HRM, cơ chế này có thể được sử dụng để ghi Audit Log, tạo sự kiện Outbox hoặc kích hoạt những xử lý sau khi dữ liệu thay đổi.
 
-#2. Luồng hoạt động thực tế
-#Ví dụ một nhân viên được cập nhật thông tin:
+# 2. Luồng hoạt động thực tế
+# Ví dụ một nhân viên được cập nhật thông tin:
 
-#Employee.update(...)
-#Rails cập nhật dữ liệu nhân viên
+# Employee.update(...)
+# Rails cập nhật dữ liệu nhân viên
 #      v
-#after_update
-#RecordObserver.record(employee, "updated")
+# after_update
+# RecordObserver.record(employee, "updated")
 #      v
-#Database Transaction Commit
-#Xác nhận thay đổi thành công
+# Database Transaction Commit
+# Xác nhận thay đổi thành công
 #      v
-#after_commit
-#RecordObserver.committed(employee)
+# after_commit
+# RecordObserver.committed(employee)
 
-#Nếu transaction bị rollback, after_commit sẽ không chạy cho transaction đó.
+# Nếu transaction bị rollback, after_commit sẽ không chạy cho transaction đó.

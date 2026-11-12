@@ -1,0 +1,303 @@
+#!/usr/bin/env ruby
+# Read names and static references only. Never load, evaluate or export ENV values.
+require "json"
+require "optparse"
+require "pathname"
+require "ripper"
+require "time"
+require "fileutils"
+require "find"
+
+class EnvFeatureAudit
+  QUOTE_CHARACTERS = [ "'", '"' ].freeze
+  FILES = %w[.env .env.example .env.production.example .env.test .env.testing].freeze
+  RUNTIME_EXTENSIONS = %w[.rb .php .js .ts .vue .yml .yaml .py .sh].freeze
+  SKIPPED_DIRS = %w[.git vendor node_modules storage log tmp coverage test tests].freeze
+  FRAMEWORK_KEYS = %w[RAILS_ENV SECRET_KEY_BASE WEB_CONCURRENCY].freeze
+
+  def initialize(ruby_root:, laravel_root:, catalog_path:)
+    @ruby_root = Pathname.new(ruby_root).expand_path
+    @laravel_root = Pathname.new(laravel_root).expand_path
+    @catalog = JSON.parse(File.read(catalog_path))
+  end
+
+  def report
+    raise ArgumentError, "Laravel source directory not found" unless @laravel_root.directory?
+    raise ArgumentError, "Ruby project directory not found" unless @ruby_root.directory?
+    laravel = declarations(@laravel_root)
+    ruby = declarations(@ruby_root)
+    laravel_refs = references(@laravel_root, :laravel)
+    ruby_refs = references(@ruby_root, :ruby)
+    keys = (laravel.keys + laravel_refs.keys).uniq.sort
+    {
+      generated_at: Time.now.getlocal("+07:00").iso8601,
+      scope: "Names and static references only; no values; no claim of external service activation",
+      source: @laravel_root.to_s, ruby_root: @ruby_root.to_s,
+      totals: {
+        laravel_declared_keys: laravel.length, laravel_referenced_keys: laravel_refs.length,
+        laravel_union_keys: keys.length, ruby_declared_keys: ruby.length,
+        ruby_referenced_keys: ruby_refs.length
+      },
+      duplicates: { laravel: duplicate_keys(laravel), ruby: duplicate_keys(ruby) },
+      groups: @catalog.fetch("groups"),
+      laravel_keys: keys.map do |key|
+        group = group_for(key)
+        override = @catalog.fetch("overrides").fetch(key, {})
+        equivalents = override.fetch("ruby_keys", group ? group.fetch("ruby_keys") : [])
+        {
+          key: key, declarations: laravel.fetch(key, []), references: laravel_refs.fetch(key, []),
+          group: group ? group.fetch("id") : "needs_review",
+          status: override.fetch("status", group ? group.fetch("status") : "needs_review"),
+          comparison: override.fetch("note", group ? group.fetch("comparison") : "Chưa có đối chiếu ngữ nghĩa; không suy ra đã hỗ trợ chỉ vì có tên biến."),
+          ruby_keys: equivalents.map { |name| ruby_key(name, ruby, ruby_refs) }
+        }
+      end,
+      ruby_keys: (ruby.keys + ruby_refs.keys).uniq.sort.map { |key| ruby_key(key, ruby, ruby_refs) }
+    }
+  end
+
+  def write(report)
+    directory = @ruby_root.join("docs")
+    FileUtils.mkdir_p(directory)
+    directory.join("env-feature-audit.json").write(JSON.pretty_generate(report) + "\n")
+    @ruby_root.join("DOI_CHIEU_ENV_LARAVEL_DJI_RUBY.txt").write(tutorial(report))
+  end
+
+  private
+
+  def declarations(root)
+    found = Hash.new { |hash, key| hash[key] = [] }
+    FILES.each do |name|
+      file = root.join(name)
+      next unless file.file?
+      quote = nil
+      file.each_line.with_index(1) do |line, number|
+        if quote
+          quote = nil if quoted_value_closed?(line, quote)
+          next
+        end
+        match = line.match(/\A\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/)
+        next unless match
+        found[match[1]] << { file: name, line: number }
+        # Only track whether a quoted value continues. Its content is never reported.
+        remainder = match.post_match.lstrip
+        if QUOTE_CHARACTERS.include?(remainder[0])
+          quote = remainder[0]
+          quote = nil if quoted_value_closed?(remainder[1..-1], quote)
+        end
+      end
+    end
+    found
+  end
+
+  def quoted_value_closed?(text, quote)
+    escaped = false
+    text.each_char do |character|
+      return true if character == quote && !escaped
+      escaped = character == "\\" && !escaped
+    end
+    false
+  end
+
+  def references(root, language)
+    found = Hash.new { |hash, key| hash[key] = [] }
+    Find.find(root.to_s) do |path|
+      relative = Pathname.new(path).relative_path_from(root).to_s
+      if relative.split("/").any? { |part| SKIPPED_DIRS.include?(part) }
+        File.directory?(path) ? Find.prune : next
+      end
+      next if relative == "bin/audit-env-features"
+      next unless File.file?(path)
+      next unless RUNTIME_EXTENSIONS.include?(File.extname(path)) || relative.start_with?("bin/")
+      next if File.basename(path).start_with?(".env")
+      source = File.read(path, encoding: "UTF-8").scrub
+      # Ignore Ruby tutorial comments, including inline comments mentioning fake ENV reads.
+      if File.extname(path) == ".rb" || source.start_with?("#!/usr/bin/env ruby")
+        Ripper.lex(source).select { |token| token[1] == :on_comment }.reverse_each do |token|
+          row, column = token[0]
+          lines = source.lines
+          lines[row - 1] = lines[row - 1].byteslice(0, column).to_s + "\n"
+          source = lines.join
+        end
+      end
+      pattern = if language == :laravel
+        /\benv\s*\(\s*["']([A-Z][A-Z0-9_]*)["']|import\.meta\.env\.([A-Z][A-Z0-9_]*)/
+      else
+        /\bENV\s*(?:\.fetch\s*\(\s*|\[\s*)["']([A-Z][A-Z0-9_]*)["']|\$\{([A-Z][A-Z0-9_]*)/
+      end
+      source.to_enum(:scan, pattern).each do
+        match = Regexp.last_match
+        key = match.captures.compact.first
+        line = source[0...match.begin(0)].count("\n") + 1
+        found[key] << { file: relative, line: line }
+      end
+    end
+    found.transform_values(&:uniq)
+  end
+
+  def group_for(key)
+    @catalog.fetch("groups").find do |group|
+      group.fetch("laravel_patterns").any? { |pattern| pattern.end_with?("_") ? key.start_with?(pattern) : key == pattern }
+    end
+  end
+
+  def duplicate_keys(declarations)
+    declarations.flat_map do |key, entries|
+      entries.group_by { |entry| entry[:file] }.filter_map do |file, rows|
+        { key: key, file: file, lines: rows.map { |entry| entry[:line] } } if rows.length > 1
+      end
+    end
+  end
+
+  def ruby_key(key, declarations, refs)
+    {
+      key: key, declarations: declarations.fetch(key, []), references: refs.fetch(key, []),
+      meaning: @catalog.fetch("ruby_key_notes", {}).fetch(key, "Chưa có ghi chú ngữ nghĩa; xem source reference và review trước khi cấu hình."),
+      framework_convention: FRAMEWORK_KEYS.include?(key)
+    }
+  end
+
+  def table(headers, rows, widths)
+    result = []
+    ([ headers ] + rows).each_with_index do |row, index|
+      wrapped = row.each_with_index.map { |cell, i| wrap(cell.to_s, widths[i]) }
+      wrapped.map(&:length).max.times do |line|
+        result << wrapped.each_with_index.map { |values, i| values.fetch(line, "").ljust(widths[i]) }.join(" | ")
+      end
+      result << widths.map { |width| "-" * width }.join("-+-") if index == 0
+      result << "" unless index == 0
+    end
+    result.join("\n") + "\n"
+  end
+
+  def wrap(text, width)
+    lines = [ "" ]
+    text.split.each do |word|
+      if !lines.last.empty? && lines.last.length + word.length + 1 > width
+        lines << ""
+      end
+      while word.length > width
+        lines << "" unless lines.last.empty?
+        lines[-1] = word.slice!(0, width)
+        lines << ""
+      end
+      lines[-1] += " " unless lines.last.empty?
+      lines[-1] += word
+    end
+    lines
+  end
+
+  def tutorial(report)
+    output = <<~TEXT
+      DOI CHIEU CHUC NANG .env LARAVEL DJI VA RUBY — #{report[:generated_at]}
+
+      TOM TAT
+      - Audit cả .env thật, các file mẫu hiện có và literal env references trong source.
+      - KHÔNG xuất giá trị, không load/eval .env, không sao chép secret hoặc bật dịch vụ.
+      - Laravel: #{report[:totals][:laravel_declared_keys]} tên biến khai báo; #{report[:totals][:laravel_referenced_keys]} tên tham chiếu source;
+        tổng hợp #{report[:totals][:laravel_union_keys]} tên. Ruby: #{report[:totals][:ruby_declared_keys]} tên khai báo.
+      - Code có reference không chứng minh request/adapter đang chạy; có thể nằm sau feature flag,
+        config cache, đường code chưa gọi hoặc dependency chưa cấu hình. Không liên hệ dịch vụ ngoài.
+      - Source Laravel: #{report[:source]}
+      - Project Ruby: #{report[:ruby_root]}
+      - Tên biến giống nhau không có nghĩa driver, giao thức, timeout, ACL và security tương đương.
+      - Tên trong .env.example có thể chỉ là lựa chọn; không coi đó là tính năng đang bật ở DJI.
+      - Đối chiếu từ source tĩnh, chưa boot Laravel để xác nhận config runtime/config cache.
+
+      BANG 1 — NHOM CHUC NANG (DOC NGANG: LARAVEL | RUBY)
+    TEXT
+    output += table([ "CHỨC NĂNG", "LARAVEL DJI", "RUBY HIỆN TẠI / PHẦN CÒN THIẾU" ], report[:groups].map { |group|
+      [ group.fetch("name"), group.fetch("laravel_patterns").join(", "), "[#{group.fetch('status')}] #{group.fetch('comparison')} Source: #{group.fetch('ruby_evidence').join('; ')}" ]
+    }, [ 26, 52, 80 ])
+    output += "\nBANG 2 — TUNG BIEN LARAVEL VA DOI CHIEU RUBY\n"
+    output += table([ "TÊN BIẾN LARAVEL", "KHAI BÁO / CODE LARAVEL", "RUBY / GIẢI THÍCH" ], report[:laravel_keys].map { |row|
+      declared = row[:declarations].map { |entry| "#{entry[:file]}:#{entry[:line]}" }.join(", ")
+      refs = row[:references].first(3).map { |entry| "#{entry[:file]}:#{entry[:line]}" }.join("; ")
+      equivalents = row[:ruby_keys].map { |entry| entry[:key] }.join(", ")
+      [ row[:key], "Khai báo: #{declared.empty? ? 'không có trong các env đã đọc' : declared}. Source: #{refs.empty? ? 'không tìm thấy literal reference trong phạm vi scan' : refs}", "[#{row[:status]}] #{equivalents.empty? ? 'Không có biến Ruby tương ứng đã map.' : equivalents}. #{row[:comparison]}" ]
+    }, [ 42, 65, 80 ])
+    output += "\nBANG 3 — BIEN RUBY, CO CODE DOC HAY CHI KHAI BAO?\n"
+    output += table([ "TÊN BIẾN RUBY", "FILE KHAI BÁO", "CODE ĐỌC / GHI CHÚ" ], report[:ruby_keys].map { |row|
+      refs = row[:references].first(5).map { |entry| "#{entry[:file]}:#{entry[:line]}" }.join("; ")
+      declaration = row[:declarations].map { |entry| "#{entry[:file]}:#{entry[:line]}" }.join(", ")
+      [ row[:key], declaration.empty? ? "Chưa có trong các env đã đọc" : declaration, "#{row[:meaning]} Source: #{refs.empty? ? 'Không tìm thấy literal reference trong source project.' : refs}#{row[:framework_convention] ? ' Framework/server convention; code trong dependency không nằm trong scan.' : ''}" ]
+    }, [ 42, 48, 90 ])
+    output += "\nBIEN TRUNG TEN TRONG CUNG FILE (KHONG IN GIA TRI)\n"
+    report[:duplicates].each do |project, rows|
+      output += "#{project}: #{rows.empty? ? 'không có' : rows.map { |row| "#{row[:key]} — #{row[:file]} dòng #{row[:lines].join(',')}" }.join('; ')}\n"
+    end
+    output += <<~TEXT
+
+      CACH DOC VA DUNG KHI HOC LARAVEL SANG RUBY
+      1. Laravel: .env -> config/*.php -> config('...') -> provider/service -> nghiệp vụ.
+         Ruby Docker: .env -> compose env_file -> ENV.fetch(...) trong config/initializer -> service.
+         Rails native không tự load .env trong project hiện tại; shell/process phải cung cấp ENV.
+      2. ENV.fetch('KEY') thiếu key sẽ báo lỗi khi được chạy. ENV['KEY'] có thể nil.
+         Biến có tên trong file mà không có code/driver đọc thì không tự tạo tính năng.
+      3. Laravel config cache có thể khiến đổi .env chưa đổi runtime ngay. Ruby thường cần restart
+         web/worker khi đổi cấu hình boot. Không tự chạy config:clear/config:cache trên DJI tham chiếu.
+      4. APP_KEY KHÔNG copy thành SECRET_KEY_BASE. Rails tách cookie/session secret và khóa mã hóa
+         Active Record. Đổi key tùy tiện có thể làm mất phiên và không đọc được dữ liệu đã mã hóa.
+      5. MySQL project không nằm 'trong phpMyAdmin'; phpMyAdmin là UI quản trị cùng DB MySQL.
+         DATABASE_HOST là đích app kết nối. Port publish ở máy Mac khác port trong Docker network.
+         DB test phải tách riêng. Không copy DB production/development vào test.
+      6. MAIL_USERNAME/PASSWORD -> SMTP_USERNAME/PASSWORD là tên tương ứng có code đọc; template
+         hiện chưa ghi đủ. LeaveMailer đọc MAIL_FROM; base ApplicationMailer vẫn dùng sender mẫu, tên sender chưa có ENV.
+      7. Session Rails hiện gồm cookie mã hóa + credential DB thu hồi được, khác Laravel chỉ đổi
+         SESSION_DRIVER. Không giảm HttpOnly/Secure/SameSite hoặc tắt encryption để giống tên biến.
+      8. Reverb và Action Cable có cùng mục tiêu realtime, không dùng chung app key/protocol.
+         Redis URL không được đưa vào JavaScript. VITE_* có thể công khai; không chứa secret server.
+      9. S3-compatible không đồng nghĩa đã có upload an toàn: cần tenant ACL, private bucket,
+         signed URL, size/type validation, quét malware/quarantine, cleanup và retention.
+      10. Cloudflare monitoring/under-attack là hành động ở account/zone bên ngoài. Không tự dùng
+          token DJI hoặc thay cấu hình Cloudflare khi mới đang đối chiếu local.
+      11. Có log/health chưa đủ observability: còn queue lag, scheduler stale, outbox age, SLO,
+          alert delivery, backup/restore drill. Backup thủ công khác retention scheduler.
+      12. Một số source reference ở comment/PHP frontend có thể không thực thi. Ruby comment được
+          lexer loại khỏi reference; JSON đầy đủ ghi mọi vị trí đã tìm thấy, không thay runtime test.
+
+      UU TIEN BO SUNG VAO ERP
+      P0: private document storage + antivirus/quarantine + signed URL trước chức năng upload.
+      P0: environment safety, secret lifecycle và production mail sender/TLS được kiểm chứng.
+      P1: Integration: connection/inbox, encrypted secret, signed inbound và quyền MySQL đã có;
+          đã có outbound HTTPS/HMAC, attempts/retry/DLQ/replay; còn adapter nghiệp vụ,
+          export/external reference, retention và business-domain dispatch.
+          Portal audit metadata đã có; đọc HUONG_DAN_AUDIT_INTEGRATION_LARAVEL_RUBY.txt.
+          Đọc HUONG_DAN_INTEGRATION_WEBHOOK_LARAVEL_RUBY.txt; chưa phải full Integration DJI.
+      P1: operations metrics/alerts, backup restore/retention, queue/scheduler monitoring.
+      P2: social login/phone verification, media adapters, Cloudflare/GCP integrations khi có nhu cầu.
+      Không thêm biến placeholder để đánh dấu đã port; phải có code + authorization + test + bằng chứng.
+
+      LENH CAP NHAT DOI CHIEU
+      ruby bin/audit-env-features             # chỉ tóm tắt; không thay file
+      ruby bin/audit-env-features --write     # tạo lại TXT và docs/env-feature-audit.json
+      ruby bin/audit-env-features --json      # JSON chỉ tên/tham chiếu, không chứa giá trị
+      --laravel-root PATH và --ruby-root PATH cho phép kiểm tra các checkout/fixture khác.
+      Mapping review ở docs/env-feature-map.json; cần cập nhật khi port thêm feature.
+    TEXT
+    output
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  root = File.expand_path("..", __dir__)
+  options = { ruby_root: root, laravel_root: File.expand_path("../../laraveldji/admin", root) }
+  write = false
+  json = false
+  OptionParser.new do |parser|
+    parser.on("--ruby-root PATH") { |value| options[:ruby_root] = value }
+    parser.on("--laravel-root PATH") { |value| options[:laravel_root] = value }
+    parser.on("--write") { write = true }
+    parser.on("--json") { json = true }
+  end.parse!
+  begin
+    audit = EnvFeatureAudit.new(**options, catalog_path: File.join(root, "docs/env-feature-map.json"))
+    report = audit.report
+    audit.write(report) if write
+    puts(json ? JSON.pretty_generate(report) : JSON.pretty_generate(report[:totals]))
+    puts "Updated TXT and docs/env-feature-audit.json (names only)." if write && !json
+  rescue ArgumentError, Errno::ENOENT => error
+    warn "ENV audit failed: #{error.message}"
+    exit 1
+  end
+end

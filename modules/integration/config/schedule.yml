@@ -1,0 +1,5 @@
+integration_deliveries:
+  cron: "* * * * *"
+  class: IntegrationDispatchJob
+  active_job: true
+  queue: default

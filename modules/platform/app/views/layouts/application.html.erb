@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <title>XinViec • People OS</title>
+  <title>XinViec • ERP</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <%= csrf_meta_tags %><%= csp_meta_tag %>
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -10,27 +10,34 @@
 <body>
 <% if current_user %>
 <aside class="sidebar">
-  <a class="brand" href="/">x<span>v</span> <small>PEOPLE OS</small></a>
+  <a class="brand" href="/">x<span>v</span> <small>ERP WORKSPACE</small></a>
   <div class="workspace"><%= current_user.company.code %> <span>WORKSPACE</span></div>
-  <nav>
-    <% if current_user.allowed?("dashboard.view") %><%= link_to "◈ Tổng quan", root_path %><% end %>
-    <% if policy(Employee).index? %><%= link_to "◉ Nhân sự", employees_path %><% end %>
-    <% if policy(Department).index? %><%= link_to "▦ Phòng ban", departments_path %><% end %>
-    <% if policy(Attendance).index? %><%= link_to "◷ Chấm công", attendances_path %><% end %>
-    <% if policy(LeaveRequest).index? %><%= link_to "☷ Nghỉ phép", leave_requests_path %><% end %>
-    <% if policy(PayRun).index? %><%= link_to "▤ Bảng lương", pay_runs_path %><% end %>
-    <% if policy(Candidate).index? %><%= link_to "◇ Tuyển dụng", candidates_path %><% end %>
-    <% if policy(AuditLog).index? %><%= link_to "⌁ Nhật ký", audit_logs_path %><% end %>
-    <% if current_user.allowed?("company.manage") %><%= link_to "▣ Company", administration_company_path %><% end %>
-    <% if current_user.allowed?("accounts.manage") %><%= link_to "◉ Tài khoản & quyền", administration_accounts_path %><% end %>
-    <% if current_user.allowed?("roles.manage") %><%= link_to "⚿ Vai trò & quyền", administration_roles_path %><% end %>
+  <nav aria-label="Menu nghiệp vụ ERP">
+    <% if current_user.allowed?("dashboard.view") %><%= link_to "◈ Dashboard tổng", root_path, class: (request.path == "/" ? "active" : nil), aria: { current: (request.path == "/" ? "page" : nil) } %><% end %>
+    <% erp_navigation_groups.each do |group| %>
+      <details class="nav-group" open>
+        <summary><%= group[:name] %></summary>
+        <% group[:entries].each do |label, path, _| %>
+          <%= link_to label, path, class: (request.path == path || request.path.start_with?("#{path}/") ? "active" : nil), aria: { current: (request.path == path ? "page" : nil) } %>
+        <% end %>
+      </details>
+    <% end %>
   </nav>
-  <div class="sidebar-footer"><span class="live-dot"></span> Hệ thống hoạt động<br><small>HRM / Rails / MySQL</small></div>
+  <div class="sidebar-footer"><span class="live-dot"></span> Hệ thống hoạt động<br><small>ERP / Rails / MySQL</small></div>
 </aside>
 <% end %>
 <main class="<%= current_user ? 'main' : 'auth' %>">
 <% if current_user %>
-<header class="topbar"><span><%= current_user.company.name %> <b>/ Quản trị nhân sự</b></span><div class="account"><span class="avatar"><%= current_user.email.first.upcase %></span><span><%= current_user.email %><small><%= current_user.role.upcase %></small></span><%= button_to "Đăng xuất", session_path, method: :delete, class: "text-button" %></div></header>
+<header class="topbar workspace-topbar" aria-label="Tài khoản và công ty đang làm việc">
+  <div class="company-context">
+    <span class="context-label"><span class="context-indicator" aria-hidden="true"></span> CÔNG TY ĐANG LÀM VIỆC</span>
+    <div class="company-context-title"><strong><%= current_user.company.name %></strong><span class="company-id">Công ty #<%= current_user.company_id %></span></div>
+  </div>
+  <div class="workspace-account">
+    <div class="signed-in-account"><span class="avatar" aria-hidden="true"><%= current_user.email.first.upcase %></span><div class="account-identity"><span class="context-label">ĐANG ĐĂNG NHẬP</span><strong><%= current_user.email %></strong><small>Hồ sơ #<%= current_user.id %> · Vai trò: <%= current_user.role %></small></div></div>
+    <div class="workspace-account-actions"><%= link_to "Bảo mật", "/my/sessions", class: "text-button" %><%= link_to "Đổi công ty ↗", "/my/companies", class: "button secondary context-switch" %><%= button_to "Đăng xuất", session_path, method: :delete, class: "text-button" %></div>
+  </div>
+</header>
 <% end %>
 <section class="content">
 <% flash.each do |type, message| %><div class="flash <%= type %>"><%= message %></div><% end %>

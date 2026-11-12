@@ -7,6 +7,7 @@ Rails.application.config.content_security_policy do |policy|
   policy.connect_src :self
   policy.object_src :none
   policy.base_uri :self
+  policy.form_action :self
   policy.frame_ancestors :none
 end
 # Đoạn code này đang cấu hình Content Security Policy (CSP) trong Ruby on Rails.
@@ -17,14 +18,14 @@ end
 
 
 # Luồng hoạt động của CSP
-                          # Rails Backend
-                # Trả HTTP Response kèm Content-Security-Policy
-                                # v
-                        # Browser kiểm tra CSP
-                # Nguồn tài nguyên có được cho phép không?
-                #  v                                #  v
-              # Được phép                         # Bị chặn
-           # Tải tài nguyên                 # Không tải tài nguyên
+# Rails Backend
+# Trả HTTP Response kèm Content-Security-Policy
+# v
+# Browser kiểm tra CSP
+# Nguồn tài nguyên có được cho phép không?
+#  v                                #  v
+# Được phép                         # Bị chặn
+# Tải tài nguyên                 # Không tải tài nguyên
 
 
 # Directive	                      Ý nghĩa

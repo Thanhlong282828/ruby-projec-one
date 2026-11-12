@@ -6,16 +6,16 @@ end
 
 # Ví dụ trong hệ thống HRM, bạn muốn hiển thị trạng thái nhân viên bằng tiếng Việt.
 # module ApplicationHelper
-  # def employee_status(status)
-    # case status
-    # when "active"
-      # "Đang làm việc"
-    # when "inactive"
-      # "Ngừng hoạt động"
-    # else
-      # "Không xác định"
-    # end
-  # end
+# def employee_status(status)
+# case status
+# when "active"
+# "Đang làm việc"
+# when "inactive"
+# "Ngừng hoạt động"
+# else
+# "Không xác định"
+# end
+# end
 # end
 
 

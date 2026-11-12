@@ -24,6 +24,8 @@ module Hrm
     config.load_defaults 8.1
     config.time_zone = "Asia/Ho_Chi_Minh"
     config.active_record.default_timezone = :utc
+    # SQL is canonical: schema.rb cannot preserve our MySQL membership triggers.
+    config.active_record.schema_format = :sql
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.

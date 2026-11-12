@@ -1,0 +1,24 @@
+<div class="page-heading"><div><div class="eyebrow">ATTENDANCE</div><h1><%= @record.code %> · <%= @record.name %></h1></div><%= link_to "Danh sách ca →", work_shifts_path %></div>
+<div class="panel">
+  <dl class="details">
+    <dt>Giờ làm</dt><dd><%= @record.start_time %> – <%= @record.end_time %><%= " (+1 ngày)" if @record.crosses_midnight? %></dd>
+    <dt>Thời gian dự kiến</dt><dd><%= @record.planned_work_minutes %> phút, đã trừ <%= @record.unpaid_break_minutes %> phút nghỉ</dd>
+    <dt>Ân hạn đi trễ / về sớm</dt><dd><%= @record.grace_in_minutes %> / <%= @record.grace_out_minutes %> phút</dd>
+    <dt>Ngưỡng ngoài ca</dt><dd><%= @record.overtime_threshold_minutes %> phút; chưa phải tăng ca được duyệt</dd>
+    <dt>Trạng thái</dt><dd><%= @record.active? ? "Đang dùng" : "Ngừng dùng" %></dd>
+  </dl>
+  <div class="toolbar">
+    <% if policy(@record).update? %><%= link_to "Sửa ca", edit_work_shift_path(@record), class: "button" %><% end %>
+    <% if policy(@record).destroy? %><%= button_to "Xóa ca", work_shift_path(@record), method: :delete, params: { lock_version: @record.lock_version }, class: "danger" %><% end %>
+  </div>
+</div>
+<div class="panel">
+  <h2>Xem thử một lần chấm công</h2>
+  <p>Chọn trong 25 ca chấm công gần nhất bạn được xem. Kết quả chỉ mô phỏng theo cấu hình hiện tại; không phân ca hoặc cập nhật bảng lương.</p>
+  <% if @attendance_options.any? %>
+    <%= form_with url: preview_work_shift_path(@record), method: :get do |form| %>
+      <div class="field"><%= form.label :attendance_id, "Ca chấm công nguồn" %><%= form.select :attendance_id, @attendance_options %></div>
+      <%= form.submit "Xem thử kết quả" %>
+    <% end %>
+  <% else %><div class="empty">Chưa có ca chấm công trong phạm vi bạn được xem.</div><% end %>
+</div>

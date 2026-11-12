@@ -17,6 +17,11 @@ module HrmIdentity
       app.routes.draw_paths << root.join("config/routes").to_s
     end
 
+    initializer "hrm_identity.schedules" do |app|
+      app.config.x.hrm.schedule_files ||= []
+      app.config.x.hrm.schedule_files << root.join("config/schedule.yml")
+    end
+
     initializer "hrm_identity.migrations" do |app|
       app.config.paths["db/migrate"].concat(config.paths["db/migrate"].expanded)
     end

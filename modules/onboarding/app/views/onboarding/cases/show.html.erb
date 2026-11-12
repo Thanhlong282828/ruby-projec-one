@@ -1,0 +1,38 @@
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">ONBOARDING / #<%= @record.id %></div>
+    <h1><%= @record.employee.full_name %></h1>
+    <p class="subtitle">Bắt đầu <%= @record.start_date %> • <%= onboarding_status_label(@record.status) %> • Phiên bản <%= @record.lock_version %></p>
+  </div>
+  <%= link_to "← Board", "/onboarding/cases" %>
+</div>
+
+<div class="panel">
+  <h2>Checklist tiếp nhận</h2>
+  <ul class="workspace-links">
+    <% @record.checklist.each do |item| %>
+      <li>
+        <div class="checklist-row">
+          <span><%= item["done"] ? "✓" : "○" %> <%= item["title"] %> <%= "(bắt buộc)" if item["required"] %></span>
+          <% if policy(@record).update? && !item["done"] && !%w[completed cancelled].include?(@record.status) %>
+            <%= button_to "Hoàn tất", "/onboarding/cases/#{@record.id}/checklist/#{item['code']}",
+                          method: :patch, params: {lock_version: @record.lock_version} %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+</div>
+
+<% if policy(@record).update? %>
+  <div class="panel">
+    <h2>Chuyển trạng thái</h2>
+    <div class="form-actions">
+      <% HrmOnboarding::Domain::Services::CaseStateMachine.targets(@record.status).each do |target| %>
+        <%= button_to onboarding_status_label(target), "/onboarding/cases/#{@record.id}/status",
+                      method: :patch, params: {status: target, lock_version: @record.lock_version}, class: "secondary" %>
+      <% end %>
+    </div>
+    <p class="hint">Kết thúc hồ sơ yêu cầu hoàn tất checklist bắt buộc. Hồ sơ đã hoàn tất hoặc hủy không được chỉnh tiếp.</p>
+  </div>
+<% end %>

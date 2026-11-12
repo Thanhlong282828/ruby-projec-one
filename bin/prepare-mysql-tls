@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+mysql_container=$(docker compose ps -q mysql)
+test -n "$mysql_container"
+mysql_volume=$(docker inspect "$mysql_container" --format '{{range .Mounts}}{{if eq .Destination "/var/lib/mysql"}}{{.Name}}{{end}}{{end}}')
+test -n "$mysql_volume"
+docker run --rm -i --network none --user 0 --entrypoint ruby --mount "type=volume,src=$mysql_volume,dst=/tls" xinviec-hrm-web:latest - < bin/support/mysql_tls.rb
+docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot --execute="ALTER INSTANCE RELOAD TLS"'
+mkdir -p tmp/mysql-schema-client
+docker compose exec -T mysql cat /var/lib/mysql/ca.pem > tmp/mysql-schema-client/ca.pem
+printf '%s\n' 'Public local MySQL CA prepared; no private key copied to app'

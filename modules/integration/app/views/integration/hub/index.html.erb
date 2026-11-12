@@ -1,0 +1,32 @@
+<%= render "integration/shared/navigation" %>
+<div class="page-heading">
+  <div><div class="eyebrow">ERP / INTEGRATION HUB</div><h1>Tích hợp & webhook</h1><p class="subtitle">Theo dõi kết nối và kiểm tra sự kiện nhận từ hệ thống ngoài.</p></div>
+  <% if policy(IntegrationConnection).create? %><%= link_to "+ Kết nối", "/integration/connections/new", class: "button" %><% end %>
+</div>
+<div class="stats">
+  <% {"received" => "Chờ kiểm tra", "acknowledged" => "Đã xác nhận", "rejected" => "Đã từ chối"}.each do |key, label| %>
+    <%= link_to "/integration?status=#{key}", class: "stat metric-card" do %><small><%= label %></small><strong><%= @workspace[:counts].fetch(key, 0) %></strong><span>Mở sự kiện nguồn ↗</span><% end %>
+  <% end %>
+</div>
+<div class="panel">
+  <div class="panel-heading"><h2>Kết nối</h2><span class="hint">Tối đa 200 kết nối theo mã</span></div>
+  <% if @workspace[:connections].empty? %><p class="empty">Chưa có kết nối. Tạo kết nối để nhận endpoint và khóa riêng.</p><% else %>
+    <table><thead><tr><th>Mã</th><th>Tên</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+      <% @workspace[:connections].each do |connection| %><tr><td><%= connection.code %></td><td><%= connection.name %></td><td><%= connection.active? ? "Đang nhận" : "Tạm dừng" %></td><td><%= link_to "Mở kết nối →", "/integration/connections/#{connection.id}" %></td></tr><% end %>
+    </tbody></table>
+  <% end %>
+</div>
+<div class="panel">
+  <div class="panel-heading"><h2>Hộp thư sự kiện</h2><%= link_to "Tất cả trạng thái", "/integration" %></div>
+  <% if @workspace[:webhooks].empty? %><p class="empty">Chưa có sự kiện phù hợp.</p><% else %>
+    <table><thead><tr><th>Kết nối</th><th>Event ID</th><th>Loại</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+      <% @workspace[:webhooks].each do |record| %><tr><td><%= record.integration_connection.code %></td><td><%= record.event_id %></td><td><%= record.event_type %></td><td><%= integration_status_label(record.status) %></td><td><%= link_to "Kiểm tra →", "/integration/inbox/#{record.id}" %></td></tr><% end %>
+    </tbody></table>
+  <% end %>
+  <div class="pagination">
+    <% if @workspace[:page] > 1 %><%= link_to "← Trước", "/integration?page=#{@workspace[:page] - 1}&status=#{@workspace[:status]}" %><% end %>
+    <span>Trang <%= @workspace[:page] %></span>
+    <% if @workspace[:next_page] %><%= link_to "Tiếp →", "/integration?page=#{@workspace[:page] + 1}&status=#{@workspace[:status]}" %><% end %>
+  </div>
+</div>
+<p class="hint">Xác nhận sự kiện chỉ ghi nhận đã kiểm tra; không tự thay đổi hồ sơ nhân sự, lương hoặc cấp quyền.</p>

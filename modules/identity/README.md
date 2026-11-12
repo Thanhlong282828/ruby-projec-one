@@ -2,7 +2,7 @@
 
 Thư viện Rails Engine nội bộ, phiên bản 0.1.0.
 
-**Sở hữu:** Authentication, User, ApiToken, session web/API và CLI quản lý tài khoản.
+**Sở hữu:** Authentication, User, ApiToken, LoginSession, session web/API và CLI quản lý tài khoản.
 
 **Liên kết runtime:** Employee liên kết User qua user_id.
 
@@ -34,4 +34,12 @@ Model Active Record và MVC vẫn ở app/. Engine gọi ServiceProvider khi kh�
 
 ## Company & RBAC MySQL (28/10/2026)
 
-Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+Một định danh đăng nhập có nhiều membership theo company; mỗi User profile vẫn thuộc đúng một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+
+
+Web authentication dùng LoginSession lưu digest trong MySQL và token trong cookie mã hóa. Commands OpenWebSession/CloseWebSession ghi/thu hồi qua repository; AuthenticateWebSession chỉ đọc, kiểm expiry 8 giờ và account/company. Đổi mật khẩu hoặc disable User thu hồi web/API credentials trong transaction; cấp credential khóa row User để tránh race. Cable kiểm session trước khi transmit. PurgeCredentialsJob dọn hết hạn theo lịch của module. Xem [hướng dẫn bảo mật Laravel–Ruby](../../HUONG_DAN_SECURITY_LARAVEL_RUBY.txt).
+
+Multi-company: `/system/companies` là danh mục quản trị tổng (SystemGrant riêng), `/my/companies` chọn membership của một login identity, `/organization/branches` quản lý nhiều chi nhánh trong company hiện tại. Quyền business vẫn theo profile/role/overrides từng company; không flip user.company_id hoặc copy password. Chi nhánh dùng OrganizationUnit thật, chưa có ABAC giới hạn từng branch xuyên ERP. Đọc HUONG_DAN_NHIEU_CONG_TY_CHI_NHANH_LARAVEL_RUBY.txt ở gốc repo.
+Schema chuẩn: db/structure.sql giữ MySQL trigger; local/CI dùng bin/prepare-mysql-tls, bin/migrate-docker và bin/test-docker. Không dùng app user để tạo trigger hoặc tự load test schema. Production phải cấu hình CA/migration role/secrets riêng; chưa deploy cloud thật.
+
+Personal web security: `/my/sessions` lists owner-identity sessions (25 per keyset page); DELETE `/my/sessions/:id` revokes another owned session with fresh caller checks, principal/profile/session locks and atomic audit. No company-admin enumeration, secret projection, API-token UI or device tracking. See `HUONG_DAN_PHIEN_DANG_NHAP_LARAVEL_RUBY.txt`.

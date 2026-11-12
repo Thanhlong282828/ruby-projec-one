@@ -2,6 +2,9 @@ module HrmWorkforce
   module Domain
     module Repositories
       class ReadRepositoryInterface
+        def all_employee_count(actor:)
+          raise NotImplementedError
+        end
         def employees(actor:, page: 1, search: nil, api: false)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##employees"
         end
@@ -23,7 +26,7 @@ module HrmWorkforce
         def employee_for_leave!(actor:, id:)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##employee_for_leave!"
         end
-        def active_employees(company_id:)
+        def active_employees(company_id:, lock: false)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##active_employees"
         end
         def employee_count(actor:)

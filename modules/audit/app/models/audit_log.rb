@@ -4,5 +4,4 @@ class AuditLog < ApplicationRecord
   def readonly? = persisted?
   before_validation { self.company_id ||= actor&.company_id }
   validate { same_company_as(:actor) }
-
 end

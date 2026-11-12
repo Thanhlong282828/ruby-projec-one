@@ -3,7 +3,7 @@ module CompanyOwned # module CompanyOwned: Tạo module dùng chung cho nhiều 
   included do # included do khai báo những thành phần được áp dụng vào Model khi include module.
     belongs_to :company # Thiết lập quan hệ nhiều-một:   |  Tương đương Laravel:  public function company(){return $this->belongsTo(Company::class);}
     scope :for_company, ->(company_id) { where(company_id: company_id) } # Đây là Local Scope, giúp tái sử dụng điều kiện truy vấn.  |  Ví dụ: Employee.for_company(10)  Tương đương SQL: SELECT * FROM employees WHERE company_id = 10;  |  Laravel:  public function scopeForCompany($query, int $companyId){ return $query->where('company_id', $companyId); }  Gọi:  Employee::forCompany(10)->get(); |  Lưu ý: Scope này không tự động được áp dụng cho mọi truy vấn. Nếu gọi Employee.all, bạn vẫn có thể truy vấn toàn bộ nhân viên nếu không có lớp giới hạn khác.
-   # 2. Validation ngăn chuyển công ty
+    # 2. Validation ngăn chuyển công ty
     validate do
       errors.add(:company_id, "cannot be moved to another company") if persisted? && will_save_change_to_company_id? # persisted? :  Bản ghi đã tồn tại trong database  |  will_save_change_to_company_id? : company_id có thay đổi và đang chờ lưu
     end
@@ -24,8 +24,8 @@ end
 # Đây là một phần quan trọng trong bảo mật dữ liệu HRM, ERP.
 
 
-#trait CompanyOwned
-#{
+# trait CompanyOwned
+# {
 #    public function company()
 #    {
 #        return $this->belongsTo(Company::class);
@@ -46,4 +46,4 @@ end
 #            }
 #        });
 #    }
-#}
+# }

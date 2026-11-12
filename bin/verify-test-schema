@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# Disposable DDL verification only: never loads or drops hrm_test/hrm_development.
+require "open3"
+require "securerandom"
+require "digest"
+abort "Run with RAILS_ENV=test" unless ENV["RAILS_ENV"] == "test"
+name = "hrm_test_schema_#{SecureRandom.hex(6)}"
+mysql = [ "docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root --batch --skip-column-names' ]
+run_sql = lambda do |sql|
+  output, error, status = Open3.capture3(*mysql, stdin_data: sql)
+  abort "Schema verification SQL failed: #{error}" unless status.success?
+  output
+end
+begin
+  run_sql.call("CREATE DATABASE `#{name}` CHARACTER SET utf8mb4;\nUSE `#{name}`;\n" + File.read(File.expand_path("../db/structure.sql", __dir__)))
+  # rubocop:disable Rails/SquishedSQLHeredocs -- Several SQL statements sent to the standalone mysql client.
+  inspection = <<~SQL
+    SELECT CONSTRAINT_TYPE, COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='#{name}' GROUP BY CONSTRAINT_TYPE ORDER BY CONSTRAINT_TYPE;
+    SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='#{name}' ORDER BY TRIGGER_NAME;
+    SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='#{name}';
+    SELECT COUNT(*) FROM `#{name}`.schema_migrations;
+  SQL
+  # rubocop:enable Rails/SquishedSQLHeredocs
+  counts = run_sql.call(inspection)
+  baseline = run_sql.call(inspection.gsub(name, "hrm_test"))
+  abort "Fresh schema constraints/indexes/migration versions differ from hrm_test" unless counts == baseline
+  # Compare real definitions too: equal counts alone cannot prove a FK/index is correct.
+  # rubocop:disable Rails/SquishedSQLHeredocs -- Multiple standalone mysql statements.
+  definitions = <<~SQL
+    SELECT TABLE_NAME,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='#{name}' ORDER BY TABLE_NAME,ORDINAL_POSITION;
+    SELECT TABLE_NAME,INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='#{name}' ORDER BY TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX;
+    SELECT TABLE_NAME,COLUMN_NAME,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_SCHEMA='#{name}' ORDER BY TABLE_NAME,CONSTRAINT_NAME,ORDINAL_POSITION;
+    SELECT CONSTRAINT_NAME,CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='#{name}' ORDER BY CONSTRAINT_NAME;
+    SELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION,ACTION_STATEMENT FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='#{name}' ORDER BY TRIGGER_NAME;
+    SELECT version FROM `#{name}`.schema_migrations ORDER BY version;
+  SQL
+  # rubocop:enable Rails/SquishedSQLHeredocs
+  actual = run_sql.call(definitions)
+  expected = run_sql.call(definitions.gsub(name, "hrm_test"))
+  abort "Fresh schema definitions differ from hrm_test" unless actual == expected
+  puts "Schema definition SHA256: #{Digest::SHA256.hexdigest(actual)}"
+
+  abort "Fresh schema lost membership guards" unless %w[users_membership_insert_guard users_membership_update_guard].all? { |guard| counts.include?(guard) }
+  puts "Fresh structure.sql loaded into disposable MySQL test schema #{name}."
+  puts counts
+ensure
+  run_sql.call("DROP DATABASE IF EXISTS `#{name}`;")
+end

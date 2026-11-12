@@ -30,3 +30,9 @@ Engine dùng chung schema, constants và host route helpers để tương thích
 - lib/hrm_attendance/infrastructure/persistence: implementation Active Record.
 
 Model Active Record và MVC vẫn ở app/. Engine gọi ServiceProvider khi khởi động/reload. Đọc hướng dẫn HUONG_DAN_LARAVEL_SANG_RAILS.txt ở gốc dự án và docs/DJI_ARCHITECTURE_MAPPING.md trước khi thêm use case.
+
+
+WorkShift cấu hình ca theo company, CRUD qua ShiftRead/ShiftWrite contracts, Commands và Policy. WorkShiftWorkspace chuẩn bị view; PreviewWorkShift đọc attendance đã scope rồi gọi AttendanceCalculator thuần. Preview không ghi công/lương, không thay lịch phân ca. Update/delete yêu cầu lock_version; MySQL bảo vệ clock/rule ranges và unique company/code. Hướng dẫn: ../../HUONG_DAN_CA_LAM_VIEC_LARAVEL_RUBY.txt.
+
+
+EmployeeShiftAssignment quản lý ca cố định theo khoảng hiệu lực, lưu snapshot server, khóa Employee khi ghi để chống overlap. Update chỉ ngày kết thúc; không xóa lịch đã bắt đầu. ScheduleRead/Write contracts tách CQRS, EmployeeShiftSchedule đối chiếu attendance có scope, không ghi payroll. Calendar/ngày nghỉ/ca xoay/chốt kỳ chưa được tích hợp. Xem ../../HUONG_DAN_PHAN_CA_LARAVEL_RUBY.txt.

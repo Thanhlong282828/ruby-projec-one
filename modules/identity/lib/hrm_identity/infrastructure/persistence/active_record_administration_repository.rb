@@ -5,7 +5,7 @@ module HrmIdentity
         def snapshot(actor:, area:, id: nil)
           guard!(actor, { company: "company.manage", accounts: "accounts.manage", roles: "roles.manage" }.fetch(area))
           company = ::Company.find(actor.company_id)
-          data = { company: company, permissions: ::Permission.order(:key).to_a }
+          data = { company: company, permissions: ::Permission.where.not(key: ::SystemGrant::KEYS).order(:key).to_a }
           case area
           when :accounts
             data[:accounts] = ::User.where(company_id: company.id).order(:email).to_a
@@ -26,7 +26,7 @@ module HrmIdentity
           actor.company.with_lock do
             guard!(actor, "company.manage")
             actor.company.update!(name: attributes.fetch(:name))
-            audit!(actor, actor.company, "company.updated", ["name"])
+            audit!(actor, actor.company, "company.updated", [ "name" ])
           end
         end
         def update_account!(actor:, id:, attributes:)
@@ -40,8 +40,8 @@ module HrmIdentity
             active = attributes.key?(:active) ? ActiveModel::Type::Boolean.new.cast(attributes[:active]) : account.active?
             previous = account.user_permissions.joins(:permission).pluck("permissions.key", :granted).to_h.transform_values { |value| value ? "grant" : "deny" }
             overrides = attributes.fetch(:permission_overrides, previous).to_h.transform_keys(&:to_s).reject { |_, value| value.blank? || value == "inherit" }
-            invalid_keys = overrides.keys - ::Permission.pluck(:key)
-            raise Domain::InvalidAdministration, "Permission không tồn tại." if invalid_keys.any? || overrides.values.any? { |v| !%w[grant deny].include?(v) }
+            invalid_keys = overrides.keys - ::Permission.where.not(key: ::SystemGrant::KEYS).pluck(:key)
+            raise Domain::InvalidAdministration, "Permission không tồn tại." if invalid_keys.any? || overrides.values.any? { |v| %w[grant deny].exclude?(v) }
             if role == "admin" && Domain::PermissionCatalog::PROTECTED.any? { |key| overrides[key] == "deny" }
               raise Domain::InvalidAdministration, "Không được chặn các quyền quản trị cốt lõi của admin."
             end
@@ -54,7 +54,7 @@ module HrmIdentity
               account.user_permissions.create!(permission: ::Permission.find_by!(key: key), granted: value == "grant")
             end
             account.api_tokens.destroy_all unless active
-            audit!(actor, account, "account.access.updated", ["role", "active", "permission_overrides"])
+            audit!(actor, account, "account.access.updated", [ "role", "active", "permission_overrides" ])
             account
           end
         end
@@ -63,8 +63,8 @@ module HrmIdentity
           actor.company.with_lock do
             guard!(actor, "roles.manage")
             role = id.present? ? ::CompanyRole.where(company_id: actor.company_id).lock.find(id) : actor.company.company_roles.new(key: attributes[:key])
-            keys = Array(attributes.fetch(:permission_keys) { role.permissions.pluck(:key) }).reject(&:blank?).map(&:to_s).uniq
-            raise Domain::InvalidAdministration, "Permission không tồn tại." if (keys - ::Permission.pluck(:key)).any?
+            keys = Array(attributes.fetch(:permission_keys) { role.permissions.pluck(:key) }).compact_blank.map(&:to_s).uniq
+            raise Domain::InvalidAdministration, "Permission không tồn tại." if (keys - ::Permission.where.not(key: ::SystemGrant::KEYS).pluck(:key)).any?
             if role.key == "admin" && (Domain::PermissionCatalog::PROTECTED - keys).any?
               raise Domain::InvalidAdministration, "Admin phải giữ quyền đăng nhập tổng quan và quản trị company/tài khoản/quyền."
             end

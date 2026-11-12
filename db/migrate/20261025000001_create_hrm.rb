@@ -50,7 +50,7 @@ class CreateHrm < ActiveRecord::Migration[8.1]
       t.datetime :reviewed_at
       t.timestamps
     end
-    add_index :leave_requests, [:employee_id, :starts_on, :ends_on]
+    add_index :leave_requests, [ :employee_id, :starts_on, :ends_on ]
     create_table :attendances do |t|
       t.references :employee, null: false, foreign_key: true
       t.date :work_date, null: false
@@ -58,7 +58,7 @@ class CreateHrm < ActiveRecord::Migration[8.1]
       t.datetime :checked_out_at
       t.timestamps
     end
-    add_index :attendances, [:employee_id, :work_date], unique: true
+    add_index :attendances, [ :employee_id, :work_date ], unique: true
     create_table :pay_runs do |t|
       t.date :period, null: false
       t.string :status, null: false, default: "draft"
@@ -75,7 +75,7 @@ class CreateHrm < ActiveRecord::Migration[8.1]
       t.bigint :net_cents, null: false
       t.timestamps
     end
-    add_index :payslips, [:pay_run_id, :employee_id], unique: true
+    add_index :payslips, [ :pay_run_id, :employee_id ], unique: true
     create_table :candidates do |t|
       t.string :full_name, null: false
       t.string :email, null: false
@@ -98,6 +98,6 @@ class CreateHrm < ActiveRecord::Migration[8.1]
       t.datetime :delivered_at
       t.timestamps
     end
-    add_index :outbox_events, [:delivered_at, :id]
+    add_index :outbox_events, [ :delivered_at, :id ]
   end
 end

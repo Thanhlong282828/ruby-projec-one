@@ -1,0 +1,28 @@
+<% record, row = @data.values_at(:record, :row) %>
+<div class="page-heading">
+  <div><div class="eyebrow">ATTENDANCE</div><h1>Phân ca · <%= row[:employee_name] %></h1></div>
+  <%= link_to "Danh sách phân ca →", shift_assignments_path %>
+</div>
+<div class="panel">
+  <dl class="details">
+    <dt>Nhân viên</dt>
+    <dd><% if row[:employee_path] %><%= link_to row[:employee_name], row[:employee_path] %><% else %><%= row[:employee_name] %><% end %></dd>
+    <dt>Ca nguồn</dt>
+    <dd><% if row[:shift_path] %><%= link_to row[:shift_code], row[:shift_path] %><% else %><%= row[:shift_code] %><% end %></dd>
+    <dt>Hiệu lực</dt><dd><%= row[:effective_from] %> → <%= row[:effective_to] || "Chưa kết thúc" %></dd>
+    <dt>Giờ đã lưu</dt><dd><%= row[:start_time] %> → <%= row[:end_time] %><%= " (+1 ngày)" if row[:crosses_midnight] %></dd>
+    <dt>Cấu hình lưu lúc phân công</dt>
+    <dd><%= row[:shift_name] %> · nghỉ <%= row[:shift_snapshot]["unpaid_break_minutes"] %> phút · phiên bản ca <%= row[:shift_snapshot]["lock_version"] %></dd>
+  </dl>
+  <p>Giữ bản cấu hình lúc phân công, không tự đổi theo ca sửa sau đó. Link ca nguồn mở cấu hình hiện tại. Lịch chưa phải công đã chốt.</p>
+  <div class="toolbar">
+    <%= link_to "Xem lịch công nhân viên →", employee_shift_schedule_path(employee_id: row[:employee_id]) %>
+    <% if policy(record).update? %>
+      <%= link_to "Cập nhật ngày kết thúc", edit_shift_assignment_path(record), class: "button" %>
+    <% end %>
+    <% if policy(record).destroy? && record.effective_from > Date.current %>
+      <%= button_to "Xóa phân ca tương lai", shift_assignment_path(record), method: :delete,
+          params: {lock_version: record.lock_version}, class: "danger" %>
+    <% end %>
+  </div>
+</div>

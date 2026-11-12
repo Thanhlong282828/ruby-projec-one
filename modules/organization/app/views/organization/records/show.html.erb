@@ -1,0 +1,28 @@
+<% base_path = HrmOrganization::Domain::Resources.path(request.path_parameters[:resource]) %>
+<h1><%= @definition[:label] %> #<%= @record.id %></h1>
+<p class="subtitle">Công ty <%= current_user.company.name %> · Bản ghi nguồn #<%= @record.id %></p>
+<div class="panel">
+  <dl class="details">
+    <% @data[:fields].each do |field| %>
+      <div>
+        <dt><%= field[:label] %></dt>
+        <dd>
+          <% if field[:source] %>
+            <%= link_to field[:value], field[:source] %>
+          <% else %>
+            <%= field[:value].presence || "—" %>
+          <% end %>
+        </dd>
+      </div>
+    <% end %>
+  </dl>
+</div>
+<div class="toolbar">
+  <% if policy(@record).update? %>
+    <%= link_to "Chỉnh sửa", "#{base_path}/#{@record.id}/edit", class: "button" %>
+  <% end %>
+  <% if policy(@record).destroy? %>
+    <%= button_to "Xóa bản ghi", "#{base_path}/#{@record.id}", method: :delete, class: "danger" %>
+  <% end %>
+  <%= link_to "Quay về danh sách", base_path, class: "button secondary" %>
+</div>

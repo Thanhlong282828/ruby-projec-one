@@ -5,6 +5,6 @@ class LeaveMailer < ApplicationMailer
     mail(to: request.employee.email, subject: "HRM: Leave request #{request.status}")
   end
   def summary(user, count)
-    mail(to: user.email, subject: "HRM: Daily summary", body: "Pending leave requests: #{count}", content_type: "text/plain")
+    mail(to: user.email, subject: I18n.t("hrm_quality.messages.hrm_daily_summary"), body: "Pending leave requests: #{count}", content_type: "text/plain")
   end
 end

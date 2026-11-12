@@ -4,6 +4,7 @@ module HrmAttendance
       class ActiveRecordWriteRepository < Domain::Repositories::WriteRepositoryInterface
         def build(employee:, at:) = employee.attendances.new(company_id: employee.company_id, work_date: at.to_date, checked_in_at: at)
         def already_checked_in?(employee:, work_date:) = employee.attendances.exists?(work_date: work_date)
+        def open_attendance?(employee:) = employee.attendances.exists?(checked_out_at: nil)
         def save!(record:)
           record.save!
           record

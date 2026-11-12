@@ -12,6 +12,8 @@
         </p>
     </div>
 
+    <%= link_to "Báo cáo theo kỳ →", attendance_report_path, class: "button" %>
+
     <% if @can_clock_in %>
         <%= button_to "◷ Vào ca hôm nay", attendances_path %>
     <% end %>

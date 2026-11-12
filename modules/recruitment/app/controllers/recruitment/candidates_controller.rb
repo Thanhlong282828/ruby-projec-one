@@ -1,6 +1,6 @@
 module Recruitment
   class CandidatesController < ApplicationController
-    before_action :set_candidate, only: [:edit, :update]
+    before_action :set_candidate, only: [ :edit, :update ]
     def index
       @candidates = HrmRecruitment::Application::Queries::ListCandidates.new.call(actor: current_user, page: params[:page])
     end
@@ -8,19 +8,19 @@ module Recruitment
       @candidate = Candidate.new(company: current_user.company)
       authorize @candidate
     end
+    def edit; end
     def create
       HrmRecruitment::Application::Commands::CreateCandidate.new.call(actor: current_user, attributes: candidate_params)
-      redirect_to candidates_path, notice: "Đã thêm ứng viên."
+      redirect_to candidates_path, notice: I18n.t("hrm_quality.messages.da_them_ung_vien")
     rescue ActiveRecord::RecordInvalid => error
       @candidate = error.record
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-    def edit; end
     def update
       HrmRecruitment::Application::Commands::UpdateCandidate.new.call(actor: current_user, record: @candidate, attributes: candidate_params)
-      redirect_to candidates_path, notice: "Đã cập nhật ứng viên."
+      redirect_to candidates_path, notice: I18n.t("hrm_quality.messages.da_cap_nhat_ung_vien")
     rescue ActiveRecord::RecordInvalid
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
     private
     def set_candidate

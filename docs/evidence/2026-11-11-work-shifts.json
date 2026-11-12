@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-11",
+  "scope": "WorkShift configuration + read-only calculation preview; not scheduling/payroll parity",
+  "tests": {
+    "runs": 163,
+    "assertions": 742,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "database": "hrm_test"
+  },
+  "security": {
+    "company_policy_scope": "PASS",
+    "request_and_command_allowlist": "PASS",
+    "stale_update_delete_version": "PASS",
+    "preview_idor_and_malformed_id": "PASS",
+    "preview_has_no_business_writes": "PASS",
+    "audit_actor_outside_http": "PASS",
+    "mysql_clock_and_rule_checks": "PASS",
+    "brakeman_warnings": 0,
+    "brakeman_errors": 0,
+    "dependency_known_advisories": 0
+  },
+  "gates": {
+    "explicit_route_files": 11,
+    "architecture_controller_concern_files": 26,
+    "brakeman_controllers": 25,
+    "models": 24,
+    "templates": 41,
+    "zeitwerk": "PASS"
+  },
+  "development": {
+    "backup_before_migration": true,
+    "migration": "20261111000004_create_work_shifts",
+    "users": 7,
+    "permissions": 53,
+    "work_shift_rows": 0,
+    "new_route_declarations": 16,
+    "bindings": 21,
+    "passwords_changed": false
+  },
+  "browser": {
+    "login_existing_account": "PASS",
+    "index_empty_state": "PASS",
+    "new_form": "PASS",
+    "width": 1280,
+    "page_width": 1280,
+    "console_errors": 0,
+    "mobile": "NOT_VERIFIED",
+    "operational_rows_created": 0
+  },
+  "limitations": [
+    "preview current shift config only, no historical snapshots",
+    "no employee shift assignments/calendar/holiday integration",
+    "fixed Asia/Ho_Chi_Minh timezone",
+    "unpaid break is configured allowance, not actual break events",
+    "outside_shift_minutes not approved overtime or payroll"
+  ],
+  "docker": {
+    "native_web_worker_build": "PASS",
+    "standalone_image_eager_load": "PASS",
+    "bindings": 21,
+    "permission_definitions": 53,
+    "work_shift_table_readable": true,
+    "master_key_in_image": false,
+    "worker_restart_without_recreation": "PASS",
+    "local_health_http": 200
+  }
+}

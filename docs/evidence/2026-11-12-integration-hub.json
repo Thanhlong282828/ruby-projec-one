@@ -1,0 +1,102 @@
+{
+  "date": "2026-11-12",
+  "scope": "Partial DJI Integration port: encrypted inbound connection lifecycle and receipt inbox/review",
+  "architecture": {
+    "engines": "integration",
+    "style": "MVC + CQRS",
+    "contracts": 28,
+    "explicit_route_files": 13,
+    "controller_files_checked": 33
+  },
+  "database": {
+    "engine": "MySQL",
+    "migration": "20261112000002_create_integration_hub",
+    "permissions": 67,
+    "definitions": 67,
+    "private_backup_before_migration": true,
+    "development_users": 7,
+    "development_connections": 0,
+    "development_webhooks": 0
+  },
+  "tests": {
+    "full": {
+      "runs": 226,
+      "assertions": 1122,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "database": "hrm_test"
+    },
+    "native_docker_feature_suite": {
+      "runs": 26,
+      "assertions": 140,
+      "failures": 0,
+      "errors": 0
+    },
+    "env_guide_regression": {
+      "runs": 4,
+      "assertions": 33,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "security_checks": {
+    "brakeman": {
+      "controllers": 32,
+      "models": 28,
+      "templates": 55,
+      "errors": 0,
+      "warnings": 0
+    },
+    "dependency_audit": {
+      "result": "No known vulnerabilities",
+      "advisory_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7"
+    },
+    "architecture": "PASS",
+    "routes": "PASS",
+    "zeitwerk": "PASS"
+  },
+  "docker": {
+    "build": "PASS web/worker",
+    "standalone_image": "PASS bindings/catalog/middleware/encryption/mediumtext/realtime registry/no master.key",
+    "worker_reloaded": true,
+    "web_reload": "Puma SIGUSR2 hot restart after final realtime gate; container preserved",
+    "health": 200
+  },
+  "browser": {
+    "result": "PASS approved existing admin local session",
+    "checks": [
+      "Sixth Dashboard metric links to actual /integration",
+      "Hub status KPI links and empty-state metadata",
+      "Connection form labels/fields; no credential creation submitted",
+      "viewport/page width 1280, no overflow",
+      "no console errors",
+      "Hub reload after final hot restart successful"
+    ],
+    "screenshot": "private temp artifact, not committed",
+    "mobile": "not verified"
+  },
+  "regressions": [
+    "HMAC binds timestamp, case-sensitive event ID and exact raw bytes",
+    "Expiry, tamper, malformed/oversized/type/UTF-8/depth envelope guards",
+    "Raw-body guard precedes Rails automatic JSON parsing/logging",
+    "Encrypted secret/payload/review_note; normal JSON omits sensitive content",
+    "DB own-company FK, uniqueness, status/timestamp CHECK",
+    "Per-connection row lock serializes key/status with ingress",
+    "Concurrent two-connection duplicate: one receipt and one outbox event",
+    "Audit/receipt rollback when outbox append fails",
+    "Version conflict and terminal review; no HR/payroll business mutation",
+    "Separate revocable sensitive payload permission on existing API tokens",
+    "Module-specific realtime permission applies before every transmit",
+    "CSRF remains on user management and 120/IP/min webhook throttle tested"
+  ],
+  "limitations": [
+    "Not all 47 DJI modules ported",
+    "No outbound provider adapters/delivery attempt UI/retry/DLQ/replay/export or automatic domain application",
+    "New inbound signing protocol differs from original DJI payload-only HMAC and internal event_sink protocol",
+    "Connections list limited to 200; inbox paginated 25",
+    "No payload retention/redaction scheduler; production policy and proxy TLS/body/timeouts/WAF still needed",
+    "App-only request limit cannot prevent transport-level network DoS",
+    "No production deployment, external credential copying or GitHub push"
+  ]
+}

@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# Test the actual Dockerfile image: only the public MySQL CA is mounted, never source.
+require "open3"
+require "net/http"
+require "json"
+require "securerandom"
+Dir.chdir(File.expand_path("..", __dir__)) do
+  image = ARGV.fetch(0, "xinviec-hrm-web:latest")
+  capture = lambda do |*command|
+    output, status = Open3.capture2e(*command)
+    abort "Image smoke command failed: #{command.first(3).join(' ')}" unless status.success?
+    output.strip
+  end
+  mysql = capture.call("docker", "compose", "ps", "-q", "mysql")
+  network = JSON.parse(capture.call("docker", "inspect", "--format", "{{json .NetworkSettings.Networks}}", mysql)).keys.fetch(0)
+  ca = File.realpath("tmp/mysql-schema-client/ca.pem")
+  common = [ "--env-file", ".env", "--network", network, "--mount", "type=bind,src=#{ca},dst=/run/mysql-ca.pem,readonly", "-e", "DATABASE_SSL_CA=/run/mysql-ca.pem", "-e", "RAILS_ENV=test" ]
+  proof = capture.call("docker", "run", "--rm", *common, image, "ruby", "-rjson", "-e", <<~SOURCE)
+    abort "Runtime must be non-root" if Process.uid.zero?
+    abort "Missing SQL schema" unless File.file?("db/structure.sql")
+    abort "Legacy schema or private key/env in image" if %w[db/schema.rb .env config/master.key].any? { |file| File.exist?(file) }
+    abort "Credential key in image" unless Dir["config/credentials/*.key"].empty?
+    puts JSON.generate(uid: Process.uid, sql_schema: true, legacy_schema: false, private_env: false)
+  SOURCE
+  name = "hrm-image-smoke-#{SecureRandom.hex(5)}"
+  begin
+    capture.call("docker", "run", "--rm", "-d", "--name", name, *common, "-p", "127.0.0.1::3000", image, "bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "3000")
+    port = capture.call("docker", "port", name, "3000/tcp").split(":").last.to_i
+    ready = false
+    80.times do
+      begin
+        response = Net::HTTP.start("127.0.0.1", port, nil, open_timeout: 1, read_timeout: 2) { |http| http.get("/up") }
+        ready = response.code == "200"
+      rescue IOError, SystemCallError, Timeout::Error
+        # Bounded readiness wait, without printing potentially sensitive server logs.
+      end
+      break if ready
+      sleep 0.25
+    end
+    abort "Image did not become healthy" unless ready
+    { "/up" => "200", "/session/new" => "200", "/pay_runs" => "302" }.each do |path, expected|
+      response = Net::HTTP.start("127.0.0.1", port, nil, read_timeout: 3) { |http| http.get(path) }
+      abort "Image HTTP smoke failed at #{path}" unless response.code == expected
+    end
+    puts "Image HTTP smoke passed: /up 200, /session/new 200, /pay_runs 302."
+    puts proof
+    puts "Image ID: #{capture.call('docker', 'image', 'inspect', '--format', '{{.Id}}', image)}"
+  ensure
+    system("docker", "stop", name, out: File::NULL, err: File::NULL)
+  end
+end

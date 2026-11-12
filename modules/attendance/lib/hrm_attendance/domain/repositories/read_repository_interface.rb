@@ -5,6 +5,9 @@ module HrmAttendance
         def list(actor:, page: 1)
           raise NotImplementedError, "HrmAttendance::ReadRepositoryInterface##list"
         end
+        def period(actor:, from:, to:, page: 1)
+          raise NotImplementedError, "HrmAttendance::ReadRepositoryInterface#period"
+        end
         def find!(actor:, id:)
           raise NotImplementedError, "HrmAttendance::ReadRepositoryInterface##find!"
         end

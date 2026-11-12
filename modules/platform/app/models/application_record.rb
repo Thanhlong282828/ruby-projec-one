@@ -9,7 +9,7 @@ end
 
 
 
-#Ví dụ:
+# Ví dụ:
 # class Employee < ApplicationRecord
 # end
 
@@ -20,11 +20,11 @@ end
 # Employee.create(name: "Thanh")
 
 
-#primary_abstract_class
+# primary_abstract_class
 
-#Đây là điểm quan trọng nhất.
+# Đây là điểm quan trọng nhất.
 
-#Nó đánh dấu ApplicationRecord là lớp abstract chính của hệ thống Active Record.
+# Nó đánh dấu ApplicationRecord là lớp abstract chính của hệ thống Active Record.
 
 #    Ý nghĩa:
 #    - ApplicationRecord đóng vai trò lớp cha, không đại diện cho một bảng dữ liệu nghiệp vụ riêng.
@@ -87,32 +87,32 @@ end
 
 
 
-#Câu hỏi : primary_abstract_class có phải là thứ cung cấp khả năng find, where, create cho Model không ?
-#Không. primary_abstract_class không cung cấp các phương thức find, where, create.
+# Câu hỏi : primary_abstract_class có phải là thứ cung cấp khả năng find, where, create cho Model không ?
+# Không. primary_abstract_class không cung cấp các phương thức find, where, create.
 #
-#Các phương thức đó đến từ ActiveRecord::Base, tức ORM của Ruby on Rails.
+# Các phương thức đó đến từ ActiveRecord::Base, tức ORM của Ruby on Rails.
 #
-#Ví dụ:
-#class ApplicationRecord < ActiveRecord::Base
-#  primary_abstract_class
-#end
+# Ví dụ:
+#     class ApplicationRecord < ActiveRecord::Base
+#       primary_abstract_class
+#     end
 #
-#class Employee < ApplicationRecord
-#end
+#     class Employee < ApplicationRecord
+#     end
 #
-#Luồng kế thừa:
-#ActiveRecord::Base
-#    │
-#    │ Cung cấp find, where, create, update, destroy...
-#    ▼
-#ApplicationRecord
-#    │
-#    │ primary_abstract_class
-#    │ Đánh dấu lớp cha abstract chính
-#    ▼
-#Employee
-#    │
-#    ▼
-#Employee.find(1)
-#Employee.where(status: "active")
-#Employee.create(name: "Thanh")
+# Luồng kế thừa:
+#     ActiveRecord::Base
+#         │
+#         │ Cung cấp find, where, create, update, destroy...
+#         ▼
+#     ApplicationRecord
+#         │
+#         │ primary_abstract_class
+#         │ Đánh dấu lớp cha abstract chính
+#         ▼
+#     Employee
+#         │
+#         ▼
+#     Employee.find(1)
+#     Employee.where(status: "active")
+#     Employee.create(name: "Thanh")

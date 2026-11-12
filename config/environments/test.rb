@@ -8,6 +8,9 @@ Rails.application.configure do
 
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
+  # Test schema must be prepared with the migration role. Automatic app-user
+  # reload cannot create MySQL triggers with binary logging enabled.
+  config.active_record.maintain_test_schema = false
 
   # Eager loading loads your entire application. When running a single test locally,
   # this is usually not necessary, and can slow down your test suite. However, it's

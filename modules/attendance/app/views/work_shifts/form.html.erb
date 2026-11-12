@@ -1,0 +1,20 @@
+<div class="page-heading"><div><div class="eyebrow">ATTENDANCE</div><h1><%= @record.persisted? ? "Sửa ca làm việc." : "Tạo ca làm việc." %></h1></div><%= link_to "Danh sách ca →", work_shifts_path %></div>
+<div class="panel">
+  <% if @record.errors.any? %><div role="alert"><%= @record.errors.full_messages.to_sentence %></div><% end %>
+  <%= form_with model: @record do |form| %>
+    <%= form.hidden_field :lock_version %>
+    <div class="form-grid">
+      <div class="field"><%= form.label :code, "Mã ca" %><%= form.text_field :code, required: true, maxlength: 30 %></div>
+      <div class="field"><%= form.label :name, "Tên ca" %><%= form.text_field :name, required: true, maxlength: 255 %></div>
+      <div class="field"><%= form.label :start_time, "Bắt đầu" %><%= form.time_field :start_time, required: true %></div>
+      <div class="field"><%= form.label :end_time, "Kết thúc" %><%= form.time_field :end_time, required: true %></div>
+      <div class="field"><%= form.label :unpaid_break_minutes, "Nghỉ không tính công (phút)" %><%= form.number_field :unpaid_break_minutes, min: 0, required: true %></div>
+      <div class="field"><%= form.label :grace_in_minutes, "Ân hạn đi trễ (phút)" %><%= form.number_field :grace_in_minutes, min: 0, required: true %></div>
+      <div class="field"><%= form.label :grace_out_minutes, "Ân hạn về sớm (phút)" %><%= form.number_field :grace_out_minutes, min: 0, required: true %></div>
+      <div class="field"><%= form.label :overtime_threshold_minutes, "Ngưỡng ngoài ca (phút)" %><%= form.number_field :overtime_threshold_minutes, min: 0, required: true %></div>
+      <div class="field"><%= form.label :active, "Trạng thái" %><%= form.select :active, [["Đang dùng", true], ["Ngừng dùng", false]] %></div>
+    </div>
+    <p class="hint">Giờ kết thúc nhỏ hơn giờ bắt đầu là ca qua đêm. Không hỗ trợ ca đủ 24 giờ. Quy tắc mới không sửa công đã ghi nhận.</p>
+    <%= form.submit "Lưu ca làm việc" %>
+  <% end %>
+</div>

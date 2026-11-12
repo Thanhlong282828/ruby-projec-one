@@ -1,0 +1,58 @@
+{
+  "verified_on": "2026-11-12",
+  "feature": "multi-company identity memberships and company branches",
+  "database": {
+    "ruby_mysql_port": 13306,
+    "laravel_mysql_port": 3306,
+    "laravel_modified": false,
+    "development_migration": "completed",
+    "tls_identity_verified": true,
+    "untrusted_ca_rejected": true,
+    "required_triggers": [
+      "users_membership_insert_guard",
+      "users_membership_update_guard"
+    ],
+    "canonical_schema": "db/structure.sql"
+  },
+  "full_suite": {
+    "runs": 322,
+    "assertions": 1924,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "native_image_without_source_mount": true
+  },
+  "gates": {
+    "route_files": 13,
+    "controllers_and_concerns": 47,
+    "zeitwerk": "passed",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_audit": "no known vulnerabilities",
+    "advisory_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7"
+  },
+  "runtime": {
+    "health_http": 200,
+    "bindings": 38,
+    "permissions": 76,
+    "companies": 1,
+    "branches": 0,
+    "system_owner_identities": 1
+  },
+  "browser": {
+    "read_only_verified": [
+      "/system/companies",
+      "/system/companies/1",
+      "/my/companies",
+      "/organization/branches"
+    ],
+    "created_business_data": false,
+    "cross_company_switch": "covered by automated web/API tests; no real extra company created"
+  },
+  "limitations": [
+    "Company-wide RBAC; branch-level ABAC across ERP remains pending",
+    "No production cloud deployment or penetration-test certification",
+    "Local CI migration uses temporary root process; production needs separate migration credentials",
+    "Browser sessions share selected company among tabs"
+  ]
+}

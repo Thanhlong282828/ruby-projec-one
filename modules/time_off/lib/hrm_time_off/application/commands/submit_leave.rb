@@ -3,6 +3,7 @@ module HrmTimeOff
     module Commands
       class SubmitLeave < Hrm::UseCase
         def initialize(write: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface), workforce: Hrm::Container.resolve(HrmWorkforce::Domain::Repositories::ReadRepositoryInterface))
+          super()
           @write, @workforce = write, workforce
         end
         def call(actor:, employee_id:, attributes:)

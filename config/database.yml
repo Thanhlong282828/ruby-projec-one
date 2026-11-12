@@ -1,7 +1,13 @@
+<% local_ca = Rails.root.join("tmp/mysql-schema-client/ca.pem"); ca = ENV["DATABASE_SSL_CA"] || (File.file?(local_ca) ? local_ca.to_s : nil) %>
 default: &default
   adapter: mysql2
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+<% if ca %>
+  sslca: <%= ca.inspect %>
+  sslverify: true
+  ssl_mode: verify_identity
+<% end %>
   host: <%= ENV.fetch("DATABASE_HOST", "127.0.0.1") %>
   username: <%= ENV.fetch("DATABASE_USERNAME", "ruby") %>
   password: <%= ENV.fetch("DATABASE_PASSWORD") %>

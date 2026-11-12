@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+case "${1:-}" in
+  test|development) migration_environment=$1 ;;
+  *) printf '%s\n' 'Usage: bin/migrate-docker test|development (local/CI only)' >&2; exit 2 ;;
+esac
+# Short-lived local/CI migration process. Never grant SUPER to runtime or relax
+# log_bin_trust_function_creators. Production needs its separate migration role.
+docker compose run --rm -e "RAILS_ENV=$migration_environment" web sh -c 'DATABASE_USERNAME=root DATABASE_PASSWORD="$MYSQL_ROOT_PASSWORD" bundle exec rails db:prepare db:verify_tenant_guards'

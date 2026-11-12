@@ -3,6 +3,7 @@ module HrmRecruitment
     module Commands
       class CreateCandidate < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:, attributes:)

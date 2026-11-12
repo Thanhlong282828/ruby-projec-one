@@ -1,0 +1,22 @@
+<div class="page-heading">
+  <div><div class="eyebrow">ONBOARDING</div><h1>Tạo hồ sơ tiếp nhận</h1></div>
+  <%= link_to "← Board", "/onboarding/cases" %>
+</div>
+
+<div class="panel">
+  <%= form_with url: "/onboarding/cases", scope: :onboarding_case do |form| %>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :employee_id, "Nhân viên" %>
+        <%= form.select :employee_id, @employees.map { |employee| [employee.full_name, employee.id] },
+                        {prompt: "Chọn nhân viên"}, required: true %>
+      </div>
+      <div class="field">
+        <%= form.label :start_date, "Ngày bắt đầu" %>
+        <%= form.date_field :start_date, required: true %>
+      </div>
+    </div>
+    <p class="hint">Checklist khởi tạo ở máy chủ. Mỗi nhân viên có một hồ sơ cho cùng ngày bắt đầu. Không tự cấp tài khoản hoặc thay đổi quyền truy cập.</p>
+    <div class="form-actions"><%= form.submit "Tạo hồ sơ" %></div>
+  <% end %>
+</div>

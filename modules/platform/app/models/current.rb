@@ -55,13 +55,13 @@ end   # Đây không phải cột database, cũng không phải quan hệ belong
 # 3. Current.user khác current_user thế nào?
 #  current_user	                                        Current.user
 #  Thường là phương thức trong Controller       	Thuộc tính ngữ cảnh của Rails
-#  Lấy user từ Session/Token	                    Chứa user đã được gán                        <
+#  Lấy user từ Session/Token	                    Chứa user đã được gán                              <
 #  Gắn với logic xác thực                         	Không tự xác thực
-#  Gọi current_user trong Controller	            Có thể đọc Current.user ở nhiều lớp
+#  Gọi current_user trong Controller	            Có thể đọc Current.user ở nhiều lớp                <
 
 # Ví dụ:
 #       # Controller
-#       Current.user = current_user
+#       Current.user = current_user          <
 
 #       # Service
 #       actor = Current.user

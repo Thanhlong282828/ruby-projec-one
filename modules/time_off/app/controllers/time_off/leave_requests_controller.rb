@@ -10,11 +10,11 @@ module TimeOff
     def create
       attributes = HrmTimeOff::Application::Requests::LeaveRequestParameters.read(params)
       @request = HrmTimeOff::Application::Commands::SubmitLeave.new.call(actor: current_user, employee_id: attributes.delete(:employee_id), attributes: attributes)
-      redirect_to leave_requests_path, notice: "Đã gửi đơn nghỉ phép."
+      redirect_to leave_requests_path, notice: I18n.t("hrm_quality.messages.da_gui_don_nghi_phep")
     rescue ActiveRecord::RecordInvalid => error
       @request = error.record
       load_employees
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
     def approve = review("approved")
     def reject = review("rejected")
@@ -25,7 +25,7 @@ module TimeOff
     def review(decision)
       request = HrmTimeOff::Application::Queries::FindLeaveRequest.new.call(actor: current_user, id: params[:id])
       HrmTimeOff::Application::Commands::ReviewLeave.new.call(request: request, reviewer: current_user, decision: decision)
-      redirect_to leave_requests_path, notice: "Đã xử lý đơn."
+      redirect_to leave_requests_path, notice: I18n.t("hrm_quality.messages.da_xu_ly_don")
     rescue Review::InvalidTransition => error
       redirect_to leave_requests_path, alert: error.message
     end

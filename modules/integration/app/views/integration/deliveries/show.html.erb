@@ -1,0 +1,11 @@
+<% if @delivery[:record].payroll_export_id %><p><%= link_to "Mở snapshot bảng lương nguồn →", "/payroll/exports/#{@delivery[:record].payroll_export_id}" %></p><% end %>
+<% record = @delivery[:record] %>
+<div class="page-heading"><div><div class="eyebrow">ERP / OUTBOUND</div><h1>Chi tiết lần gửi #<%= record.id %></h1><p class="subtitle"><%= record.event_id %></p></div><%= link_to "← Hàng đợi", "/integration/outbound", class: "button secondary" %></div>
+<div class="panel"><p>Kết nối: <%= record.integration_connection.code %> · Đích: <%= record.target_key %></p><p>Trạng thái: <strong><%= delivery_status_label(record.status) %></strong> · Số lần thử: <%= record.attempt_count %> · Số lần xếp lại: <%= record.replay_count %></p><p>Lịch gửi tiếp: <%= record.available_at %></p>
+<% if policy(record).retry? && %w[retry_wait dead_letter blocked].include?(record.status) && record.replay_count < 10 %><%= button_to "Retry / replay giữ nguyên Event ID", "/integration/outbound/#{record.id}/retry", params: {lock_version: record.lock_version}, class: "button" %><% end %>
+<% if policy(record).payload? %><%= link_to "Xem nội dung nhạy cảm", "/integration/outbound/#{record.id}/payload" %><% end %>
+<% if @delivery[:body] %><pre><%= @delivery[:body] %></pre><% end %></div>
+<div class="panel"><h2>Lịch sử từng lần gửi</h2><% if @delivery[:attempts].empty? %><p class="empty">Chưa có lần gửi; scheduler kiểm tra mỗi phút.</p><% else %><table><thead><tr><th>Lần</th><th>Kết quả</th><th>HTTP</th><th>Bắt đầu</th><th>Hoàn tất</th></tr></thead><tbody><% @delivery[:attempts].each do |attempt| %><tr><td><%= attempt.sequence %></td><td><%= attempt.outcome %></td><td><%= attempt.http_status || "—" %></td><td><%= attempt.started_at %></td><td><%= attempt.completed_at %></td></tr><% end %></tbody></table><% end %></div>
+<p class="hint">Không lưu nội dung response từ đối tác. Replay không xóa lịch sử và không tạo Event ID mới.</p>
+
+<% if policy([:integration, AuditLog]).index? %><p><%= link_to "Xem nhật ký yêu cầu gửi →", "/integration/audit?resource=outbound&record_id=#{record.id}" %></p><% end %>

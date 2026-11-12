@@ -1,0 +1,14 @@
+# CI uses packaged application bytes, avoiding host UID bind-mount ownership.
+# Only the public MySQL CA prepared by bin/prepare-mysql-tls is mounted.
+services:
+  web:
+    volumes: !override
+      - ./tmp/mysql-schema-client/ca.pem:/run/mysql-ca.pem:ro
+    environment:
+      DATABASE_SSL_CA: /run/mysql-ca.pem
+    ports: !reset []
+  worker:
+    volumes: !override
+      - ./tmp/mysql-schema-client/ca.pem:/run/mysql-ca.pem:ro
+    environment:
+      DATABASE_SSL_CA: /run/mysql-ca.pem

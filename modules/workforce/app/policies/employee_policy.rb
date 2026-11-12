@@ -5,7 +5,7 @@ class EmployeePolicy < ApplicationPolicy
   def update? = allowed?("employees.update")
   def destroy? = allowed?("employees.delete")
   def sensitive? = allowed?("employees.sensitive")
-  class Scope < Scope
+  class Scope < ApplicationPolicy::Scope
     def resolve
       return tenant if user&.allowed?("employees.read_all")
       user&.allowed?("employees.read") ? tenant.where(user_id: user.id) : scope.none

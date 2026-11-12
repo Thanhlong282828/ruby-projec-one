@@ -1,0 +1,12 @@
+<div class="page-heading"><div><div class="eyebrow">ATTENDANCE PREVIEW</div><h1>Xem thử theo ca.</h1><p class="subtitle">Chỉ mô phỏng, không ghi công hoặc tính lương.</p></div><%= link_to "Về cấu hình ca →", work_shift_path(@preview[:shift]["id"]) %></div>
+<div class="panel">
+  <p>Ca nguồn: <%= link_to @preview[:shift]["code"], work_shift_path(@preview[:shift]["id"]) %> · <%= link_to "Mở chấm công ngày #{@preview[:work_date]} →", @preview[:attendance_path] %></p>
+  <p>Dự kiến: <%= @preview[:scheduled_start].strftime("%d/%m %H:%M") %> – <%= @preview[:scheduled_end].strftime("%d/%m %H:%M") %> (Asia/Ho_Chi_Minh).</p>
+  <dl class="details">
+    <% { scheduled_minutes: "Độ dài ca", planned_work_minutes: "Phút dự kiến sau nghỉ", worked_minutes: "Phút ghi nhận sau nghỉ", late_minutes: "Đi trễ sau ân hạn", early_minutes: "Về sớm sau ân hạn", outside_shift_minutes: "Ngoài ca sau ngưỡng" }.each do |key, label| %>
+      <dt><%= label %></dt><dd><%= @preview[:result][key] %> phút</dd>
+    <% end %>
+    <dt>Kết quả</dt><dd><%= { "incomplete" => "Thiếu lượt vào/ra", "present" => "Đủ lượt, không trễ/sớm", "late" => "Đi trễ", "early_leave" => "Về sớm", "late_and_early" => "Đi trễ và về sớm" }.fetch(@preview[:result][:status]) %></dd>
+  </dl>
+  <p class="hint">Giờ nghỉ là định mức ca, chưa lấy từ lượt nghỉ thực tế. Phút ngoài ca chưa được duyệt tăng ca; ca chưa đủ lượt không được cộng phút ghi nhận.</p>
+</div>

@@ -13,7 +13,7 @@ class ApiTest < ActionDispatch::IntegrationTest
     headers = token_headers(own.user)
     get "/api/v1/employees", headers: headers
     assert_response :success
-    assert_equal [own.id], response.parsed_body["data"].map { |item| item["id"] }
+    assert_equal([ own.id ], response.parsed_body["data"].pluck("id"))
     assert_not response.parsed_body["data"].first.key?("salary_cents")
     get "/api/v1/employees/#{other.id}", headers: headers
     assert_response :not_found

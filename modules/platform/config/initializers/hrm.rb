@@ -13,7 +13,7 @@ if ENV["SMTP_USERNAME"].present?
 end
 Rails.application.config.action_mailer.raise_delivery_errors = true
 Rails.application.config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "localhost:3100") }
-Rails.application.config.filter_parameters += [:password, :token, :authorization, :bank_account, :national_id, :salary_cents]
+Rails.application.config.filter_parameters += [ :password, :token, :authorization, :bank_account, :national_id, :salary_cents ]
 # Đoạn code Ruby on Rails này đang cấu hình 6 thành phần quan trọng của Backend HRM:
 # 1. Sidekiq: Xử lý Job chạy nền.
 # 2. Redis Cache: Lưu dữ liệu cache.

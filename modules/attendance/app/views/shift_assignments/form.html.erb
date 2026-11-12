@@ -1,0 +1,49 @@
+<% record = @data[:record] %>
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">ATTENDANCE</div>
+    <h1><%= record.persisted? ? "Kết thúc phân ca." : "Phân ca nhân viên." %></h1>
+  </div>
+  <%= link_to "Danh sách phân ca →", shift_assignments_path %>
+</div>
+<div class="panel">
+  <% if record.errors.any? %>
+    <p role="alert"><%= record.errors.full_messages.to_sentence %></p>
+  <% end %>
+  <%= form_with model: record, scope: :shift_assignment,
+      url: record.persisted? ? shift_assignment_path(record) : shift_assignments_path do |form| %>
+    <%= form.hidden_field :lock_version %>
+    <% if record.persisted? %>
+      <p><%= @data[:row][:employee_name] %> · <%= @data[:row][:shift_code] %> · hiệu lực từ <%= record.effective_from %></p>
+    <% else %>
+      <% if @data[:options][:shifts].empty? %>
+        <p class="hint">Chưa có ca đang dùng trong phạm vi bạn được chọn.
+          <% if policy(WorkShift).index? %><%= link_to "Mở ca làm việc để cấu hình →", work_shifts_path %><% end %>
+        </p>
+      <% end %>
+      <% if @data[:options][:employees].empty? %>
+        <p class="hint">Chưa có nhân viên trong phạm vi bạn được chọn.</p>
+      <% end %>
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :employee_id, "Nhân viên" %>
+          <%= form.select :employee_id, @data[:options][:employees], {prompt: "Chọn nhân viên"}, required: true %>
+        </div>
+        <div class="field">
+          <%= form.label :work_shift_id, "Ca làm việc" %>
+          <%= form.select :work_shift_id, @data[:options][:shifts], {prompt: "Chọn ca"}, required: true %>
+        </div>
+        <div class="field">
+          <%= form.label :effective_from, "Hiệu lực từ" %>
+          <%= form.date_field :effective_from, required: true %>
+        </div>
+      </div>
+    <% end %>
+    <div class="field">
+      <%= form.label :effective_to, "Hiệu lực đến (để trống nếu chưa kết thúc)" %>
+      <%= form.date_field :effective_to %>
+    </div>
+    <p class="hint">Hai đầu ngày đều thuộc hiệu lực. Không được trùng lịch. Muốn đổi ca, kết thúc lịch cũ rồi tạo lịch mới. Danh sách chọn tối đa 200 mục được phép xem.</p>
+    <%= form.submit "Lưu phân ca" %>
+  <% end %>
+</div>

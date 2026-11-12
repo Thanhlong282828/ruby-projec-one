@@ -1,0 +1,17 @@
+<div class="page-heading"><div><div class="eyebrow">ERP / PAYROLL EXPORTS</div><h1>Tệp xuất bảng lương</h1><p class="subtitle">Bản đối soát từ kỳ lương đã chốt, kiểm tra toàn vẹn trước khi tải.</p></div><%= link_to "← Bảng lương", "/pay_runs", class: "button secondary" %></div>
+<div class="panel"><%= form_with url: "/payroll/exports", method: :get do |form| %>
+  <div class="field"><%= form.label :period, "Lọc theo kỳ lương" %><%= form.month_field :period, value: @workspace[:period] %></div>
+  <div class="form-actions"><%= form.submit "Lọc danh sách", class: "button" %><%= link_to "Tất cả kỳ", "/payroll/exports" %></div>
+<% end %></div>
+<p class="hint"><%= @workspace[:count] %> tệp theo bộ lọc · Công ty hiện tại · 25 tệp mỗi lượt</p>
+<div class="panel"><div class="panel-heading"><h2>Snapshot đã lưu</h2><span class="hint">Một snapshot phiên bản 1 cho mỗi kỳ lương</span></div>
+<% if @workspace[:records].empty? %><p class="empty">Chưa có tệp xuất phù hợp.</p><% else %>
+<table><thead><tr><th>Kỳ lương</th><th>Nhân viên</th><th>Kích thước</th><th>Ngày tạo</th><th></th></tr></thead><tbody>
+<% @workspace[:records].each do |record| %><tr><td><%= record.period.strftime("%m/%Y") %></td><td><%= record.employee_count %></td><td><%= number_to_human_size(record.byte_size) %></td><td><%= record.created_at %></td><td><%= link_to "Chi tiết & lịch sử tải →", "/payroll/exports/#{record.id}" %></td></tr><% end %>
+</tbody></table><% end %>
+<div class="pagination"><% if @workspace[:before] %><%= link_to "Về đầu", "/payroll/exports?#{ {period: @workspace[:period]}.compact.to_query}" %><% end %><% if @workspace[:next_before] %><%= link_to "Tệp cũ hơn →", "/payroll/exports?#{ {period: @workspace[:period], before: @workspace[:next_before]}.compact.to_query}" %><% end %></div></div>
+<% if policy(PayrollExport).create? %><div class="panel"><h2>Tạo tệp từ bảng lương</h2>
+<% if @workspace[:eligible_runs].empty? %><p class="empty">Chưa có kỳ lương đã chốt chưa được xuất.</p><% else %>
+<%= form_with url: "/payroll/exports" do |form| %><div class="field"><%= form.label :pay_run_id, "Kỳ lương đã chốt (100 kỳ mới nhất)" %><%= form.select :pay_run_id, @workspace[:eligible_runs].map { |id, period| [period.strftime("%m/%Y"), id] } %></div><div class="form-actions"><%= form.submit "Tạo snapshot CSV", class: "button" %></div><% end %>
+<% end %><p class="hint">Tệp giữ số liệu tại lúc tạo; không tự thay đổi theo hồ sơ hoặc dữ liệu nguồn sau đó.</p></div><% end %>
+<p class="hint">Tệp nội bộ để đối soát, chưa phải bút toán kế toán, lệnh thanh toán hoặc tệp nộp cơ quan nhà nước.</p>

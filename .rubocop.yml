@@ -1,0 +1,45 @@
+inherit_mode:
+  merge:
+    - Include
+
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+plugins:
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  Include:
+    - bin/audit-env-features
+    - bin/brakeman
+    - bin/bundler-audit
+    - bin/check-architecture
+    - bin/check-routes
+    - bin/dev
+    - bin/typecheck
+    - bin/smoke-image
+    - bin/verify-test-schema
+    - bin/check-secrets
+    - bin/check-rbi
+    - bin/quality
+    - bin/rails
+    - bin/rake
+    - bin/rubocop
+    - bin/setup
+    - bin/setup-docker
+  Exclude:
+    - sorbet/rbi/**/*
+    - vendor/**/*
+    - tmp/**/*
+    - log/**/*
+
+Lint:
+  Enabled: true
+Security:
+  Enabled: true
+Rails:
+  Enabled: true
+Performance:
+  Enabled: true

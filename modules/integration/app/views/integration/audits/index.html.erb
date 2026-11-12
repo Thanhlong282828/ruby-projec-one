@@ -1,0 +1,54 @@
+<%= render "integration/shared/navigation" %>
+<div class="page-heading">
+  <div><div class="eyebrow">ERP / INTEGRATION HUB</div><h1>Nhật ký tích hợp</h1><p class="subtitle">Theo dõi thay đổi và lần gửi trong công ty của bạn.</p></div>
+  <%= link_to "← Tích hợp & webhook", "/integration", class: "button secondary" %>
+</div>
+<div class="panel">
+  <%= form_with url: "/integration/audit", method: :get do |form| %>
+    <div class="form-grid">
+      <div class="field"><%= form.label :from, "Từ ngày" %><%= form.date_field :from, value: @workspace[:filters][:from], required: true %></div>
+      <div class="field"><%= form.label :to, "Đến ngày" %><%= form.date_field :to, value: @workspace[:filters][:to], required: true %></div>
+      <div class="field"><%= form.label :resource, "Loại bản ghi" %><%= form.select :resource, [["Tất cả", "all"], ["Kết nối", "connection"], ["Sự kiện nhận", "inbound"], ["Yêu cầu gửi", "outbound"], ["Lần thử gửi", "attempt"]], selected: @workspace[:filters][:resource] %></div>
+      <div class="field"><%= form.label :operation, "Hành động" %><%= form.select :operation, [["Tất cả", "all"], ["Tạo mới", "created"], ["Cập nhật", "updated"], ["Xóa", "deleted"]], selected: @workspace[:filters][:operation] %></div>
+      <div class="field"><%= form.label :record_id, "ID bản ghi (chọn loại trước)" %><%= form.number_field :record_id, min: 1, value: @workspace[:filters][:record_id] %></div>
+    </div>
+    <div class="form-actions"><%= form.submit "Lọc nhật ký", class: "button" %><%= link_to "30 ngày gần nhất", "/integration/audit" %></div>
+  <% end %>
+  <p class="hint">Tối đa 93 ngày mỗi lần lọc. Múi giờ: <%= @workspace[:timezone] %>. Chỉ hiển thị tên trường thay đổi; nội dung webhook và khóa bí mật được bảo vệ.</p>
+</div>
+<div class="stats">
+  <% {"created" => "Tạo mới", "updated" => "Cập nhật", "deleted" => "Xóa"}.each do |action, label| %>
+    <%= link_to integration_audit_url(@workspace[:filters], operation: action), class: "stat metric-card" do %>
+      <small><%= label %></small><strong><%= @workspace[:counts].fetch(action, 0) %></strong><span>Xem nhật ký nguồn ↗</span>
+    <% end %>
+  <% end %>
+</div>
+<p class="hint">Số liệu theo khoảng ngày, loại và ID đã chọn; mỗi card mở đúng hành động tương ứng. Dữ liệu đọc trực tiếp, không dùng cache.</p>
+<div class="panel">
+  <div class="panel-heading"><h2>Dòng thời gian</h2><span class="hint">Mới nhất trước · 25 mục mỗi lượt</span></div>
+  <% if @workspace[:records].empty? %>
+    <p class="empty">Chưa có nhật ký phù hợp với bộ lọc.</p>
+  <% else %>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Thời điểm</th><th>Bản ghi</th><th>Hành động / người thực hiện</th><th>Trường thay đổi / kết quả gửi</th><th>Nguồn</th></tr></thead>
+      <tbody>
+        <% @workspace[:records].each do |entry| %>
+          <tr>
+            <td><%= entry[:occurred_at] %><br><small>Audit #<%= entry[:id] %></small></td>
+            <td><%= integration_audit_resource(entry[:record_type]) %> #<%= entry[:record_id] %></td>
+            <td><%= integration_audit_action(entry[:action]) %><br><small><%= entry[:actor_id] ? "Tài khoản ##{entry[:actor_id]}" : "Hệ thống / tác vụ nền" %></small></td>
+            <td>
+              <%= entry[:changed_fields].join(", ") %>
+              <% if entry[:attempt] %><br><small>Lần <%= entry[:attempt][:sequence] %> · <%= entry[:attempt][:outcome] %> · HTTP <%= entry[:attempt][:http_status] || "—" %></small><% end %>
+            </td>
+            <td><% if entry[:source_url] %><%= link_to "Mở dữ liệu →", entry[:source_url] %><% else %><span class="hint">Nguồn không còn tồn tại</span><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
+  <div class="pagination">
+    <% if @workspace[:before] %><%= link_to "Về đầu danh sách", integration_audit_url(@workspace[:filters]) %><% end %>
+    <% if @workspace[:next_before] %><%= link_to "Nhật ký cũ hơn →", integration_audit_url(@workspace[:filters], before: @workspace[:next_before]) %><% end %>
+  </div>
+</div>

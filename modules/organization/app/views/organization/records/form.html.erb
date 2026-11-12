@@ -1,0 +1,37 @@
+<% base_path = HrmOrganization::Domain::Resources.path(request.path_parameters[:resource]) %>
+<% record = @data[:record] %>
+<h1><%= record.persisted? ? "Cập nhật" : "Tạo" %> <%= @definition[:label].downcase %></h1>
+<%= render "shared/errors", record: record %>
+<div class="panel">
+  <%= form_with model: record, scope: :record, url: record.persisted? ? "#{base_path}/#{record.id}" : base_path do |form| %>
+    <div class="form-grid">
+      <% @definition[:fields].each do |field, (label, kind)| %>
+        <div class="field">
+          <%= form.label field, label %>
+          <% if @data[:options].key?(kind) %>
+            <%= form.select field, @data[:options][kind], include_blank: true %>
+          <% elsif kind == :boolean %>
+            <%= form.select field, [["Không", false], ["Có", true]] %>
+          <% elsif kind == :date %>
+            <%= form.date_field field %>
+          <% elsif [:integer, :money].include?(kind) %>
+            <%= form.number_field field, min: 0, step: kind == :integer ? 1 : "0.01" %>
+          <% else %>
+            <%= form.text_field field %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="form-actions">
+      <%= form.submit "Lưu" %>
+      <%= link_to "Quay lại", base_path, class: "button secondary" %>
+    </div>
+  <% end %>
+</div>
+<p class="hint">
+  <% if request.path_parameters[:resource] == "employee_assignments" %>
+    Chọn nhân viên và vị trí trong cùng công ty. Vị trí phải thuộc đúng đơn vị tổ chức đã chọn.
+  <% else %>
+    Thông tin được lưu cho công ty <%= current_user.company.name %>.
+  <% end %>
+</p>

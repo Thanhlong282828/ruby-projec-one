@@ -3,6 +3,7 @@ module HrmWorkforce
     module Commands
       class CreateEmployee < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:, attributes:)

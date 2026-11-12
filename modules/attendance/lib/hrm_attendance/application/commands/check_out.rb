@@ -3,6 +3,7 @@ module HrmAttendance
     module Commands
       class CheckOut < Hrm::UseCase
         def initialize(read: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface), write: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface))
+          super()
           @read, @write = read, write
         end
         def call(actor:, id:, at: Time.current)

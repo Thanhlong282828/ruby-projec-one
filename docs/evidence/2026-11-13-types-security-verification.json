@@ -1,0 +1,324 @@
+{
+  "date": "2026-11-13",
+  "scope": "Local uncommitted source and canonical Dockerfile image; test DB/sample data only",
+  "git": {
+    "head": "9b9c014facc2f4c2cbcf423d7d7685eef429f408",
+    "dirty": true,
+    "commit_created": false,
+    "pushed": false,
+    "github_actions_for_this_change": "not run / not certified"
+  },
+  "A": {
+    "baseline": {
+      "tests": 342,
+      "assertions": 2143,
+      "rubocop_files": 539,
+      "offenses": 0
+    },
+    "versions": {
+      "ruby": "3.4.12",
+      "rails": "8.1.4.1",
+      "mysql": "8.4",
+      "sorbet": "0.6.13672",
+      "tapioca": "0.20.0"
+    },
+    "strict_files": [
+      "modules/payroll/lib/hrm_payroll/application/commands/finalize_pay_run.rb",
+      "modules/payroll/lib/hrm_payroll/application/queries/list_payslips.rb",
+      "modules/payroll/lib/hrm_payroll/application/queries/reconcile_pay_run.rb",
+      "modules/payroll/lib/hrm_payroll/domain/reconciliation_result.rb",
+      "modules/payroll/lib/hrm_payroll/domain/repositories/read_repository_interface.rb",
+      "modules/payroll/lib/hrm_payroll/domain/repositories/write_repository_interface.rb",
+      "modules/payroll/lib/hrm_payroll/domain/snapshot.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_read_repository.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_write_repository.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/payroll_reconciliation.rb"
+    ],
+    "gem_rbi": 106,
+    "dsl_rbi": 142,
+    "annotations": 15,
+    "shim_files": 1,
+    "todo_stubs": false,
+    "negative_probe": {
+      "contract": "WriteRepositoryInterface.finalize!",
+      "error": 7002,
+      "temporary_file_removed": true
+    },
+    "dynamic_boundaries": [
+      "string-based DI resolution",
+      "Pundit/materialized pagination",
+      "ActiveRecord JSON deserialization",
+      "generated library APIs"
+    ],
+    "nil_behavior_regression": "missing actors still raise Pundit; optional page/snapshots retain nil behavior",
+    "changed_files": [
+      "Gemfile",
+      "Gemfile.lock",
+      "modules/payroll/hrm_payroll.gemspec",
+      ".rubocop.yml",
+      "sorbet/config",
+      "sorbet/tapioca/require.rb",
+      "sorbet/tapioca/config.yml",
+      "sorbet/rbi/ (generated plus documented Bundler shim)",
+      "modules/payroll/lib/hrm_payroll/application/commands/finalize_pay_run.rb",
+      "modules/payroll/lib/hrm_payroll/application/queries/list_payslips.rb",
+      "modules/payroll/lib/hrm_payroll/application/queries/reconcile_pay_run.rb",
+      "modules/payroll/lib/hrm_payroll/domain/reconciliation_result.rb",
+      "modules/payroll/lib/hrm_payroll/domain/repositories/read_repository_interface.rb",
+      "modules/payroll/lib/hrm_payroll/domain/repositories/write_repository_interface.rb",
+      "modules/payroll/lib/hrm_payroll/domain/snapshot.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_read_repository.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_write_repository.rb",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/payroll_reconciliation.rb",
+      "modules/attendance/app/policies/attendance_policy.rb",
+      "modules/attendance/app/policies/employee_shift_assignment_policy.rb",
+      "modules/attendance/app/policies/work_shift_policy.rb",
+      "modules/audit/app/policies/audit_log_policy.rb",
+      "modules/integration/app/policies/integration_connection_policy.rb",
+      "modules/integration/app/policies/integration_delivery_policy.rb",
+      "modules/integration/app/policies/integration_webhook_policy.rb",
+      "modules/onboarding/app/policies/onboarding_case_policy.rb",
+      "modules/organization/app/policies/cost_center_policy.rb",
+      "modules/organization/app/policies/employee_assignment_policy.rb",
+      "modules/organization/app/policies/job_position_policy.rb",
+      "modules/organization/app/policies/organization_unit_policy.rb",
+      "modules/payroll/app/policies/pay_run_policy.rb",
+      "modules/payroll/app/policies/payroll_export_policy.rb",
+      "modules/recruitment/app/policies/candidate_policy.rb",
+      "modules/time_off/app/policies/leave_request_policy.rb",
+      "modules/workforce/app/policies/department_policy.rb",
+      "modules/workforce/app/policies/employee_policy.rb"
+    ]
+  },
+  "B": {
+    "engines": 12,
+    "bindings": 38,
+    "controller_files": 48,
+    "architecture_negative_tests": [
+      "controller repository/container bypass",
+      "missing/cross-owned provider binding",
+      "Payroll to Leave Infrastructure or undeclared IAM contract"
+    ],
+    "schema": {
+      "fresh_sql_load": true,
+      "definition_comparison": true,
+      "definition_sha256": "e8767887ae49a19c8aa8bcbaa98e0bfe55b0fb277613c2456e95e6ad1dc399cd",
+      "foreign_keys": 75,
+      "checks": 19,
+      "primary_keys": 34,
+      "unique_constraints": 45,
+      "index_column_entries": 232,
+      "migration_versions": 17,
+      "membership_triggers": 2,
+      "disposable_schema_removed": true
+    },
+    "new_migration": false,
+    "historical_upgrade": "not independently verified: suitable historical image unavailable; no business dump imported",
+    "preserved_policy": [
+      "open shifts and pending leave are warnings",
+      "OT/tax/deduction formulas unchanged"
+    ],
+    "changed_files": [
+      "bin/check-architecture",
+      "config/engine_boundaries.yml",
+      "bin/verify-test-schema",
+      "modules/platform/test/application/engine_bindings_test.rb",
+      "test/cli/architecture_gate_test.rb",
+      "modules/payroll/test/models/payroll_snapshot_regression_test.rb"
+    ]
+  },
+  "C": {
+    "fixed_bug": "reconciliation retained revoked leave.read_all under an outer query cache; repository now performs uncached source authorization/read",
+    "regressions": [
+      "cached source-grant revocation",
+      "CSV grant revocation while waiting on artifact lock",
+      "audit failure rolls back closing status/snapshot/outbox",
+      "nil actor and optional projections",
+      "cold snapshot type autoload",
+      "private configuration inventory before content reads"
+    ],
+    "existing_coverage_retained": [
+      "concurrent leave approval under REPEATABLE READ",
+      "concurrent closing and grant revocation",
+      "immutable identity/salary snapshots and sealed CSV",
+      "cross-company web/API/CSV denial",
+      "live Cable permission/session/source rechecks",
+      "sensitive delivery worker source-grant checks",
+      "HMAC validation/idempotency/retry/outbox contracts"
+    ],
+    "browser": {
+      "environment": "hrm_test at loopback127.0.0.1:3311, then server and two QA companies removed",
+      "company_A": {
+        "payslips": 2,
+        "net_vnd": 40000000,
+        "attendance_closed": 1,
+        "approved_leave_days": 1,
+        "csv_downloaded": true
+      },
+      "company_B": {
+        "payslips": 2,
+        "net_vnd": 60000000,
+        "attendance_closed": 1,
+        "approved_leave_days": 1
+      },
+      "cross_company_pay_run": "B could not open A run",
+      "keyboard": "Tab/Enter login and actions; visible solid outline observed",
+      "narrow": {
+        "width": 390,
+        "document_scroll_width": 390,
+        "pages": [
+          "attendance",
+          "leave",
+          "payroll"
+        ],
+        "payroll_table": "scrolls within auto-overflow panel"
+      },
+      "screenshot": "2026-11-13-company-b-finalized.png"
+    },
+    "queries": {
+      "row_counts": [
+        1,
+        20
+      ],
+      "employees": [
+        9,
+        9
+      ],
+      "reconciliation": [
+        20,
+        20
+      ],
+      "csv_creation": [
+        49,
+        49
+      ],
+      "ceilings": {
+        "employees": 11,
+        "reconciliation": 22,
+        "csv_creation": 52
+      },
+      "max_growth": 1,
+      "exclusions": "cached/schema/transaction-control SQL; not a latency/load benchmark"
+    },
+    "changed_files": [
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_read_repository.rb",
+      "modules/payroll/test/models/concurrent_payroll_close_test.rb",
+      "modules/payroll/test/performance/erp_query_budget_test.rb",
+      "test/cli/payroll_type_loading_test.rb",
+      "test/cli/docker_environment_test.rb",
+      "test/cli/secret_inventory_test.rb",
+      "bin/check-secrets",
+      "bin/setup-docker",
+      ".env.example",
+      ".gitleaks.toml"
+    ]
+  },
+  "D": {
+    "source_tests": {
+      "runs": 355,
+      "assertions": 2311,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "seed": 51915
+    },
+    "image_tests": {
+      "runs": 355,
+      "assertions": 2311,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "seed": 51915
+    },
+    "rubocop": {
+      "files": 554,
+      "offenses": 0
+    },
+    "routes": 13,
+    "typecheck": "pass including negative probe",
+    "rbi": "gem inventory, DSL drift, no duplicate shims passed",
+    "autoload": "pass",
+    "brakeman": {
+      "controllers": 47,
+      "models": 34,
+      "templates": 67,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "known_vulnerabilities": 0,
+      "advisories": 1359,
+      "advisory_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7"
+    },
+    "gitleaks": {
+      "version": "8.30.1",
+      "findings_after_verified_public_example_exception": 0,
+      "negative_probe_and_redaction": "pass",
+      "scope": "publishable working tree including untracked source; ignored private env/keys/backups not read; no full Git history claim",
+      "private_path_inventory_regression": "Force-added unreadable dummy .env rejected by filename before reading contents; 7 assertions",
+      "probe_uses_repository_config": true,
+      "verbose_probe_confirms_REDACTED": true
+    },
+    "actionlint": {
+      "version": "1.7.7",
+      "findings": 0
+    },
+    "internal_receiver_tests": 8,
+    "image": {
+      "id": "sha256:9fe48b167ddf1a088f7cbf8c6750bdb6abdccac0c4ef109d914a207fbcf3a432",
+      "source_mounted": false,
+      "public_ca_only": true,
+      "uid": 1000,
+      "structure_sql": true,
+      "legacy_schema_rb": false,
+      "http": {
+        "/up": 200,
+        "/session/new": 200,
+        "/pay_runs": 302
+      },
+      "compared_app_files": 926,
+      "mismatches": [],
+      "manifest_sha256": "a1884f1bab99c85da0a728abeba48456a3f6d6260ebd10f1026e6039543922be",
+      "private_config_files_absent": true
+    },
+    "changed_files": [
+      "Dockerfile",
+      ".dockerignore",
+      "bin/quality",
+      "bin/typecheck",
+      "bin/check-rbi",
+      "bin/smoke-image",
+      ".github/workflows/ci.yml",
+      "AGENTS.md",
+      "docs/QUALITY.md",
+      "docs/ARCHITECTURE.md",
+      "docs/VERIFICATION.md",
+      "docs/evidence/2026-11-13-types-security-verification.json",
+      "docs/evidence/2026-11-13-company-b-finalized.png"
+    ],
+    "worker_image": {
+      "id": "sha256:107cca3e8d85ce0a3dd883f168f9edb15fa96b2c72fccac506a0c74cf5a0f526",
+      "app_files_match_source": 926,
+      "mismatches": [],
+      "full_suite": "run on web image; worker application bytes matched independently"
+    }
+  },
+  "remaining_limits": [
+    "Strict scope is the 10 Payroll files, not the whole app; generated dynamic framework types remain gradual",
+    "Historical schema upgrade not independently verified; fresh structure and current MySQL constraints are verified",
+    "Existing dirty .ruby-version 3.3.6 preserved; verified runtime/Docker/CI are Ruby3.4.12",
+    "Remote GitHub Actions not run for this uncommitted source; scanners are not production pentest or cloud attestation"
+  ],
+  "commands": [
+    "docker compose exec -T -e RAILS_ENV=test web bundle exec rails test --seed 51915",
+    "docker compose run --rm --no-deps -e RAILS_ENV=test web ruby bin/quality",
+    "docker compose exec -T web ruby bin/typecheck --self-test",
+    "RAILS_ENV=test ruby bin/verify-test-schema",
+    "docker run --rm -v \"$PWD/.github/workflows:/work:ro\" rhysd/actionlint:1.7.7 -color /work/ci.yml",
+    "docker compose run --rm --no-deps event_sink python test_server.py",
+    "docker compose build web worker",
+    "ruby bin/smoke-image",
+    "docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=$PWD/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test xinviec-hrm-web:latest bundle exec rails test --seed 51915",
+    "same no-source-mount docker run with ruby bin/quality"
+  ]
+}

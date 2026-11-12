@@ -2,7 +2,10 @@ module HrmIdentity
   module Application
     module Commands
       class ManageCompanyAccess < Hrm::UseCase
-        def initialize(repository: Hrm::Container.resolve(Domain::Repositories::AdministrationRepositoryInterface)) = (@repository = repository)
+        def initialize(repository: Hrm::Container.resolve(Domain::Repositories::AdministrationRepositoryInterface))
+          super()
+          (@repository = repository)
+        end
         def call(actor:, area:, attributes:, id: nil)
           require_actor!(actor)
           case area

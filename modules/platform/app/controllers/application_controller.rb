@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base # ActionController::Base cung cấp các chức năng dành cho Web Controller, chẳng hạn render HTML, Session, Cookie, CSRF protection và các helper.
+  include SensitiveResponseHeaders
   include Pundit::Authorization # Tích hợp Pundit để kiểm tra quyền truy cập, tương tự Laravel Policy.
   before_action :authenticate_user! # Tích hợp Pundit để kiểm tra quyền truy cập, tương tự Laravel Policy. |  Trước khi chạy Action, Rails thực hiện theo thứ tự: 1. authenticate_user!: Kiểm tra người dùng đã đăng nhập. 2. Current.user = current_user: Đưa User vào ngữ cảnh request.
   before_action { Current.user = current_user } # Tích hợp Pundit để kiểm tra quyền truy cập, tương tự Laravel Policy. | 2. Current.user = current_user: Đưa User vào ngữ cảnh request.
@@ -14,7 +15,10 @@ class ApplicationController < ActionController::Base # ActionController::Base cu
   end
   private
   def current_user
-    @current_user ||= HrmIdentity::Application::Queries::FindActiveUser.new.call(id: session[:user_id])
+    @current_user ||= authenticated_login&.user
+  end
+  def authenticated_login
+    @authenticated_login ||= HrmIdentity::Application::Queries::AuthenticateWebSession.new.call(raw: session[:login_token])
   end
   def authenticate_user!
     redirect_to new_session_path unless current_user
@@ -29,15 +33,15 @@ end
 # 2. Luồng xác thực bằng Session
 # Browser gửi HTTP Request
 # Cookie chứa Rails Session
-       # v
+# v
 # authenticate_user!
 # Gọi current_user để xác định người đăng nhập
-       # v
-# FindActiveUser Query
-# Tìm User từ session[:user_id]
-       # v
+# v
+# AuthenticateWebSession Query
+# Tra login_sessions từ hash của session[:login_token], kiểm hạn và User
+# v
 # Có User
 # Tiếp tục xử lý trang
-       # v
+# v
 # Không có User
 # Redirect tới trang đăng nhập

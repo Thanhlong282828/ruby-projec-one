@@ -1,0 +1,16 @@
+<div class="page-heading"><div><div class="eyebrow">INTEGRATION / <%= @connection.code %></div><h1><%= @connection.name %></h1></div><%= link_to "← Hub", "/integration" %></div>
+<div class="panel">
+  <h2>Nhận webhook</h2>
+  <p><span class="badge"><%= @connection.active? ? "Đang nhận" : "Tạm dừng" %></span></p>
+  <p class="hint">POST endpoint, ký HMAC-SHA256 bằng khóa đã lưu. Payload gốc được mã hóa; khóa không được hiển thị lại ở trang này.</p>
+  <pre class="secret-value">/webhooks/integration/<%= @connection.public_id %></pre>
+  <p class="hint">Headers: X-Webhook-Timestamp, X-Webhook-Id, X-Webhook-Signature. Chuỗi ký: timestamp.event_id.raw_body. Body JSON gồm event_type và payload object. Tối đa 64 KiB, timestamp trong 5 phút. Production phải dùng HTTPS.</p>
+  <% if policy(@connection).update? %>
+    <div class="form-actions">
+      <%= button_to(@connection.active? ? "Tạm dừng nhận" : "Bật nhận webhook", "/integration/connections/#{@connection.id}/status", method: :patch, params: {active: !@connection.active?, lock_version: @connection.lock_version}) %>
+      <%= button_to "Đổi khóa — vô hiệu khóa cũ", "/integration/connections/#{@connection.id}/rotate", method: :post, params: {lock_version: @connection.lock_version}, class: "secondary" %>
+    </div>
+  <% end %>
+</div>
+
+<% if policy([:integration, AuditLog]).index? %><p><%= link_to "Xem nhật ký bản ghi này →", "/integration/audit?resource=connection&record_id=#{@connection.id}" %></p><% end %>

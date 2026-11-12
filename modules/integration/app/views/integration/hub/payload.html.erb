@@ -1,0 +1,2 @@
+<div class="page-heading"><div><div class="eyebrow">NỘI DUNG ĐƯỢC BẢO VỆ</div><h1>Webhook #<%= @payload[:id] %></h1></div><%= link_to "← Metadata", "/integration/inbox/#{@payload[:id]}" %></div>
+<div class="panel"><h2>Payload gốc</h2><pre class="secret-value"><%= @payload[:body] %></pre><h2>Ghi chú kiểm tra</h2><pre class="secret-value"><%= @payload[:note] %></pre></div>

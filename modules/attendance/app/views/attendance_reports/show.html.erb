@@ -1,0 +1,48 @@
+<div class="page-heading">
+  <div><div class="eyebrow">ATTENDANCE</div><h1>Báo cáo chấm công.</h1>
+    <p class="subtitle">Theo ngày vào ca, múi giờ Asia/Ho_Chi_Minh. Thời gian ghi nhận chưa trừ giờ nghỉ, chưa phải giờ tính lương.</p>
+  </div>
+  <%= link_to "Về chấm công →", attendances_path, class: "button" %>
+</div>
+<div class="panel">
+  <%= form_with url: attendance_report_path, method: :get do |form| %>
+    <%= form.label :from, "Từ ngày" %>
+    <%= form.date_field :from, value: @report[:from], required: true %>
+    <%= form.label :to, "Đến ngày" %>
+    <%= form.date_field :to, value: @report[:to], required: true %>
+    <%= form.submit "Xem báo cáo" %>
+  <% end %>
+  <p>Tối đa 93 ngày mỗi kỳ. Tổng số tính trên cả kỳ; danh sách hiển thị 25 ca mỗi trang.</p>
+</div>
+<div class="stats">
+  <% [["Ca trong kỳ", :total], ["Ca chưa đóng", :open], ["Phút đã ghi nhận", :elapsed_minutes], ["Ca hơn 16 giờ", :excessive]].each do |label, key| %>
+    <article class="stat">
+      <small><%= label %></small>
+      <strong><%= number_with_delimiter(@report[:summary][key]) %></strong>
+      <%= link_to "Xem ca nguồn ↓", attendance_report_path(from: @report[:from], to: @report[:to], anchor: "attendance-report-records") %>
+    </article>
+  <% end %>
+</div>
+<div class="panel" id="attendance-report-records">
+  <p>Nguồn: ca chấm công bạn có quyền xem, từ <%= @report[:from] %> đến <%= @report[:to] %>. Ca chưa đóng không cộng thời gian.</p>
+  <table>
+    <thead><tr><th>Nhân viên</th><th>Ngày vào ca</th><th>Vào ca</th><th>Ra ca</th><th>Phút</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <% @report[:rows].each do |row| %>
+        <tr>
+          <td><% if row[:employee_path] %><%= link_to row[:employee_name], row[:employee_path] %><% else %><%= row[:employee_name] %><% end %></td>
+          <td><%= row[:work_date] %></td>
+          <td><%= row[:checked_in_at].in_time_zone.strftime("%d/%m %H:%M") %></td>
+          <td><%= row[:checked_out_at]&.in_time_zone&.strftime("%d/%m %H:%M") || "—" %></td>
+          <td><%= row[:elapsed_minutes] || "—" %></td>
+          <td><%= { "open" => "Chưa ra ca", "closed" => "Đã đóng", "excessive" => "Cần kiểm tra: hơn 16 giờ" }.fetch(row[:status]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @report[:rows].empty? %><div class="empty">Không có ca chấm công trong trang/kỳ này.</div><% end %>
+  <div class="toolbar">
+    <% if @report[:page] > 1 %><%= link_to "← Trang trước", attendance_report_path(from: @report[:from], to: @report[:to], page: @report[:page] - 1) %><% end %>
+    <% if @report[:page] * 25 < @report[:summary][:total] %><%= link_to "Trang sau →", attendance_report_path(from: @report[:from], to: @report[:to], page: @report[:page] + 1) %><% end %>
+  </div>
+</div>

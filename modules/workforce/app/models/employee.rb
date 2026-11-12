@@ -1,11 +1,14 @@
 class Employee < ApplicationRecord
   include CompanyOwned
   include ObservableRecord
+  has_many :employee_shift_assignments, dependent: :restrict_with_error
+  has_many :onboarding_cases, dependent: :restrict_with_error
   belongs_to :department
   belongs_to :user, optional: true
   has_many :leave_requests, dependent: :restrict_with_error
   has_many :attendances, dependent: :restrict_with_error
   has_many :payslips, dependent: :restrict_with_error
+  has_many :employee_assignments, dependent: :restrict_with_error
   encrypts :bank_account
   encrypts :national_id
   enum :status, { active: "active", probation: "probation", inactive: "inactive" }, validate: true
@@ -21,5 +24,4 @@ class Employee < ApplicationRecord
   end
   before_validation { self.company_id ||= department&.company_id }
   validate { same_company_as(:department, :user) }
-
 end

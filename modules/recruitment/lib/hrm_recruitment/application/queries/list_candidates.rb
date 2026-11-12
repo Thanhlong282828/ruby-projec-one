@@ -3,6 +3,7 @@ module HrmRecruitment
     module Queries
       class ListCandidates < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:, page: 1)

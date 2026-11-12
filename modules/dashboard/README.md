@@ -4,7 +4,7 @@ Thư viện Rails Engine nội bộ, phiên bản 0.1.0.
 
 **Sở hữu:** Controller/View tổng quan, số liệu từ các module nghiệp vụ.
 
-**Liên kết runtime:** Workforce, TimeOff, Recruitment, Identity, Platform.
+**Liên kết runtime:** Workforce, TimeOff, Recruitment, Onboarding, Integration, Identity, Platform.
 
 - `app/models`: Model / Active Record / validation (nếu module có dữ liệu riêng).
 - `app/controllers`: Controller web và/hoặc API.
@@ -30,3 +30,7 @@ Engine dùng chung schema, constants và host route helpers để tương thích
 - lib/hrm_dashboard/infrastructure/persistence: implementation Active Record.
 
 Model Active Record và MVC vẫn ở app/. Engine gọi ServiceProvider khi khởi động/reload. Đọc hướng dẫn HUONG_DAN_LARAVEL_SANG_RAILS.txt ở gốc dự án và docs/DJI_ARCHITECTURE_MAPPING.md trước khi thêm use case.
+
+## ERP workspace (12/11/2026)
+
+Six permission-filtered metric cards link to actual scoped source lists. Totals are fetched through each module repository contract and cached per company/user/permission digest for up to 30 seconds. The employee card counts all scoped profiles to match its source list. Grouped sidebar and business Board share ErpNavigationHelper. Leave widget is optional and never blocks dashboard-only roles. No fabricated Finance/Inventory KPI or empty business module links.

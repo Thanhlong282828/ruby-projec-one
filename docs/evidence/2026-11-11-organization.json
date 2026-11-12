@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-11",
+  "scope": "Organization increment, not full Laravel DJI parity",
+  "tests": {
+    "runs": 103,
+    "assertions": 467,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "real_mysql_concurrent_writers": true
+  },
+  "after_view_formatting": {
+    "http_tests": 5,
+    "assertions": 41,
+    "failures": 0,
+    "errors": 0
+  },
+  "static_checks": {
+    "explicit_route_files": 11,
+    "controllers": 21,
+    "models": 22,
+    "templates": 36,
+    "brakeman_warnings": 0,
+    "brakeman_errors": 0,
+    "container_bindings": 19
+  },
+  "runtime": {
+    "database": "hrm_development",
+    "database_user": "ruby@%",
+    "companies": 1,
+    "users": 7,
+    "permissions": 49,
+    "organization_rows": 0,
+    "rails_routes": 150,
+    "organization_routes": 64
+  },
+  "data_integrity": {
+    "existing_business_tables": 14,
+    "rows_and_digests_unchanged": true,
+    "schema_migrations_only": true
+  },
+  "source_inventory": {
+    "modules": 47,
+    "php_files": 2704,
+    "route_declarations": 505,
+    "empty_write_actions": 75,
+    "source_unchanged": true,
+    "runtime_laravel_route_count": "NOT_REVERIFIED; CV snapshot 2026-10-29 reported 753"
+  },
+  "browser": {
+    "width": 320,
+    "cost_center_unit_position_assignment_forms": "PASS",
+    "page_horizontal_overflow": false,
+    "console_errors": 0,
+    "desktop_viewports": "NOT_VERIFIED"
+  },
+  "remaining": "Other DJI contexts and Organization competency/budget/workflow/branch ABAC parity remain incomplete.",
+  "docker": {
+    "native_web_worker_build": "PASS",
+    "image_boot_without_source_mount": "PASS",
+    "permission_definitions": 49,
+    "csv_available": true,
+    "master_key_in_image": false,
+    "x86_build": "NOT_RUN"
+  }
+}

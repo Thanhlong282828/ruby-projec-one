@@ -1,10 +1,10 @@
 require "test_helper"
 class ContainerArchitectureTest < ActiveSupport::TestCase
   test "every module provider resolves concrete implementations of its contracts" do
-    contracts = Dir[Rails.root.join("modules/*/lib/hrm_*/domain/repositories/*_interface.rb")]
-    assert_equal 17, contracts.length
+    contracts = Rails.root.glob("modules/*/lib/hrm_*/domain/repositories/*_interface.rb")
+    assert_equal 38, contracts.length
     contracts.each do |file|
-      relative = file.split("/lib/", 2).last.delete_suffix(".rb")
+      relative = file.to_s.split("/lib/", 2).last.delete_suffix(".rb")
       contract = relative.camelize.constantize
       implementation = Hrm::Container.resolve(contract)
       assert_kind_of contract, implementation
@@ -22,7 +22,7 @@ class ContainerArchitectureTest < ActiveSupport::TestCase
     assert_raises(Hrm::Container::InvalidBinding) { container.resolve(HrmAttendance::Domain::Repositories::ReadRepositoryInterface) }
   end
   test "bindings retain names and each resolution gets a fresh repository" do
-    assert Hrm::Container.bindings.all? { |key, value| key.is_a?(String) && value.is_a?(String) }
+    assert(Hrm::Container.bindings.all? { |key, value| key.is_a?(String) && value.is_a?(String) })
     contract = HrmAttendance::Domain::Repositories::ReadRepositoryInterface
     assert_not_same Hrm::Container.resolve(contract), Hrm::Container.resolve(contract)
   end

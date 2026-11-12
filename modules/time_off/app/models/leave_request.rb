@@ -22,5 +22,4 @@ class LeaveRequest < ApplicationRecord
   end
   before_validation { self.company_id ||= employee&.company_id }
   validate { same_company_as(:employee, :reviewer) }
-
 end

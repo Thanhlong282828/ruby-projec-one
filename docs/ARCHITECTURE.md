@@ -2,7 +2,7 @@
 
 Kiến trúc ứng dụng đã có Provider + Application Command/Query + Domain Repository Interface + Infrastructure Active Record. Xem [mapping DJI Laravel](DJI_ARCHITECTURE_MAPPING.md) cho quyết định và giới hạn.
 
-Mã nguồn hiện được đóng gói thành 9 local gem Rails Engines trong `modules/`. Mỗi domain sở hữu MVC, policy, service và test; platform chứa lớp nền và UI dùng chung. Xem [quy tắc và ranh giới module](MODULES.md).
+Mã nguồn hiện được đóng gói thành 12 local gem Rails Engines trong `modules/`. Mỗi domain sở hữu MVC, policy, service và test; platform chứa lớp nền và UI dùng chung. Xem [quy tắc và ranh giới module](MODULES.md).
 
 Ruby on Rails 8.1 / Ruby 3.4 / MySQL 8.4. Modular monolith với microservice nhận sự kiện riêng. MVC giữ controller mỏng, nghiệp vụ đặt tại modules/<module>/lib/hrm_<module>/application và domain (app/services còn các facade tương thích), policy tách quyền truy cập. Chưa phải hệ thống microservices phân tán toàn bộ nghiệp vụ.
 
@@ -31,7 +31,7 @@ REST client ─────────┼─ Puma → Middleware → Authentica
 | Yêu cầu | Triển khai |
 |---|---|
 | ORM / Active Record | Models, associations, scopes, enum, constraints |
-| Migration | db/migrate, schema.rb do Rails sinh |
+| Migration | module migrations, db/structure.sql giữ MySQL triggers |
 | Routing / REST | config/routes.rb; API version v1 |
 | Validation | Model validation + MySQL indexes/check constraint |
 | Middleware | Rack::Attack, Rails CSRF/cookies/request ID |
@@ -62,4 +62,13 @@ Local dùng HTTP và secrets tạo riêng trong .env. Production cần HTTPS rev
 
 ## Company & RBAC MySQL (28/10/2026)
 
-Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+Một định danh đăng nhập có nhiều membership theo company; mỗi User profile vẫn thuộc đúng một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+
+Multi-company: `/system/companies` là danh mục quản trị tổng (SystemGrant riêng), `/my/companies` chọn membership của một login identity, `/organization/branches` quản lý nhiều chi nhánh trong company hiện tại. Quyền business vẫn theo profile/role/overrides từng company; không flip user.company_id hoặc copy password. Chi nhánh dùng OrganizationUnit thật, chưa có ABAC giới hạn từng branch xuyên ERP. Đọc HUONG_DAN_NHIEU_CONG_TY_CHI_NHANH_LARAVEL_RUBY.txt ở gốc repo.
+Schema chuẩn: db/structure.sql giữ MySQL trigger; local/CI dùng bin/prepare-mysql-tls, bin/migrate-docker và bin/test-docker. Không dùng app user để tạo trigger hoặc tự load test schema. Production phải cấu hình CA/migration role/secrets riêng; chưa deploy cloud thật.
+
+### Executable engine boundaries and strict Payroll slice
+
+`config/engine_boundaries.yml` + `bin/check-architecture` enforce the verified 12-engine dependency graph, repository provider ownership/completeness and Controller → Application entry points. Shared top-level models remain an explicit modular-monolith exception: Payroll reconciliation locks Workforce Employee and reads Attendance/Leave rows under company scope; this is not 12 separately isolated databases. The legacy TimeOff review exception and transport error rescues retain existing API behavior. Fixture-based negative gate tests reject controller container access, missing/cross-owned bindings and Payroll reaching Leave Infrastructure or undeclared IAM contracts.
+
+The Payroll closing/read/reconciliation path is gradually typed with Sorbet, including its repository contracts/implementations and snapshot result shape; see QUALITY.md for the exact scope and dynamic boundaries. Provider bindings remain strings, preserving Rails reload behavior.

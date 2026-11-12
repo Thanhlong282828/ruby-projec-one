@@ -1,0 +1,51 @@
+{
+  "en": {
+    "hrm_quality": {
+      "messages": {
+        "da_ket_thuc_ca": "Đã kết thúc ca.",
+        "ban_da_cham_cong_hom_nay": "Bạn đã chấm công hôm nay.",
+        "da_vao_ca": "Đã vào ca.",
+        "da_xoa_phan_ca_tuong_lai": "Đã xóa phân ca tương lai.",
+        "da_cap_nhat_ngay_ket_thuc": "Đã cập nhật ngày kết thúc.",
+        "da_phan_ca": "Đã phân ca.",
+        "da_xoa_ca_lam_viec": "Đã xóa ca làm việc.",
+        "da_cap_nhat_ca_lam_viec": "Đã cập nhật ca làm việc.",
+        "da_tao_ca_lam_viec": "Đã tạo ca làm việc.",
+        "khong_the_xoa_ca_dang_co_phan_cong": "Không thể xóa ca đang có phân công.",
+        "da_cap_nhat_quyen_vai_tro_trong_mysql": "Đã cập nhật quyền vai trò trong MySQL.",
+        "da_luu_vai_tro_va_quyen_tai_khoan_trong_mysql": "Đã lưu vai trò và quyền tài khoản trong MySQL.",
+        "da_cap_nhat_company": "Đã cập nhật company.",
+        "da_chuyen_cong_ty_vai_tro_va_du_lieu_theo_membership_cua_cong_ty_da_chon": "Đã chuyển công ty. Vai trò và dữ liệu theo membership của công ty đã chọn.",
+        "da_dang_xuat_phien_da_chon": "Đã đăng xuất phiên đã chọn.",
+        "email_hoac_mat_khau_khong_dung": "Email hoặc mật khẩu không đúng.",
+        "da_cap_membership_khong_tao_mat_khau_hay_sao_chep_quyen": "Đã cấp membership. Không tạo mật khẩu hay sao chép quyền.",
+        "da_cap_nhat_cong_ty": "Đã cập nhật công ty.",
+        "da_tao_cong_ty_va_membership_quan_tri_rieng_trong_mysql": "Đã tạo công ty và membership quản trị riêng trong MySQL.",
+        "da_xep_hang_lai_giu_nguyen_event_id_va_lich_su": "Đã xếp hàng lại, giữ nguyên Event ID và lịch sử.",
+        "da_luu_hang_doi_mysql_scheduler_se_chuyen_sang_sidekiq": "Đã lưu hàng đợi MySQL; scheduler sẽ chuyển sang Sidekiq.",
+        "da_ghi_nhan_ket_qua_kiem_tra_su_kien": "Đã ghi nhận kết quả kiểm tra sự kiện.",
+        "da_cap_nhat_ket_noi": "Đã cập nhật kết nối.",
+        "da_xep_hang_thong_bao_snapshot_khong_gui_noi_dung_csv": "Đã xếp hàng thông báo snapshot, không gửi nội dung CSV.",
+        "da_hoan_tat_checklist": "Đã hoàn tất checklist.",
+        "da_chuyen_trang_thai": "Đã chuyển trạng thái.",
+        "da_tao_ho_so_tiep_nhan": "Đã tạo hồ sơ tiếp nhận.",
+        "da_tao_chi_nhanh_thuoc_cong_ty_hien_tai": "Đã tạo chi nhánh thuộc công ty hiện tại.",
+        "da_xoa_ban_ghi": "Đã xóa bản ghi.",
+        "da_cap_nhat": "Đã cập nhật.",
+        "da_tao_ban_ghi": "Đã tạo bản ghi.",
+        "da_luu_snapshot_csv_cua_ky_luong": "Đã lưu snapshot CSV của kỳ lương.",
+        "da_chot_bang_luong": "Đã chốt bảng lương.",
+        "da_tao_bang_luong_nhap": "Đã tạo bảng lương nháp.",
+        "da_cap_nhat_ung_vien": "Đã cập nhật ứng viên.",
+        "da_them_ung_vien": "Đã thêm ứng viên.",
+        "da_xu_ly_don": "Đã xử lý đơn.",
+        "da_gui_don_nghi_phep": "Đã gửi đơn nghỉ phép.",
+        "hrm_daily_summary": "HRM: Daily summary",
+        "da_them_phong_ban": "Đã thêm phòng ban.",
+        "da_xoa_nhan_vien": "Đã xóa nhân viên.",
+        "da_cap_nhat_ho_so": "Đã cập nhật hồ sơ.",
+        "da_tao_nhan_vien": "Đã tạo nhân viên."
+      }
+    }
+  }
+}

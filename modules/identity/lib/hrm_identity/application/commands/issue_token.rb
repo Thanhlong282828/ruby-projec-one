@@ -3,6 +3,7 @@ module HrmIdentity
     module Commands
       class IssueToken < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::WriteRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:)

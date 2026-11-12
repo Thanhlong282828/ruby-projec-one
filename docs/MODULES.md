@@ -2,7 +2,7 @@
 
 ## Cách lắp ghép
 
-Gemfile khai báo 9 local gems `hrm_platform`, `hrm_identity`, `hrm_workforce`, `hrm_attendance`, `hrm_time_off`, `hrm_payroll`, `hrm_recruitment`, `hrm_audit`, `hrm_dashboard` từ thư mục modules. Mỗi gem có gemspec, entrypoint và Rails::Engine. Rails tự nạp models/controllers/views/policies/services/jobs/assets/initializers/tasks của engine; không dùng require thủ công từng class.
+Gemfile khai báo 12 local gems `hrm_platform`, `hrm_identity`, `hrm_workforce`, `hrm_attendance`, `hrm_time_off`, `hrm_payroll`, `hrm_recruitment`, `hrm_audit`, `hrm_dashboard`, `hrm_organization`, `hrm_onboarding`, `hrm_integration` từ thư mục modules. Mỗi gem có gemspec, entrypoint và Rails::Engine. Rails tự nạp models/controllers/views/policies/services/jobs/assets/initializers/tasks của engine; không dùng require thủ công từng class.
 
 Routing nằm trong module, host dùng `draw` để ghép cùng route set nên URL, helper và API v1 không đổi. Platform sở hữu ApplicationRecord, ApplicationController, API BaseController, ApplicationPolicy và UI shell. Domain service giữ transaction, controller chỉ điều phối; model giữ association/validation; policy quyết định quyền; view trình bày.
 
@@ -13,7 +13,7 @@ Routing nằm trong module, host dùng `draw` để ghép cùng route set nên U
 3. Không sao chép base classes giữa module. Chức năng hạ tầng dùng chung thuộc platform; tránh chuyển mọi logic vào shared.
 4. API của một domain đặt cùng module với MVC web của domain đó.
 5. Test domain đặt cạnh module; hành trình nhiều domain giữ ở test/integration. `rails test` nạp module tests qua test/modules_test.rb.
-6. Migration mới nằm trong modules/<module>/db/migrate, timestamp unique toàn hệ thống. Engine tự thêm đường dẫn migration vào host. Baseline db/migrate/20261025000001_create_hrm.rb giữ nguyên vì đã áp dụng; schema.rb tiếp tục là ảnh chụp chung do Rails sinh.
+6. Migration mới nằm trong modules/<module>/db/migrate, timestamp unique toàn hệ thống. Engine tự thêm đường dẫn migration vào host. Baseline db/migrate/20261025000001_create_hrm.rb giữ nguyên vì đã áp dụng; structure.sql là schema chuẩn để giữ MySQL triggers.
 7. Lịch chạy thuộc module trong config/schedule.yml (Platform: outbox; TimeOff: tổng hợp). Engine đăng ký file lịch, Sidekiq của Platform nạp các lịch khi khởi động.
 8. Việc tạo local gem mới cần thêm Gemfile, route fragment, README sở hữu/phụ thuộc và kiểm thử. Docker COPY modules trước bundle install để Bundler đọc gemspec.
 
@@ -53,4 +53,7 @@ Model Active Record, Controller và View vẫn giữ vị trí Rails MVC. Applic
 
 ## Company & RBAC MySQL (28/10/2026)
 
-Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+Một định danh đăng nhập có nhiều membership theo company; mỗi User profile vẫn thuộc đúng một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](../HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+
+Multi-company: `/system/companies` là danh mục quản trị tổng (SystemGrant riêng), `/my/companies` chọn membership của một login identity, `/organization/branches` quản lý nhiều chi nhánh trong company hiện tại. Quyền business vẫn theo profile/role/overrides từng company; không flip user.company_id hoặc copy password. Chi nhánh dùng OrganizationUnit thật, chưa có ABAC giới hạn từng branch xuyên ERP. Đọc HUONG_DAN_NHIEU_CONG_TY_CHI_NHANH_LARAVEL_RUBY.txt ở gốc repo.
+Schema chuẩn: db/structure.sql giữ MySQL trigger; local/CI dùng bin/prepare-mysql-tls, bin/migrate-docker và bin/test-docker. Không dùng app user để tạo trigger hoặc tự load test schema. Production phải cấu hình CA/migration role/secrets riêng; chưa deploy cloud thật.

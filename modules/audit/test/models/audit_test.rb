@@ -1,12 +1,12 @@
 require "test_helper"
 class AuditDomainTest < ActiveSupport::TestCase
   test "audit and outbox roll back with employee transaction" do
-    before_counts = [Employee.count, AuditLog.count, OutboxEvent.count]
+    before_counts = [ Employee.count, AuditLog.count, OutboxEvent.count ]
     Employee.transaction do
       make_employee
       raise ActiveRecord::Rollback
     end
-    assert_equal before_counts, [Employee.count, AuditLog.count, OutboxEvent.count]
+    assert_equal before_counts, [ Employee.count, AuditLog.count, OutboxEvent.count ]
   end
   test "observer attributes changes without storing sensitive values" do
     actor = make_user(:admin)

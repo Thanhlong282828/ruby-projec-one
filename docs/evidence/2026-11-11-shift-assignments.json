@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-12",
+  "scope": "Fixed employee shift assignment intervals, rule snapshots and read-only schedule comparison; partial DJI parity",
+  "tests": {
+    "runs": 184,
+    "assertions": 846,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "database": "hrm_test",
+    "two_mysql_connections_overlap_test": "PASS"
+  },
+  "gates": {
+    "route_files": 11,
+    "architecture_controller_concern_files": 28,
+    "zeitwerk": "PASS",
+    "brakeman_controllers": 27,
+    "models": 25,
+    "templates": 46,
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_known_advisories": 0
+  },
+  "development": {
+    "migration": "20261111000005_create_employee_shift_assignments",
+    "backup_before_migration": true,
+    "users": 7,
+    "permissions": 58,
+    "bindings": 23,
+    "assignment_rows": 0,
+    "business_demo_rows_created": 0,
+    "passwords_changed": false
+  },
+  "browser": {
+    "status": "PASS",
+    "explicit_local_admin_login_permission": true,
+    "index_empty_state": "PASS",
+    "new_form_and_no_shift_guidance": "PASS",
+    "schedule_filter_submit": "PASS",
+    "unassigned_day_rows": 7,
+    "business_rows_created": 0,
+    "width": 1280,
+    "page_width": 1280,
+    "console_errors": 0,
+    "mobile": "NOT_VERIFIED"
+  },
+  "security": [
+    "Company composite FKs",
+    "permission and ownership scope",
+    "immutable employee/shift/start/snapshot",
+    "employee row lock + overlap validation",
+    "optimistic lock for end update/delete",
+    "historical delete rejected",
+    "source links authorized",
+    "malformed nested IDs return 404",
+    "Invalid optional date rejected instead of silently becoming open-ended"
+  ],
+  "limits": [
+    "No MySQL exclusion constraint: direct SQL can bypass interval overlap; report fails closed on conflicts",
+    "Fixed shift applies every date in effective interval; no holiday/weekday/rotation rules",
+    "Effective end can be corrected by authorized users: this is not finalized payroll history",
+    "Read-only comparison does not assign/check in/approve overtime or post payroll",
+    "Dropdowns capped at 200 scoped options; larger selection available via API IDs"
+  ],
+  "after_form_hint": {
+    "http_tests": 4,
+    "status": "PASS"
+  },
+  "started_on": "2026-11-11",
+  "docker": {
+    "native_web_worker_build": "PASS",
+    "standalone_image_eager_load": "PASS",
+    "bindings": 23,
+    "permission_definitions": 58,
+    "assignment_table_readable": true,
+    "strict_date_validation_present": true,
+    "master_key_in_image": false,
+    "worker_restart_without_recreation": "PASS",
+    "local_health_http": 200
+  },
+  "dependency_advisory_db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7"
+}

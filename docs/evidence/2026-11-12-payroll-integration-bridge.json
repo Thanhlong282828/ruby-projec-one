@@ -1,0 +1,146 @@
+{
+  "date": "2026-11-12",
+  "feature": "Source-bound payroll snapshot descriptor notifications",
+  "scope": "Manual descriptor notification only, not CSV upload/accounting/provider/government parity",
+  "source_reference": "Read-only Laravel DJI EnterpriseDomainIntegrationBridge; no reference data/secrets copied",
+  "architecture": {
+    "style": "Engine + MVC + CQRS",
+    "new_contracts": 2,
+    "total_bindings": 36,
+    "new_explicit_routes": 4,
+    "route_files": 13,
+    "controller_files_checked": 41,
+    "payroll_source_owner": "Payroll ExportSourceRepositoryInterface",
+    "integration_owner": "PayrollBridgeRepositoryInterface",
+    "dependency": "hrm_integration explicitly depends on local hrm_payroll; lock resolved locally, no external gem upgrade"
+  },
+  "database": {
+    "migration": "20261112000007_bind_payroll_export_deliveries",
+    "private_backup_before_migration": true,
+    "backup_mode": "0600",
+    "source_fk": "integration_deliveries(company_id,payroll_export_id) -> payroll_exports(company_id,id)",
+    "source_nullable_for_generic": true,
+    "source_model_immutable": true,
+    "idempotency": "deterministic company/source/connection/target key, existing MySQL company/idempotency unique",
+    "permission": "payroll.exports.notify",
+    "permission_count": 74,
+    "admin_default_only_no_runtime_bypass": true
+  },
+  "notification": {
+    "event_type": "payroll.export.ready",
+    "fields": [
+      "source",
+      "source_uuid",
+      "version",
+      "format",
+      "period",
+      "mime",
+      "byte_size",
+      "checksum"
+    ],
+    "excluded": [
+      "CSV bytes",
+      "amounts",
+      "employee rows",
+      "download URL",
+      "credentials"
+    ],
+    "generic_event_roots_reserved": true,
+    "generic_key_namespace_reserved": "payroll-v1:"
+  },
+  "security": [
+    "enqueue and worker require integration.read/send plus payroll.read/exports.read/exports.notify",
+    "metadata read scopes source read grants; payload also requires integration.payload.read",
+    "retry rechecks original requester in worker and source integrity before requeue",
+    "verify actual immutable CSV and exact typed descriptor/body digest",
+    "delivery/connection/source locks before consistent grant reads under REPEATABLE READ",
+    "uncached authorization under locks",
+    "MySQL source tenant FK",
+    "source-aware Integration audit filtering including attempts",
+    "realtime checks trusted same-company/type OutboxEvent ID then current scoped delivery/attempt source",
+    "web CSRF, Bearer API, sensitive no-store",
+    "existing default-off operator HTTPS company allowlist, TLS/DNS pinning/SSRF/time caps retained",
+    "audit/outbox queue/quarantine atomic"
+  ],
+  "verification": {
+    "full_hrm_test": {
+      "runs": 302,
+      "assertions": 1777,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "native_image_no_source_mount": {
+      "runs": 90,
+      "assertions": 769,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "routes": "pass",
+    "architecture": "pass",
+    "zeitwerk": "pass",
+    "whitespace": "pass",
+    "brakeman": {
+      "controllers": 40,
+      "models": 32,
+      "templates": 62,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "updated": true,
+      "advisories": 1359,
+      "db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7",
+      "known_vulnerabilities": 0
+    }
+  },
+  "race_coverage": [
+    "two MySQL connections create one source-bound delivery/outbox",
+    "source notify revocation while waiting for connection lock",
+    "source notify revocation while waiting for artifact lock",
+    "cache-enabled enqueue grant revocation while waiting for connection lock"
+  ],
+  "runtime": {
+    "web_container_preserved": "Exact xinviec-hrm-web-1 SIGUSR2, no recreate",
+    "worker_restarted": true,
+    "health_http": 200,
+    "image_non_root": true,
+    "image_dotenv_masterkey_absent": true,
+    "counts": {
+      "users": 7,
+      "pay_runs": 0,
+      "payroll_exports": 0,
+      "deliveries": 0,
+      "attempts": 0
+    },
+    "external_provider_calls": 0,
+    "development_business_samples_created": 0
+  },
+  "ui": {
+    "browser": "Approved local admin sign-in, Dashboard and empty payroll exports page verified read-only",
+    "new_bridge_page": "Rendered form/source links/API tested using isolated hrm_test fixtures; not manually submitted in development",
+    "mobile_tested": false,
+    "business_form_submissions": 0
+  },
+  "env_audit": {
+    "names_references_only": true,
+    "laravel_declared": 140,
+    "laravel_referenced": 293,
+    "ruby_declared": 19,
+    "ruby_referenced": 27,
+    "new_runtime_variable": false
+  },
+  "guide": "HUONG_DAN_BRIDGE_BANG_LUONG_LARAVEL_RUBY.txt; summary, 3 horizontal comparison tables, actual file flow and security/cloud limits",
+  "limitations": [
+    "No CSV upload or signed download sharing",
+    "No accounting journal/mapping/maker-checker/provider/statutory parity",
+    "No receipt reconciliation/retention/legal hold/amendment v2",
+    "Receiver must deduplicate Event ID across remote HTTP/local commit crash window",
+    "blocked still lacks integrity-specific reason code",
+    "Portal omits deleted delivery/attempt history for users lacking source grants because source classification cannot be proven",
+    "Privileged SQL/key compromise remains outside checksum guarantees",
+    "Production cloud/IAM/secret manager/private networks/restore drill not provisioned or verified",
+    "No GitHub push"
+  ]
+}

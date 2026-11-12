@@ -2,6 +2,7 @@ module HrmWorkforce
   module Infrastructure
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
+        def all_employee_count(actor:) = Pundit.policy_scope!(actor, ::Employee).count
         def employees(actor:, page: 1, search: nil, api: false)
           scope = Pundit.policy_scope!(actor, ::Employee).includes(:department).order(api ? :id : :employee_code)
           if search.present?
@@ -19,7 +20,10 @@ module HrmWorkforce
         end
         def employee_for_user!(user:) = ::Employee.find_by!(company_id: user.company_id, user_id: user.id)
         def employee_for_leave!(actor:, id:) = Pundit.policy_scope!(actor, ::Employee).includes(:department).find(id)
-        def active_employees(company_id:) = ::Employee.where(company_id: company_id).active.to_a
+        def active_employees(company_id:, lock: false)
+          scope = ::Employee.where(company_id: company_id).active.order(:id)
+          (lock ? scope.lock : scope).to_a
+        end
         def employee_count(actor:) = Pundit.policy_scope!(actor, ::Employee).active.count
         def department_count(actor:) = Pundit.policy_scope!(actor, ::Department).count
       end

@@ -101,7 +101,7 @@ docker compose run --rm -e RAILS_ENV=test web bundle exec rails test modules/tim
 ## Phạm vi thực tế
 Có CRUD nhân sự/phòng ban, hồ sơ ứng viên và giai đoạn, một ca chấm công/ngày, nghỉ phép theo ngày lịch và số dư năm, chụp lương cơ bản/chốt kỳ lương, audit, realtime thông báo có thay đổi, email duyệt đơn và tổng hợp hằng ngày.
 
-Đây là nền tảng phát triển chạy local, chưa phải giải pháp đã nghiệm thu để triển khai doanh nghiệp. Chưa có thuế/BHXH/OT, nhiều công ty, file hợp đồng, SSO/MFA, quên mật khẩu, ngày lễ/lịch ca hay phân quyền manager theo phòng ban. Rails là framework Ruby; dự án không trộn PHP vào backend. Microservice tách riêng là event receiver; các nghiệp vụ HRM giữ trong modular monolith để tránh phân tán giao dịch nhân sự.
+Đây là nền tảng phát triển chạy local, chưa phải giải pháp đã nghiệm thu để triển khai doanh nghiệp. Chưa có thuế/BHXH/OT đầy đủ, file hợp đồng, SSO/MFA, quên mật khẩu, ngày lễ và branch ABAC hay phân quyền manager theo phòng ban. Rails là framework Ruby; dự án không trộn PHP vào backend. Microservice tách riêng là event receiver; các nghiệp vụ HRM giữ trong modular monolith để tránh phân tán giao dịch nhân sự.
 
 ## Đưa lên production
 Dùng image có Gemfile.lock, build asset (`rails assets:precompile` với env phù hợp), HTTPS reverse proxy trước Puma, database/Redis private, SMTP thật, secrets manager; không dùng compose development nguyên trạng. Thiết lập `APP_HOST`, `DATABASE_NAME`, keys mã hóa, `SECRET_KEY_BASE`, `RAILS_ENV=production`; cấu hình allowed hosts/origins WebSocket. Seed demo bị khóa ở production. Backup cả database và khóa mã hóa, thử restore trước khi sử dụng dữ liệu thật.
@@ -113,10 +113,47 @@ Mở thư mục gốc bằng VS Code rồi chọn **Dev Containers: Reopen in Co
 
 ## Company & RBAC MySQL (28/10/2026)
 
-Mỗi tài khoản thuộc một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
+Một định danh đăng nhập có nhiều membership theo company; mỗi User profile vẫn thuộc đúng một company; `company_roles`, `permissions`, `role_permissions` và `user_permissions` lưu quyền thật trong MySQL. Vai trò tùy chỉnh không cần sửa enum. Web `/manage/company`, `/manage/roles`, `/manage/accounts`; REST `/api/v1/company`, `/api/v1/roles`, `/api/v1/accounts`. `User#allowed?` đọc DB, Policy kiểm permission và company; các scope, payroll, cache, email, audit/outbox và realtime đều giới hạn tenant. Hướng dẫn: [Company & permission](HUONG_DAN_COMPANY_PERMISSION_MYSQL.txt) ở gốc project.
 
 ## MySQL qua phpMyAdmin (local)
 
 Mở http://pma.test/, tài khoản `ruby`, mật khẩu `123456`. Chọn database `hrm_development`: Rails đọc/ghi trực tiếp database này bằng cùng tài khoản trong `.env`; phpMyAdmin là giao diện quản trị. Database `hrm_test` dành riêng cho kiểm thử. Không nhập tài khoản này vào form đăng nhập HRM. Mật khẩu này chỉ dùng local; MySQL Ruby mở cổng 13306 chỉ trên localhost.
 
 Trong phpMyAdmin chọn server Ruby HRM (127.0.0.1:13306). Rails trong Docker vẫn kết nối mysql:3306 tới cùng database. Server MySQL local (existing) giữ nguyên kết nối cũ 3306.
+
+## Organization — CQRS (11/11/2026)
+
+Module `organization` bổ sung trung tâm chi phí, cây tổ chức, vị trí, phân công nhân sự theo hiệu lực, định biên và CSV. Dữ liệu MySQL thật theo company, có quyền DB và kiểm thử concurrent vacancy. Mở `/organization/tree` hoặc `/organization/cost-centers`. Không seed/copy dữ liệu vận hành Laravel.
+
+[Hướng dẫn Laravel ↔ Ruby cho Organization](HUONG_DAN_ORGANIZATION_CQRS_LARAVEL_RUBY.txt) · [Kiểm kê toàn bộ DJI và phần chưa chuyển](DOI_CHIEU_TOAN_BO_LARAVEL_DJI_SANG_RUBY.txt). Đây là một bước chuyển, chưa phải tương đương toàn bộ DJI.
+
+## Đối chiếu chức năng cấu hình Laravel DJI → Ruby
+
+Chạy `ruby bin/audit-env-features` để thống kê tên biến và tham chiếu source, hoặc thêm `--write` để cập nhật `DOI_CHIEU_ENV_LARAVEL_DJI_RUBY.txt` và `docs/env-feature-audit.json`. Lệnh chỉ đọc tên/tham chiếu, không load/eval `.env`, không xuất giá trị và không liên hệ dịch vụ bên ngoài. Source mặc định: `Desktop/laraveldji/admin`; có thể truyền `--laravel-root PATH`.
+
+TXT có ba bảng ngang theo nhóm chức năng, từng biến Laravel và code đọc biến Ruby. Mapping có review ở `docs/env-feature-map.json`; các khoảng trống Cloudflare/Supabase/S3/ClamAV/OAuth/monitoring được nối vào `docs/erp-porting-roadmap.json`. Có tên biến hoặc reference không chứng minh dịch vụ đã được kích hoạt/kiểm chứng.
+
+## Integration Hub / webhook inbound
+
+Mở `/integration` trong nhóm Quản trị & bảo mật. Có connection lifecycle, secret mã hóa và trả một lần, HMAC timestamp/event ID/raw body, encrypted inbox, metadata/payload permissions riêng và review có khóa phiên bản. Dashboard có KPI dẫn tới Hub; ba KPI trong Hub lọc đúng trạng thái. Hướng dẫn so sánh: `HUONG_DAN_INTEGRATION_WEBHOOK_LARAVEL_RUBY.txt`.
+
+Public ingress `/webhooks/integration/:public_id` chỉ dùng HMAC riêng từng connection; không dùng cookie/company từ client. Kết nối mới tạm dừng. Inbound acknowledgment không tự áp dụng nghiệp vụ; outbound provider adapters/attempts/retry/DLQ/replay và retention scheduling vẫn chưa port. `.env` không chứa secret từng connection; không copy khóa DJI.
+
+### Outbound Integration
+
+Open `/integration` → Hàng đợi gửi, or `/integration/outbound`. Durable MySQL queue, attempt history, Sidekiq delivery/scheduler, retry/backoff and dead-letter replay are available under company-scoped database permissions. External targets are disabled by default (`INTEGRATION_TARGETS_JSON={}`); no arbitrary browser-supplied URLs. Read `HUONG_DAN_OUTBOUND_QUEUE_LARAVEL_RUBY.txt` before configuring a partner. Provider-specific exports and automatic business dispatch remain incomplete.
+
+### Integration operational audit
+
+Open `/integration/audit` from the Integration subnavigation. Dedicated company-scoped grant, safe metadata projection, period/resource/record/action filters, keyset pagination and source links are implemented. See `HUONG_DAN_AUDIT_INTEGRATION_LARAVEL_RUBY.txt` for the Laravel comparison and differences from DJI delivery audit/history. This does not add historical before/after values or a tamper-proof ledger.
+
+### Payroll reconciliation CSV
+
+`/payroll/exports` provides immutable, encrypted CSV snapshots from finalized pay runs with separate download grants, integrity checks and access history. Read `HUONG_DAN_XUAT_BANG_LUONG_LARAVEL_RUBY.txt`. This adds a source-artifact prerequisite; accounting journals/provider mappings/outbound bridge remain incomplete.
+
+Multi-company: `/system/companies` là danh mục quản trị tổng (SystemGrant riêng), `/my/companies` chọn membership của một login identity, `/organization/branches` quản lý nhiều chi nhánh trong company hiện tại. Quyền business vẫn theo profile/role/overrides từng company; không flip user.company_id hoặc copy password. Chi nhánh dùng OrganizationUnit thật, chưa có ABAC giới hạn từng branch xuyên ERP. Đọc HUONG_DAN_NHIEU_CONG_TY_CHI_NHANH_LARAVEL_RUBY.txt ở gốc repo.
+Schema chuẩn: db/structure.sql giữ MySQL trigger; local/CI dùng bin/prepare-mysql-tls, bin/migrate-docker và bin/test-docker. Không dùng app user để tạo trigger hoặc tự load test schema. Production phải cấu hình CA/migration role/secrets riêng; chưa deploy cloud thật.
+
+## Kiểm tra chất lượng trên GitHub
+
+Push/PR chạy hai job: Ruby/Rails lint-format và MySQL test/autoload/security. Cấu hình thật trong `.github/workflows/ci.yml`; lệnh local `docker compose exec -T web ruby bin/quality`. Xem [đối chiếu Pint/Larastan/PHPStan và giới hạn](docs/QUALITY.md). RuboCop không thay thế static type checking PHPStan level10; remote Actions/branch protection chưa được xác nhận.

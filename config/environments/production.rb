@@ -5,8 +5,8 @@ Rails.application.configure do
 
   # Code is not reloaded between requests.
   config.enable_reloading = false
-  config.hosts = [ENV.fetch("APP_HOST").split(":").first]
-  config.action_cable.allowed_request_origins = ["https://#{ENV.fetch("APP_HOST")}"]
+  config.hosts = [ ENV.fetch("APP_HOST").split(":").first ]
+  config.action_cable.allowed_request_origins = [ "https://#{ENV.fetch("APP_HOST")}" ]
 
   # Eager load code on boot for better performance and memory savings (ignored by Rake tasks).
   config.eager_load = true

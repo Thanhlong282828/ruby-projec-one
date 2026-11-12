@@ -3,6 +3,7 @@ module HrmAttendance
     module Queries
       class FindAttendance < Hrm::UseCase
         def initialize(repository: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface))
+          super()
           @repository = repository
         end
         def call(actor:, id:)

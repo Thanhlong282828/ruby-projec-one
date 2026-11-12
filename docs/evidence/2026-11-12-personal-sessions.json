@@ -1,0 +1,34 @@
+{
+  "feature": "Personal web-session listing and revocation",
+  "verified_on": "2026-11-12",
+  "full_suite": {
+    "runs": 331,
+    "assertions": 2025,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "focused_with_races": {
+    "runs": 8,
+    "assertions": 64
+  },
+  "gates": {
+    "route_files": 13,
+    "controller_concern_files": 48,
+    "zeitwerk": "passed",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_audit": "no known vulnerability"
+  },
+  "browser": "Read-only current session card verified on local admin",
+  "migration": false,
+  "real_development_sessions_revoked": false,
+  "ownership": "Principal identity, independent of company admin grants",
+  "limitations": [
+    "No IP or device tracking",
+    "No API token management UI",
+    "Does not cancel already authenticated in-flight requests",
+    "No immediate socket-disconnect guarantee",
+    "Native image not rebuilt in this increment"
+  ]
+}

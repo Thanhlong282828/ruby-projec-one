@@ -12,15 +12,20 @@ Dir.chdir(File.expand_path("..", __dir__)) do
       "replace-with-random-secret" => SecureRandom.hex(32)
     }
     replacements.each { |from, to| contents.gsub!(from, to) }
+    contents.sub!(/^SECRET_KEY_BASE=CHANGE_ME$/, "SECRET_KEY_BASE=#{SecureRandom.hex(64)}")
     contents.gsub!("replace-with-32-random-characters") { SecureRandom.alphanumeric(32) }
     File.write(".env", contents, perm: 0600)
   end
+  exit if ARGV.include?("--env-only")
   commands = [
-    ["docker", "compose", "build"],
-    ["docker", "compose", "up", "-d", "--wait", "mysql", "redis", "mailpit", "event_sink"],
-    ["docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO ruby;"'],
-    ["docker", "compose", "run", "--rm", "web", "bundle", "exec", "rails", "db:prepare", "db:seed"],
-    ["docker", "compose", "up", "-d", "web", "worker"]
+    [ "docker", "compose", "build" ],
+    [ "docker", "compose", "up", "-d", "--wait", "mysql", "redis", "mailpit", "event_sink" ],
+    [ "docker", "compose", "exec", "-T", "mysql", "sh", "-c", 'case "$MYSQL_USER" in ""|*[!a-zA-Z0-9_]*) exit 2;; esac; MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root --execute="CREATE DATABASE IF NOT EXISTS hrm_test; GRANT ALL ON hrm_test.* TO \`$MYSQL_USER\`@\`%\`;"' ],
+    [ "bin/prepare-mysql-tls" ],
+    [ "bin/migrate-docker", "development" ],
+    [ "docker", "compose", "run", "--rm", "web", "bundle", "exec", "rails", "db:seed" ],
+    [ "docker", "compose", "run", "--rm", "-e", "EMAIL=admin@hrm.local", "web", "bundle", "exec", "rails", "system:grant_owner" ],
+    [ "docker", "compose", "up", "-d", "web", "worker" ]
   ]
   commands.each { |command| abort("Setup failed") unless system(*command) }
   puts "Open http://localhost:3100 — admin@hrm.local. Password: SEED_ADMIN_PASSWORD in .env"

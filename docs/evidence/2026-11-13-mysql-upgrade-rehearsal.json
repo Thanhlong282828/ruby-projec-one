@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-13",
+  "source_snapshot_sha256": "8db982ba24d68f339bbcce6a31e65eb0e6062c92983181d2b00d73b17f87ac7a",
+  "application_image": "sha256:5f358807ea15b7220f4f12877b7037886dda1d7c321ecceba1420f4b43b91bd9",
+  "historical_source": {
+    "commit": "9b9c014facc2f4c2cbcf423d7d7685eef429f408",
+    "path": "db/schema.rb",
+    "git_blob": "653a7e19b0af6ad0bed1d21bee102b762ff9eb39",
+    "sha256": "0e8eaacf9f40c586d58cee2fa1dc9fa5c12454563eeff0b11c77f7370b853847",
+    "version": 20261028000002,
+    "reason": "Latest committed schema in this repository before uncommitted ERP additions; all three migration files exist at same commit. No business dump or reverse migration used."
+  },
+  "records": [
+    {
+      "stage": "before",
+      "mysql": "8.4.13",
+      "migrations": [
+        20261025000001,
+        20261028000001,
+        20261028000002
+      ],
+      "companies": 2,
+      "payslips": 2,
+      "constraints": [
+        {
+          "CONSTRAINT_TYPE": "CHECK",
+          "total": 1
+        },
+        {
+          "CONSTRAINT_TYPE": "FOREIGN KEY",
+          "total": 35
+        },
+        {
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "total": 18
+        },
+        {
+          "CONSTRAINT_TYPE": "UNIQUE",
+          "total": 18
+        }
+      ],
+      "indexes": 98,
+      "schema_sha256": "0e8eaacf9f40c586d58cee2fa1dc9fa5c12454563eeff0b11c77f7370b853847"
+    },
+    {
+      "stage": "after",
+      "migrations": [
+        20261025000001,
+        20261028000001,
+        20261028000002,
+        20261111000001,
+        20261111000002,
+        20261111000003,
+        20261111000004,
+        20261111000005,
+        20261112000001,
+        20261112000002,
+        20261112000003,
+        20261112000004,
+        20261112000005,
+        20261112000006,
+        20261112000007,
+        20261112000008,
+        20261112000009
+      ],
+      "results": [
+        {
+          "company": 1,
+          "legacy_net": 20000000,
+          "legacy_identity": null,
+          "legacy_export": "rejected_missing_snapshot",
+          "new_status": "finalized",
+          "new_snapshot": 20000000,
+          "csv_bytes": 182,
+          "cross_company": "denied"
+        },
+        {
+          "company": 2,
+          "legacy_net": 30000000,
+          "legacy_identity": null,
+          "legacy_export": "rejected_missing_snapshot",
+          "new_status": "finalized",
+          "new_snapshot": 30000000,
+          "csv_bytes": 182,
+          "cross_company": "denied"
+        }
+      ]
+    },
+    {
+      "stage": "schema_verified",
+      "counts": {
+        "columns": 304,
+        "indexes": 232,
+        "key_column_usage": 223,
+        "checks": 19,
+        "triggers": 2,
+        "constraints": 4,
+        "versions": 17
+      },
+      "definition_sha256": "8d1caf81647673a576533f6b5d2fd540a57d08499ef57a4581f335fb57d4d008",
+      "constraint_rejections": [
+        "CHECK",
+        "composite_FK",
+        "membership_trigger",
+        "unique_index"
+      ]
+    }
+  ],
+  "after_constraints": {
+    "CHECK": 19,
+    "FOREIGN KEY": 75,
+    "PRIMARY KEY": 34,
+    "UNIQUE": 45
+  },
+  "comparison": "All columns/defaults, named indexes, key-column ownership, CHECK text, trigger timing/event/body and migration versions match fresh current structure.sql. Normalize trigger whitespace only outside quoted literals/identifiers. 223 key_column_usage rows are not223foreign keys. No migration source changes required.",
+  "data_checks": [
+    "All old column values for companies/users/api_tokens/employees/pay_runs/payslips retained immediately after migration",
+    "Two old API token principal_user_id backfills equal original user_id",
+    "Legacy20m/30mVND salary readable via ListPayslips; historical identity remains nil",
+    "Migration-provisioned CSV grants used; no extra post-migration grants",
+    "Legacy CSV creation fails missing identity; new payroll both companies build/finalize/download182byteCSV",
+    "Change live name/salary after draft preserves20m/30m snapshot",
+    "Cross-company payslip reads denied",
+    "Invalid SQL rejected by CHECK3819/compositeFK1452/trigger1644/unique1062"
+  ],
+  "isolation": {
+    "mysql": "new MySQL8.4.13 container/random volume; network none; Unix socket only",
+    "schemas": [
+      "hrm_test",
+      "hrm_fresh"
+    ],
+    "secrets": "Fresh random temporary env0600; no real .env/backup read",
+    "cleanup": "finally removes container/volume; no rehearsal resources remain",
+    "mounts": "packaged application; readonly proof scripts; disposable DB volume; no source",
+    "privilege": "root only in disposable DDL/fixture process; runtime grants unchanged",
+    "platform": "MySQL amd64 emulation on arm64 host; Ruby image arm64"
+  },
+  "reproduction": {
+    "host_python": "import subprocess, pathlib, tempfile, secrets, os, json, time\nroot='/Users/lahoathanh/Desktop/xinviec/ruby'\nname='hrm-upgrade-rehearsal-'+secrets.token_hex(6)\nvolume=name+'-data'\ndef run(args, **kwargs):\n    return subprocess.run(args, check=True, cwd=root, **kwargs)\nwith tempfile.TemporaryDirectory(prefix='hrm-upgrade-') as td:\n    td=pathlib.Path(td); td.chmod(0o755)\n    (td/'old_schema.rb').write_bytes(subprocess.check_output(['git','show','9b9c014facc2f4c2cbcf423d7d7685eef429f408:db/schema.rb'],cwd=root))\n    (td/'rehearse.rb').write_bytes(pathlib.Path('/private/tmp/hrm-upgrade-rehearsal.rb').read_bytes())\n    env=td/'mysql.env'; password=secrets.token_hex(32)\n    values={'MYSQL_ROOT_PASSWORD':password,'MYSQL_DATABASE':'hrm_test','DATABASE_PASSWORD':password,'SECRET_KEY_BASE':secrets.token_hex(64),'EVENT_SECRET':secrets.token_hex(32),'REDIS_URL':'redis://127.0.0.1:6379/0','CABLE_REDIS_URL':'redis://127.0.0.1:6379/2'}\n    for key in ['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY','ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY','ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT']: values[key]=secrets.token_hex(16)\n    env.write_text(''.join(key+'='+value+'\\n' for key,value in values.items())); env.chmod(0o600)\n    volume_created=False; mysql_created=False\n    try:\n        run(['docker','volume','create',volume],stdout=subprocess.DEVNULL)\n        volume_created=True\n        run(['docker','run','-d','--name',name,'--network','none','--env-file',str(env),'--mount',f'type=volume,src={volume},dst=/var/lib/mysql','sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69','--socket=/var/lib/mysql/mysql.sock'],stdout=subprocess.DEVNULL)\n        mysql_created=True\n        for i in range(120):\n            r=subprocess.run(['docker','exec',name,'sh','-c','MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" mysql -uroot --socket=/var/lib/mysql/mysql.sock -N -e \"SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=\\'hrm_test\\' AND @@port=3306\"'],capture_output=True)\n            if r.returncode==0 and r.stdout.strip()==b'1': break\n            time.sleep(.5)\n        else: raise RuntimeError('Disposable MySQL not ready')\n        run(['docker','run','--rm','--user','0','--network','none','--volumes-from',name,'--env-file',str(env),'-e','RAILS_ENV=test','-e','DATABASE_HOST=unreachable.invalid','--mount',f'type=bind,src={td},dst=/proof,readonly','sha256:5f358807ea15b7220f4f12877b7037886dda1d7c321ecceba1420f4b43b91bd9','bundle','exec','rails','runner','/proof/rehearse.rb'])\n    finally:\n        if mysql_created: run(['docker','rm','-f',name],stdout=subprocess.DEVNULL)\n        if volume_created: run(['docker','volume','rm',volume],stdout=subprocess.DEVNULL)\n",
+    "rails_runner": "require \"json\"\nrequire \"digest\"\nraise \"test only\" unless Rails.env.test?\nActiveRecord::Base.establish_connection(adapter: \"mysql2\", socket: \"/var/lib/mysql/mysql.sock\", username: \"root\", password: ENV.fetch(\"MYSQL_ROOT_PASSWORD\"), database: \"hrm_test\", encoding: \"utf8mb4\")\nc = ActiveRecord::Base.connection\nraise \"wrong DB\" unless c.select_value(\"SELECT DATABASE()\") == \"hrm_test\"\nraise \"must be empty disposable database\" unless c.tables.empty?\nActiveRecord::Migration.verbose = false\nload \"/proof/old_schema.rb\"\ncontext = ActiveRecord::MigrationContext.new(Rails.application.paths[\"db/migrate\"].to_a)\nold_versions = %w[20261025000001 20261028000001 20261028000002]\nraise \"historical version mismatch\" unless context.get_all_versions.map(&:to_s).sort == old_versions.sort\nraw = ->(table, attrs) do\n  now = Time.current\n  values = attrs.merge(created_at: now, updated_at: now).slice(*c.columns(table).map { |col| col.name.to_sym })\n  c.execute(\"INSERT INTO #{c.quote_table_name(table)} (#{values.keys.map { |k| c.quote_column_name(k) }.join(',')}) VALUES (#{values.values.map { |v| c.quote(v) }.join(',')})\")\n  c.select_value(\"SELECT LAST_INSERT_ID()\").to_i\nend\nids = [\"A\", \"B\"].each_with_index.map do |suffix, n|\n  company = raw.call(\"companies\", code: \"UPGRADE_#{suffix}\", name: \"Upgrade sample #{suffix}\")\n  role_id = raw.call(\"company_roles\", company_id: company, key: \"admin\", name: \"Sample admin\")\n  %w[payroll.read payroll.create payroll.finalize].each do |key|\n    permission_id = c.select_value(\"SELECT id FROM permissions WHERE `key`=#{c.quote(key)}\") || raw.call(\"permissions\", key: key, name: \"Sample permission\")\n    raw.call(\"role_permissions\", company_role_id: role_id, permission_id: permission_id)\n  end\n  user = raw.call(\"users\", company_id: company, role: \"admin\", email: \"upgrade-#{suffix.downcase}@example.test\", password_digest: BCrypt::Password.create(SecureRandom.hex(24)))\n  raw.call(\"api_tokens\", user_id: user, digest: Digest::SHA256.hexdigest(SecureRandom.hex(32)), expires_at: Time.current + 3600)\n  department = raw.call(\"departments\", company_id: company, code: \"QA\", name: \"Sample\")\n  employee = raw.call(\"employees\", company_id: company, department_id: department, user_id: user, employee_code: \"OLD_#{suffix}\", full_name: \"Historical #{suffix}\", email: \"employee-#{suffix.downcase}@example.test\", job_title: \"Sample\", hired_on: Date.new(2026, 1, 1), salary_cents: (n+2)*10000000)\n  run = raw.call(\"pay_runs\", company_id: company, created_by_id: user, period: Date.new(2026, 1, 1), status: \"finalized\", finalized_at: Time.current)\n  slip = raw.call(\"payslips\", company_id: company, pay_run_id: run, employee_id: employee, gross_cents: (n+2)*10000000, deductions_cents: 0, net_cents: (n+2)*10000000)\n  [company, user, employee, run, slip]\nend\nsnapshot = lambda do\n  %w[companies users api_tokens employees pay_runs payslips].to_h do |table|\n    columns = c.columns(table).map(&:name)\n    [table, c.exec_query(\"SELECT #{columns.map { |col| c.quote_column_name(col) }.join(',')} FROM #{c.quote_table_name(table)} ORDER BY id\").to_a]\n  end\nend\nbefore = snapshot.call\nputs JSON.generate(stage: \"before\", mysql: c.select_value(\"SELECT VERSION()\"), migrations: context.get_all_versions, companies: ids.size, payslips: ids.size, constraints: c.exec_query(\"SELECT CONSTRAINT_TYPE,COUNT(*) AS total FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() GROUP BY CONSTRAINT_TYPE ORDER BY CONSTRAINT_TYPE\").to_a, indexes: c.select_value(\"SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE()\").to_i, schema_sha256: Digest::SHA256.file('/proof/old_schema.rb').hexdigest)\ncontext.migrate\nApplicationRecord.descendants.each(&:reset_column_information)\n# Verify every original column value; newly nullable historical identity must stay unknown.\nafter = snapshot.call\nbefore.each do |table, rows|\n  raise \"legacy data changed in #{table}\" unless rows == after.fetch(table).map { |row| row.slice(*rows.first.keys) }\nend\nraise \"pending migrations\" if context.needs_migration?\nraise \"credential principal backfill failed\" unless c.select_value(\"SELECT COUNT(*) FROM api_tokens WHERE principal_user_id = user_id\").to_i == 2\nRails.application.eager_load!\nActiveJob::Base.queue_adapter = :test\nresults = ids.map do |company_id, user_id, employee_id, run_id, slip_id|\n  actor = User.find(user_id)\n  employee = Employee.find(employee_id)\n  old = Payslip.find(slip_id)\n  raise \"legacy identity fabricated\" unless old.employee_code_snapshot.nil? && old.employee_name_snapshot.nil?\n  listed = HrmPayroll::Application::Queries::ListPayslips.new.call(run: PayRun.find(run_id), actor: actor)\n  raise \"legacy slip unreadable\" unless listed.map(&:id).include?(slip_id)\n  # New CSV grants must come from the actual migration, not harness provisioning.\n  begin\n    HrmPayroll::Application::Commands::CreateExport.new.call(actor: actor, pay_run_id: run_id)\n    raise \"must reject fabricated legacy export\"\n  rescue HrmPayroll::Domain::Services::PayrollCsv::InvalidSource\n    # No historical identity snapshot exists; never substitute live employee data.\n  end\n  run = HrmPayroll::Application::Commands::BuildPayRun.new.call(actor: actor, period: Date.new(2026, 2, 1))\n  captured = run.payslips.first\n  employee.update!(full_name: \"Changed after snapshot\", salary_cents: 99000000)\n  run = HrmPayroll::Application::Commands::FinalizePayRun.new.call(actor: actor, run: run)\n  export = HrmPayroll::Application::Commands::CreateExport.new.call(actor: actor, pay_run_id: run.id)\n  download = HrmPayroll::Application::Commands::DownloadExport.new.call(actor: actor, id: export.id)\n  raise \"snapshot changed\" unless captured.reload.gross_cents == old.gross_cents && captured.employee_code_snapshot == employee.employee_code\n  raise \"empty CSV\" unless download.fetch(:bytes).include?(employee.employee_code)\n  other = ids.find { |row| row[0] != company_id }\n  begin\n    HrmPayroll::Application::Queries::ListPayslips.new.call(run: PayRun.find(other[3]), actor: actor)\n    raise \"cross company allowed\"\n  rescue ActiveRecord::RecordNotFound, Pundit::NotAuthorizedError\n  end\n  {company: company_id, legacy_net: old.net_cents, legacy_identity: nil, legacy_export: \"rejected_missing_snapshot\", new_status: run.status, new_snapshot: captured.gross_cents, csv_bytes: download.fetch(:bytes).bytesize, cross_company: \"denied\"}\nend\nputs JSON.generate(stage: \"after\", migrations: context.get_all_versions, results: results)\n# Definition comparison with a fresh structure.sql is performed by the host afterwards.\nrequire \"open3\"\nc.execute(\"CREATE DATABASE hrm_fresh CHARACTER SET utf8mb4\")\noutput, error, status = Open3.capture3({ \"MYSQL_PWD\" => ENV.fetch(\"MYSQL_ROOT_PASSWORD\") }, \"mysql\", \"--socket=/var/lib/mysql/mysql.sock\", \"--user=root\", \"hrm_fresh\", stdin_data: File.read(Rails.root.join(\"db/structure.sql\")))\nraise \"fresh SQL load failed: #{error}\" unless status.success?\nmetadata = lambda do |db|\n  {\n    columns: c.exec_query(\"SELECT TABLE_NAME,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='#{db}' ORDER BY TABLE_NAME,ORDINAL_POSITION\").to_a,\n    indexes: c.exec_query(\"SELECT TABLE_NAME,INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='#{db}' ORDER BY TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX\").to_a,\n    key_column_usage: c.exec_query(\"SELECT TABLE_NAME,CONSTRAINT_NAME,COLUMN_NAME,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_SCHEMA='#{db}' ORDER BY TABLE_NAME,CONSTRAINT_NAME,ORDINAL_POSITION\").to_a,\n    checks: c.exec_query(\"SELECT CONSTRAINT_NAME,CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='#{db}' ORDER BY CONSTRAINT_NAME\").to_a,\n    triggers: c.exec_query(\"SELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION,ACTION_STATEMENT FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='#{db}' ORDER BY TRIGGER_NAME\").to_a,\n    constraints: c.exec_query(\"SELECT CONSTRAINT_TYPE,COUNT(*) AS total FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='#{db}' GROUP BY CONSTRAINT_TYPE ORDER BY CONSTRAINT_TYPE\").to_a,\n    versions: c.select_values(\"SELECT version FROM #{db}.schema_migrations ORDER BY version\")\n  }\nend\nactual, expected = metadata.call('hrm_test'), metadata.call('hrm_fresh')\n# Migration uses squished SQL; structure.sql stores formatted trigger bodies.\n# Normalize only whitespace outside quoted literals/identifiers, preserving messages.\n[actual, expected].each do |definition|\n  definition[:triggers].each do |trigger|\n    trigger[\"ACTION_STATEMENT\"] = trigger.fetch(\"ACTION_STATEMENT\").split(/('(?:''|[^'])*'|`(?:``|[^`])*`)/).each_with_index.map { |part, i| i.odd? ? part : part.gsub(/\\s+/, \" \") }.join.strip\n  end\nend\ndifferent = actual.keys.reject { |key| actual[key] == expected[key] }\nif different.any?\n  puts JSON.generate(stage: \"metadata_difference\", keys: different, counts: actual.transform_values(&:size), expected_counts: expected.transform_values(&:size))\n  different.each { |k| puts JSON.generate(kind: k, only_upgrade: actual[k]-expected[k], only_fresh: expected[k]-actual[k]) }\n  raise \"Upgraded schema differs from fresh SQL\"\nend\nreject = lambda do |sql, code|\n  begin\n    c.execute(sql)\n  rescue ActiveRecord::StatementInvalid => e\n    raise unless e.cause.respond_to?(:error_number) && e.cause.error_number == code\n    next\n  end\n  raise \"Constraint did not reject sample write\"\nend\nreject.call(\"UPDATE employees SET salary_cents=-1 WHERE id=#{ids[0][2]}\", 3819)\nreject.call(\"UPDATE payslips SET employee_id=#{ids[1][2]} WHERE id=#{ids[0][4]}\", 1452)\nreject.call(\"UPDATE users SET principal_user_id=id WHERE id=#{ids[0][1]}\", 1644)\nreject.call(\"UPDATE companies SET code='UPGRADE_A' WHERE id=#{ids[1][0]}\", 1062)\nputs JSON.generate(stage: \"schema_verified\", counts: actual.transform_values(&:size), definition_sha256: Digest::SHA256.hexdigest(JSON.generate(actual)), constraint_rejections: [\"CHECK\", \"composite_FK\", \"membership_trigger\", \"unique_index\"])\n"
+  },
+  "limits": [
+    "Invented fixtures, not production backup/restore",
+    "Initial harness attempts fixed temporary-server readiness, automatic schema versions and fixture columns/grants; no product suppression added",
+    "Reproduction is pinned to recorded immutable application and MySQL image IDs; these images must remain available locally."
+  ],
+  "mysql_image_id": "sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69"
+}

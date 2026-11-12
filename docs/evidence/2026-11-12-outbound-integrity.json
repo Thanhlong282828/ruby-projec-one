@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-12",
+  "feature": "Generic outbound integrity gate and reserved typed business event roots",
+  "scope": "Security prerequisite only; no source-bound payroll bridge or artifact transport",
+  "architecture": "Existing Integration Engine + MVC + CQRS; pure Domain service shared by enqueue/replay/worker; no new contract/routes/migration/ENV/dependency",
+  "rules": [
+    "64KiB original bytes",
+    "UTF-8, JSON/schema/depth",
+    "payroll/erp/government roots rejected for generic outbound",
+    "worker and replay verify persisted SHA256",
+    "invalid payload/decryption blocked before HTTP, no fabricated attempt",
+    "status-only locked quarantine preserves optimistic lock, database constraints and audit/outbox callbacks",
+    "metadata serialization does not decrypt payload"
+  ],
+  "quarantine_validator_exception": "Rails encrypted-column length validation decrypts even for status-only writes. Narrow private block! requires exactly status mutation and save(validate:false); ordinary model writes retain all validations.",
+  "verification": {
+    "targeted": {
+      "runs": 23,
+      "assertions": 182,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "full_hrm_test": {
+      "runs": 287,
+      "assertions": 1671,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "native_no_source_mount": {
+      "runs": 25,
+      "assertions": 194,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "routes_files": 13,
+    "architecture_controllers": 39,
+    "zeitwerk": "pass",
+    "brakeman": {
+      "controllers": 38,
+      "models": 32,
+      "templates": 61,
+      "errors": 0,
+      "warnings": 0
+    },
+    "bundler_audit": {
+      "updated": true,
+      "advisories": 1359,
+      "db_commit": "4d71b123428e33f694e805ce15351ee3d8d62ef7",
+      "known_vulnerabilities": 0
+    },
+    "increment_whitespace": "pass"
+  },
+  "tests_cover": [
+    "reserved roots via direct command and authenticated API",
+    "changed valid encrypted JSON with stale digest",
+    "schema/size/UTF-8 and legacy reserved event with matching digest",
+    "broken ciphertext, metadata API, manual replay denial",
+    "quarantine rollback on outbox failure",
+    "existing MySQL duplicate-worker/idempotency and permission-lock races"
+  ],
+  "runtime": {
+    "native_image_built": true,
+    "bundle_check": "pass",
+    "web_reload": "Exact xinviec-hrm-web-1 SIGUSR2, no recreate",
+    "worker_restarted": true,
+    "health_http": 200,
+    "development_counts": {
+      "users": 7,
+      "pay_runs": 0,
+      "payroll_exports": 0,
+      "deliveries": 0,
+      "attempts": 0
+    },
+    "external_calls": 0,
+    "business_samples_created": 0
+  },
+  "documentation": "HUONG_DAN_BAO_VE_OUTBOUND_LARAVEL_RUBY.txt; summary then three horizontal tables then file-by-file flow",
+  "limitations": [
+    "No source FK/source grants/worker source verification for payroll yet; bridge remains missing",
+    "Checksum does not defeat a privileged operator modifying both body and digest",
+    "blocked has no dedicated integrity reason code in current UI",
+    "No provider/accounting/government export parity",
+    "No browser UI changes or mobile verification in this increment",
+    "No external provider sends or GitHub push"
+  ],
+  "logs": "Private temp hrm_outbound_integrity_{full,gates,native,image}_20261112.txt; no secrets copied into evidence"
+}

@@ -1,6 +1,6 @@
 module Workforce
   class DepartmentsController < ApplicationController
-    before_action :set_department, only: [:edit, :update, :destroy]
+    before_action :set_department, only: [ :edit, :update, :destroy ]
     def index
       @departments = HrmWorkforce::Application::Queries::ListDepartments.new.call(actor: current_user, page: params[:page])
     end
@@ -8,19 +8,19 @@ module Workforce
       @department = Department.new(company: current_user.company)
       authorize @department
     end
+    def edit; end
     def create
       HrmWorkforce::Application::Commands::CreateDepartment.new.call(actor: current_user, attributes: department_params)
-      redirect_to departments_path, notice: "Đã thêm phòng ban."
+      redirect_to departments_path, notice: I18n.t("hrm_quality.messages.da_them_phong_ban")
     rescue ActiveRecord::RecordInvalid => error
       @department = error.record
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-    def edit; end
     def update
       HrmWorkforce::Application::Commands::UpdateDepartment.new.call(actor: current_user, record: @department, attributes: department_params)
-      redirect_to departments_path, notice: "Đã cập nhật."
+      redirect_to departments_path, notice: I18n.t("hrm_quality.messages.da_cap_nhat")
     rescue ActiveRecord::RecordInvalid
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
     def destroy
       HrmWorkforce::Application::Commands::DeleteDepartment.new.call(actor: current_user, record: @department)

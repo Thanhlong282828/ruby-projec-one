@@ -1,0 +1,33 @@
+<h1>Định biên và vị trí còn trống</h1>
+<p class="subtitle">
+  Nguồn: vị trí được duyệt và phân công đang có hiệu lực hôm nay; mỗi phân công chiếm một chỗ.
+  Hồ sơ nhân viên chưa được phân công không được tính vào số đang bố trí.
+</p>
+<div class="panel" role="region" aria-label="Định biên" tabindex="0">
+  <table>
+    <thead>
+      <tr>
+        <th>Vị trí nguồn</th><th>Đơn vị</th><th>Được duyệt</th>
+        <th>Đang bố trí</th><th>Còn trống</th><th>Trọng yếu</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <tr>
+          <td><%= link_to "#{row[:code]} — #{row[:title]}", row[:source] %></td>
+          <td><%= link_to row[:unit], row[:unit_source] if row[:unit_source] %></td>
+          <td><%= row[:approved] %></td>
+          <td><%= link_to row[:occupied], "/organization/employee-assignments" %></td>
+          <td><%= row[:vacant] %></td>
+          <td><%= row[:critical] ? "Có" : "Không" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @rows.empty? %>
+    <div class="empty">
+      Chưa có vị trí được duyệt.
+      <%= link_to "Mở danh sách vị trí →", "/organization/job-positions" %>
+    </div>
+  <% end %>
+</div>

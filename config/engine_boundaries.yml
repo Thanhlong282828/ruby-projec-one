@@ -1,0 +1,21 @@
+# Existing cross-engine API dependencies. Shared top-level AR models are addressed below.
+engines:
+  attendance: [HrmWorkforce]
+  audit: []
+  dashboard: [HrmWorkforce, HrmTimeOff, HrmRecruitment, HrmOnboarding, HrmIntegration]
+  identity: [HrmPlatform]
+  integration: [HrmPayroll]
+  onboarding: []
+  organization: []
+  payroll: [HrmWorkforce]
+  platform: []
+  recruitment: []
+  time_off: [HrmPlatform, HrmWorkforce, HrmIdentity]
+  workforce: [HrmIdentity]
+# This modular monolith shares a database and public model constants. In particular:
+# Payroll locks Employee and reads Attendance/LeaveRequest for its authorized reconciliation.
+# Leave uses Workforce for balances and IAM for summary recipients. None may instantiate
+# another engine's Infrastructure/Providers. Payroll's legacy TimeOff::Review::InvalidTransition
+# is retained for API rescue compatibility; removing that alias requires a separate API change.
+controller_rescue_exceptions:
+  HrmIntegration::Infrastructure::Http::OutboundTransport::Unavailable: "Legacy transport exception is only rescued to return 503; controllers never construct a transport."

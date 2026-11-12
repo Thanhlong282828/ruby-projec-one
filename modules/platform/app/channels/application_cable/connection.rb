@@ -1,8 +1,15 @@
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
     identified_by :current_user
+    def session_authenticated?
+      login = authenticated_session
+      login && login.user_id == current_user.id
+    end
+    def authenticated_session
+      HrmIdentity::Application::Queries::AuthenticateWebSession.new.call(raw: request.session[:login_token])
+    end
     def connect
-      self.current_user = HrmIdentity::Application::Queries::FindActiveUser.new.call(id: request.session[:user_id]) || reject_unauthorized_connection
+      self.current_user = authenticated_session&.user || reject_unauthorized_connection
     end
   end
 end

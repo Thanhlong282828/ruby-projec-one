@@ -40,8 +40,8 @@ class CompanyAccessTest < ActiveSupport::TestCase
     other_admin = make_user(:admin, company: another_company)
     own = make_employee
     other = make_employee(make_user(:employee, company: other_admin.company))
-    assert_equal [own.id], Pundit.policy_scope!(admin, Employee).pluck(:id)
-    assert_equal [own.department_id], Pundit.policy_scope!(admin, Department).pluck(:id)
+    assert_equal [ own.id ], Pundit.policy_scope!(admin, Employee).pluck(:id)
+    assert_equal [ own.department_id ], Pundit.policy_scope!(admin, Department).pluck(:id)
     assert_raises(ActiveRecord::RecordNotFound) { HrmWorkforce::Application::Queries::FindEmployee.new.call(actor: admin, id: other.id) }
     assert_raises(Pundit::NotAuthorizedError) { HrmWorkforce::Application::Commands::UpdateEmployee.new.call(actor: admin, record: other, attributes: { full_name: "Hijacked" }) }
     assert_equal "Test Person", other.reload.full_name
@@ -51,7 +51,7 @@ class CompanyAccessTest < ActiveSupport::TestCase
   test "MySQL rejects cross company association even when model validations are bypassed" do
     own = make_employee
     other = make_employee(make_user(:employee, company: another_company))
-    assert_raises(ActiveRecord::InvalidForeignKey) { own.update_column(:department_id, other.department_id) }
+    assert_raises(ActiveRecord::InvalidForeignKey) { own.update_column(:department_id, other.department_id) } # rubocop:disable Rails/SkipsModelValidations -- Regression intentionally exercises DB guards or corrupt/legacy rows without AR callbacks.
     assert_equal own.company_id, own.reload.department.company_id
     assert_raises(ActiveRecord::InvalidForeignKey) do
       User.connection.execute("UPDATE users SET role='unknown-role' WHERE id=#{own.user_id}")
@@ -69,7 +69,7 @@ class CompanyAccessTest < ActiveSupport::TestCase
     own = make_employee
     other = make_employee(make_user(:employee, company: another_company))
     options = HrmWorkforce::Application::Queries::EmployeeFormOptions.new.call(actor: admin)
-    assert_equal [own.department_id], options[:departments].map(&:id)
+    assert_equal [ own.department_id ], options[:departments].map(&:id)
     assert_includes options[:users].map(&:id), own.user_id
     assert_not_includes options[:users].map(&:id), other.user_id
   end
@@ -87,8 +87,8 @@ class CompanyAccessTest < ActiveSupport::TestCase
     other = make_employee(make_user(:employee, company: other_admin.company))
     run = HrmPayroll::Application::Commands::BuildPayRun.new.call(period: Date.current, actor: admin)
     other_run = HrmPayroll::Application::Commands::BuildPayRun.new.call(period: Date.current, actor: other_admin)
-    assert_equal [own.id], run.payslips.pluck(:employee_id)
-    assert_equal [other.id], other_run.payslips.pluck(:employee_id)
+    assert_equal [ own.id ], run.payslips.pluck(:employee_id)
+    assert_equal [ other.id ], other_run.payslips.pluck(:employee_id)
     assert_raises(Pundit::NotAuthorizedError) { HrmPayroll::Application::Commands::FinalizePayRun.new.call(run: other_run, actor: admin) }
   end
   test "dashboard cache does not mix company data and permission revocation changes its key" do
@@ -104,21 +104,21 @@ class CompanyAccessTest < ActiveSupport::TestCase
     assert_equal 2, query.call(actor: other_admin)[:employees]
   end
   test "audit outbox and scheduled summaries carry company identity" do
-    admin = make_user(:admin)
+    make_user(:admin)
     other_admin = make_user(:admin, company: another_company)
     own = make_employee
     other = make_employee(make_user(:employee, company: other_admin.company))
     request = own.leave_requests.create!(starts_on: Date.current, ends_on: Date.current, reason: "Own")
     2.times do |i|
-      day = Date.current + 10 + i * 2
+      day = Date.current + 10 + (i * 2)
       other.leave_requests.create!(starts_on: day, ends_on: day, reason: "Other")
     end
-    assert_equal [own.company_id], AuditLog.where(record_type: "Employee", record_id: own.id).pluck(:company_id).uniq
+    assert_equal [ own.company_id ], AuditLog.where(record_type: "Employee", record_id: own.id).pluck(:company_id).uniq
     event = OutboxEvent.where(event_type: "employee.created").detect { |row| row.payload["record_id"] == own.id }
     assert_equal own.company_id, event.company_id
     summary = HrmTimeOff::Application::Queries::DailySummary.new.call(company_id: own.company_id)
     assert_equal 1, summary[:pending]
-    assert summary[:recipients].all? { |user| user.company_id == own.company_id }
+    assert(summary[:recipients].all? { |user| user.company_id == own.company_id })
     assert_equal 2, HrmTimeOff::Application::Queries::DailySummary.new.call(company_id: other.company_id)[:pending]
     repository = Hrm::Container.resolve(HrmTimeOff::Domain::Repositories::ReadRepositoryInterface)
     assert_raises(ActiveRecord::RecordNotFound) { repository.find_for_mail!(id: request.id, company_id: other.company_id) }
@@ -130,7 +130,7 @@ class CompanyAccessTest < ActiveSupport::TestCase
     assert employee.reload.manager?
     assert employee.allowed?("recruitment.read")
     assert_not employee.allowed?("leave.review")
-    assert AuditLog.where(company_id: admin.company_id, record_type: "User", record_id: employee.id, action: "account.access.updated").exists?
+    assert AuditLog.exists?(company_id: admin.company_id, record_type: "User", record_id: employee.id, action: "account.access.updated")
     administration.update_account!(actor: admin, id: employee.id, attributes: { active: true })
     assert_not employee.allowed?("leave.review"), "omitting override fields must preserve existing denies"
   end
@@ -161,7 +161,8 @@ class CompanyAccessTest < ActiveSupport::TestCase
     assert_equal before_count, Company.count
     company = administration.create_company!(code: "NEWORG", name: "New Org", owner_email: "owner-new@example.test", password: "StrongPassword123!")
     assert_equal 4, company.company_roles.count
-    assert_equal 29, company.company_roles.find_by!(key: "admin").permissions.count
+    assert_equal (HrmIdentity::Domain::PermissionCatalog.definitions.keys - SystemGrant::KEYS).sort, company.company_roles.find_by!(key: "admin").permissions.pluck(:key).sort
+    assert_not company.users.first.allowed?("system.companies.manage")
     assert company.users.first.allowed?("accounts.manage")
   end
   test "general employee edit grant cannot leak or change protected compensation fields" do
@@ -188,12 +189,11 @@ class CompanyAccessTest < ActiveSupport::TestCase
 
   test "stale actor cannot mint a token after account or company deactivation" do
     actor = make_user
-    User.where(id: actor.id).update_all(active: false)
+    User.where(id: actor.id).update_all(active: false) # rubocop:disable Rails/SkipsModelValidations -- Regression intentionally exercises DB guards or corrupt/legacy rows without AR callbacks.
     assert actor.active?, "test intentionally keeps the old object in memory"
     assert_raises(Pundit::NotAuthorizedError) { HrmIdentity::Application::Commands::IssueToken.new.call(actor: actor) }
     actor.reload.update!(active: true)
-    Company.where(id: actor.company_id).update_all(active: false)
+    Company.where(id: actor.company_id).update_all(active: false) # rubocop:disable Rails/SkipsModelValidations -- Regression intentionally exercises DB guards or corrupt/legacy rows without AR callbacks.
     assert_raises(Pundit::NotAuthorizedError) { HrmIdentity::Application::Commands::IssueToken.new.call(actor: actor) }
   end
-
 end

@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-12",
+  "scope": "Secret-safe Laravel DJI/Ruby environment feature comparison; no application provider activation",
+  "totals": {
+    "laravel_declared_keys": 140,
+    "laravel_referenced_keys": 293,
+    "laravel_union_keys": 301,
+    "ruby_declared_keys": 18,
+    "ruby_referenced_keys": 26
+  },
+  "groups": 23,
+  "unmapped_keys": 0,
+  "duplicate_keys": {
+    "laravel": [
+      {
+        "key": "SESSION_SECURE_COOKIE",
+        "file": ".env.example",
+        "lines": [
+          86,
+          91
+        ]
+      },
+      {
+        "key": "SESSION_HTTP_ONLY",
+        "file": ".env.example",
+        "lines": [
+          87,
+          94
+        ]
+      },
+      {
+        "key": "SESSION_SAME_SITE",
+        "file": ".env.example",
+        "lines": [
+          88,
+          97
+        ]
+      },
+      {
+        "key": "VITE_SOURCEMAP",
+        "file": ".env.example",
+        "lines": [
+          251,
+          295
+        ]
+      },
+      {
+        "key": "DOCUMENT_STORAGE_DISK",
+        "file": ".env.example",
+        "lines": [
+          107,
+          180
+        ]
+      },
+      {
+        "key": "EMPLOYEE_DOCUMENT_STORAGE_DISK",
+        "file": ".env.example",
+        "lines": [
+          109,
+          181
+        ]
+      }
+    ],
+    "ruby": []
+  },
+  "outputs": [
+    "DOI_CHIEU_ENV_LARAVEL_DJI_RUBY.txt",
+    "docs/env-feature-audit.json",
+    "docs/env-feature-map.json"
+  ],
+  "cli": "bin/audit-env-features",
+  "tests": {
+    "runs": 4,
+    "assertions": 33,
+    "failures": 0,
+    "errors": 0,
+    "scope": [
+      "No value export/evaluation",
+      "Multiline secret fragments excluded",
+      "Duplicate key locations",
+      "Ruby comment/vendor exclusion",
+      "Unknown keys remain needs_review"
+    ]
+  },
+  "checks": {
+    "native_ruby_cli": "PASS",
+    "ruby_syntax": "PASS",
+    "routes": "PASS, 12 files",
+    "architecture": "PASS, 30 controller files",
+    "zeitwerk": "PASS",
+    "brakeman_engines": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "dependency_audit": "No known vulnerabilities; advisory commit 4d71b123428e33f694e805ce15351ee3d8d62ef7"
+  },
+  "limits": [
+    "Static references do not prove runtime consumption or active external services",
+    "PHP/frontend comments may contribute static references; Ruby comments are excluded",
+    "No Laravel boot/config-cache changes or external provider requests",
+    "No source .env values or value hashes in artifacts",
+    "No .env edits, secret copying/rotation, database migration or GitHub push",
+    "Full application suite not repeated: application runtime unchanged; CLI-only tests ran"
+  ]
+}

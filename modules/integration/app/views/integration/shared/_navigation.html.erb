@@ -1,0 +1,7 @@
+<nav class="integration-tabs" aria-label="Chức năng tích hợp">
+  <%= link_to "Nhận sự kiện", "/integration", class: current_page?("/integration") ? "button" : "button secondary", aria: {current: current_page?("/integration") ? "page" : nil} %>
+  <%= link_to "Gửi sự kiện", "/integration/outbound", class: current_page?("/integration/outbound") ? "button" : "button secondary", aria: {current: current_page?("/integration/outbound") ? "page" : nil} %>
+  <% if policy([:integration, AuditLog]).index? %>
+    <%= link_to "Nhật ký", "/integration/audit", class: current_page?("/integration/audit") ? "button" : "button secondary", aria: {current: current_page?("/integration/audit") ? "page" : nil} %>
+  <% end %>
+</nav>

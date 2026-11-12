@@ -1,0 +1,42 @@
+{
+  "verified_on": "2026-11-12",
+  "rubocop": {
+    "files": 532,
+    "offenses": 0,
+    "version": "1.92.2",
+    "rails": "2.38.0",
+    "performance": "1.27.0",
+    "omakase": "1.1.0",
+    "enabled_groups": [
+      "Lint",
+      "Security",
+      "Rails",
+      "Performance"
+    ],
+    "documented_test_SQL_bypass_exceptions": 27,
+    "todo_baseline": false
+  },
+  "native_full_suite": {
+    "runs": 332,
+    "assertions": 2035,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_mounted": false
+  },
+  "gates": {
+    "routes": 13,
+    "controller_concern_files": 48,
+    "zeitwerk": "passed",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_audit": "no known vulnerability",
+    "actionlint": "1.7.7 passed"
+  },
+  "github_remote_run_verified": false,
+  "branch_protection_configured": false,
+  "full_project_static_typing": false,
+  "new_database_migration": false,
+  "development_reset": false,
+  "native_user": "hrm"
+}

@@ -1,0 +1,103 @@
+{
+  "verified_on": "2026-11-12",
+  "source": "/Users/lahoathanh/Desktop/xinviec/ruby",
+  "build": "docker compose build web worker (repository Dockerfile)",
+  "image": {
+    "id": "sha256:d5ce9ea3340bb46abe3aafa0896dbb7a529ee911c69c48f49f39c7bdba2ca126",
+    "runtime_user": "hrm",
+    "schema_rb_absent": true,
+    "structure_sql_present": true,
+    "dotenv_master_key_absent": true,
+    "matched_source_files": {
+      "Gemfile.lock": "f0ff2ae41ca8365fb61b4d8a5373fdeaa2fc360782510b2526b301bf0aa36812",
+      "db/structure.sql": "21a111a574e19313e6ad692f48287be02c87f50e29d57ce6f6e1cc8cdb0be253",
+      "modules/payroll/app/models/pay_run.rb": "934e06b3f9f8120cfa802af363fda11c630187e64329165ea558be1822b6b5dc",
+      "modules/payroll/app/models/payslip.rb": "75a505eedb04dddc051334c5ca88d64c70944121863fb7f1ed0b616f91b4d0f9",
+      "modules/payroll/app/controllers/payroll/pay_runs_controller.rb": "259a88201f0d7b5883fe24ece0966cb5912ca3247c99c284dc169fa2a1d25677",
+      "modules/payroll/app/views/payroll/pay_runs/show.html.erb": "26b1b85d46116eb1aac8de4b4efb6938ac5c531e96a1a615c682c3b2ace62576",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_write_repository.rb": "556a3ccc4e589015d9222faf326be0fc59b92fb5e5f8d9a3def28040eb3ac259",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_read_repository.rb": "ab83461c8efb7a09290a9853302e45c6eca25b9d8bbdb24fee56a4cb3c493f4c",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/active_record_export_write_repository.rb": "dc463ebb77762750895b63e6154b26bdb1d39acfe344ed7a4693e74ad81226e3",
+      "modules/payroll/lib/hrm_payroll/infrastructure/persistence/payroll_reconciliation.rb": "b2a6ce981b664498856386224519ee8b036c8c42da32e03a179134bc7beae23b",
+      "modules/time_off/lib/hrm_time_off/infrastructure/persistence/active_record_read_repository.rb": "a57de53fed918b79489cfc332a6976f6be2eb8203104f845397367aac097be20",
+      "modules/time_off/lib/hrm_time_off/infrastructure/persistence/active_record_write_repository.rb": "f00cde501206e68c869972b79c6ca7f4d7c3f63c9313c0729248e6731b2efe57",
+      "modules/time_off/lib/hrm_time_off/application/commands/review_leave.rb": "026f533b6b564a3f63e4eb7b922a1d7a62758911d022d33f7038cf8eee16f2ea",
+      "modules/workforce/lib/hrm_workforce/infrastructure/persistence/active_record_read_repository.rb": "f0d637e130a8d8936264b21124b6fbe418892bb68cbd00a71d003ad153c42a6d"
+    }
+  },
+  "smoke_http": {
+    "up": 200,
+    "session_new": 200,
+    "pay_runs_unauthenticated": 302,
+    "source_mounted": false
+  },
+  "full_source_suite": {
+    "runs": 342,
+    "assertions": 2143,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "full_canonical_image_suite": {
+    "runs": 342,
+    "assertions": 2143,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "quality": {
+    "rubocop_files": 539,
+    "offenses": 0,
+    "route_files": 13,
+    "controller_concern_files": 48,
+    "zeitwerk": "passed",
+    "brakeman_errors": 0,
+    "brakeman_warnings": 0,
+    "dependency_audit": "no known vulnerability"
+  },
+  "red_green": {
+    "snapshot_identity_changed_with_live_profile": "reproduced then fixed",
+    "normal_payslip_mutation_after_close": "reproduced then fixed",
+    "forged_run_company_attribute_read": "reproduced then fixed",
+    "leave_approval_in_older_repeatable_read_transaction": "reproduced then fixed"
+  },
+  "two_company_samples": [
+    {
+      "company": "A",
+      "attendance_records": 1,
+      "approved_leave_days": 1,
+      "captured_base_salary_vnd": 20000000
+    },
+    {
+      "company": "B",
+      "attendance_records": 1,
+      "approved_leave_days": 2,
+      "captured_base_salary_vnd": 30000000
+    }
+  ],
+  "covered": [
+    "close twice concurrently commits one audit/reconciliation",
+    "finalize grant revoked while waiting denies close",
+    "audit/outbox failure rolls back close and snapshot",
+    "company B export and payroll denied to company A",
+    "existing session loses payroll access when grant revoked",
+    "source reconciliation hidden without attendance/leave grants",
+    "original employee identity survives later edits and CSV creation"
+  ],
+  "migration": {
+    "version": "20261112000009",
+    "test": "passed",
+    "development": "passed after private backup",
+    "development_pay_runs_before": 0,
+    "development_payslips_before": 0,
+    "historical_backfill": false
+  },
+  "limits": [
+    "Base salary snapshot only; attendance/leave do not automatically change amounts or compute OT/tax",
+    "Open attendance/pending leave are captured warnings, not new automatic closing prohibitions",
+    "Model/API write guards do not prevent privileged raw SQL; artifact verification remains independent",
+    "Legacy rows retain unknown identity and cannot fabricate a new historical export; existing artifact downloads remain valid"
+  ],
+  "sample_business_data_environment": "hrm_test only; development not seeded/reset",
+  "laravel_modified": false
+}

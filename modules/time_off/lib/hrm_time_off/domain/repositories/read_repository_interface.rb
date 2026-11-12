@@ -2,6 +2,9 @@ module HrmTimeOff
   module Domain
     module Repositories
       class ReadRepositoryInterface
+        def count(actor:)
+          raise NotImplementedError
+        end
         def list(actor:, page: 1, recent: false)
           raise NotImplementedError, "HrmTimeOff::ReadRepositoryInterface##list"
         end
@@ -11,7 +14,7 @@ module HrmTimeOff
         def employee_options(actor:)
           raise NotImplementedError, "HrmTimeOff::ReadRepositoryInterface##employee_options"
         end
-        def used_days(employee:, year:)
+        def used_days(employee:, year:, lock: false)
           raise NotImplementedError, "HrmTimeOff::ReadRepositoryInterface##used_days"
         end
         def pending_count(actor: nil, company_id: nil)

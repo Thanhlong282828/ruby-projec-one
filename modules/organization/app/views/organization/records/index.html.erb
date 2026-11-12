@@ -1,0 +1,56 @@
+<% base_path = HrmOrganization::Domain::Resources.path(request.path_parameters[:resource]) %>
+<% record_policy = policy(@definition[:model].constantize) %>
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">CƠ CẤU TỔ CHỨC</div>
+    <h1><%= @definition[:label] %></h1>
+    <p class="subtitle">Dữ liệu của công ty <%= current_user.company.name %>.</p>
+  </div>
+</div>
+<div class="toolbar">
+  <% if record_policy.create? %>
+    <%= link_to "Thêm mới", "#{base_path}/new", class: "button" %>
+  <% end %>
+  <% if record_policy.export? %>
+    <%= link_to "Xuất CSV", "#{base_path}/export", class: "button secondary" %>
+  <% end %>
+</div>
+<div class="panel" role="region" aria-label="Danh sách cơ cấu tổ chức" tabindex="0">
+  <table>
+    <thead>
+      <tr>
+        <th>Bản ghi nguồn</th>
+        <% @definition[:fields].each_value do |label, _| %>
+          <th><%= label %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @data[:rows].each do |row| %>
+        <tr>
+          <td><%= link_to "Mở ##{row[:id]} →", row[:source] %></td>
+          <% row[:fields].each do |field| %>
+            <td>
+              <% if field[:source] %>
+                <%= link_to field[:value], field[:source] %>
+              <% else %>
+                <%= field[:value].presence || "—" %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @data[:records].empty? %>
+    <div class="empty">
+      Chưa có dữ liệu trong công ty này.
+      <% if record_policy.create? %>
+        <%= link_to "Tạo bản ghi đầu tiên →", "#{base_path}/new" %>
+      <% else %>
+        Người quản lý có thể thêm dữ liệu tại đây.
+      <% end %>
+    </div>
+  <% end %>
+</div>
+<%= render "shared/pagination", records: @data[:records] %>

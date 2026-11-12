@@ -3,16 +3,16 @@ class AttendanceUseCasesTest < ActiveSupport::TestCase
   class FakeReadRepository < HrmAttendance::Domain::Repositories::ReadRepositoryInterface
     attr_reader :received
     def list(actor:, page:)
-      @received = [actor.id, page]
-      [:from_fake_repository]
+      @received = [ actor.id, page ]
+      [ :from_fake_repository ]
     end
   end
   test "query accepts a repository double through constructor injection" do
     actor = make_user
     repository = FakeReadRepository.new
     result = HrmAttendance::Application::Queries::ListAttendances.new(repository: repository).call(actor: actor, page: 2)
-    assert_equal [:from_fake_repository], result
-    assert_equal [actor.id, 2], repository.received
+    assert_equal [ :from_fake_repository ], result
+    assert_equal [ actor.id, 2 ], repository.received
   end
   test "check in and check out go through the real bound repositories" do
     employee = make_employee
@@ -59,9 +59,8 @@ class AttendanceUseCasesTest < ActiveSupport::TestCase
     queries = []
     subscriber = ->(*args) { queries << args.last[:sql] unless %w[SCHEMA TRANSACTION].include?(args.last[:name]) }
     ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
-      rows.each { |row| [row.employee.full_name, row.work_date] }
+      rows.each { |row| [ row.employee.full_name, row.work_date ] }
     end
     assert_empty queries
   end
-
 end

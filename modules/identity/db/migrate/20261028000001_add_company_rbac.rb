@@ -28,13 +28,13 @@ class AddCompanyRbac < ActiveRecord::Migration[8.1]
         "realtime.read" => "Nhận cập nhật realtime company",
         "company.manage" => "Quản lý company",
         "accounts.manage" => "Quản lý tài khoản company",
-        "roles.manage" => "Quản lý quyền trong company",
+        "roles.manage" => "Quản lý quyền trong company"
       }.freeze
   DEFAULTS = {
-        "admin" => ["dashboard.view", "employees.read", "employees.read_all", "employees.create", "employees.update", "employees.delete", "employees.sensitive", "departments.read", "departments.create", "departments.update", "departments.delete", "attendance.read", "attendance.read_all", "attendance.clock", "leave.read", "leave.read_all", "leave.submit", "leave.submit_for_others", "leave.review", "payroll.read", "payroll.create", "payroll.finalize", "recruitment.read", "recruitment.write", "audit.read", "realtime.read", "company.manage", "accounts.manage", "roles.manage"],
-        "hr" => ["dashboard.view", "employees.read", "employees.read_all", "employees.create", "employees.update", "employees.sensitive", "departments.read", "departments.create", "departments.update", "attendance.read", "attendance.read_all", "attendance.clock", "leave.read", "leave.read_all", "leave.submit", "leave.submit_for_others", "leave.review", "payroll.read", "payroll.create", "payroll.finalize", "recruitment.read", "recruitment.write", "realtime.read"],
-        "manager" => ["dashboard.view", "employees.read", "attendance.read", "attendance.clock", "leave.read", "leave.submit", "leave.read_all", "leave.review", "departments.read"],
-        "employee" => ["dashboard.view", "employees.read", "attendance.read", "attendance.clock", "leave.read", "leave.submit"],
+        "admin" => [ "dashboard.view", "employees.read", "employees.read_all", "employees.create", "employees.update", "employees.delete", "employees.sensitive", "departments.read", "departments.create", "departments.update", "departments.delete", "attendance.read", "attendance.read_all", "attendance.clock", "leave.read", "leave.read_all", "leave.submit", "leave.submit_for_others", "leave.review", "payroll.read", "payroll.create", "payroll.finalize", "recruitment.read", "recruitment.write", "audit.read", "realtime.read", "company.manage", "accounts.manage", "roles.manage" ],
+        "hr" => [ "dashboard.view", "employees.read", "employees.read_all", "employees.create", "employees.update", "employees.sensitive", "departments.read", "departments.create", "departments.update", "attendance.read", "attendance.read_all", "attendance.clock", "leave.read", "leave.read_all", "leave.submit", "leave.submit_for_others", "leave.review", "payroll.read", "payroll.create", "payroll.finalize", "recruitment.read", "recruitment.write", "realtime.read" ],
+        "manager" => [ "dashboard.view", "employees.read", "attendance.read", "attendance.clock", "leave.read", "leave.submit", "leave.read_all", "leave.review", "departments.read" ],
+        "employee" => [ "dashboard.view", "employees.read", "attendance.read", "attendance.clock", "leave.read", "leave.submit" ]
       }.freeze
   TENANT_TABLES = %i[users departments employees attendances leave_requests pay_runs payslips candidates audit_logs outbox_events].freeze
   def up
@@ -64,19 +64,19 @@ class AddCompanyRbac < ActiveRecord::Migration[8.1]
       t.string :name, null: false
       t.timestamps
     end
-    add_index :company_roles, [:company_id, :key], unique: true
+    add_index :company_roles, [ :company_id, :key ], unique: true
     create_table :role_permissions do |t|
       t.references :company_role, null: false, foreign_key: true
       t.references :permission, null: false, foreign_key: true
     end
-    add_index :role_permissions, [:company_role_id, :permission_id], unique: true, name: 'idx_role_permission_unique'
+    add_index :role_permissions, [ :company_role_id, :permission_id ], unique: true, name: 'idx_role_permission_unique'
     create_table :user_permissions do |t|
       t.references :user, null: false, foreign_key: true
       t.references :permission, null: false, foreign_key: true
       t.boolean :granted, null: false
       t.timestamps
     end
-    add_index :user_permissions, [:user_id, :permission_id], unique: true
+    add_index :user_permissions, [ :user_id, :permission_id ], unique: true
     PERMISSIONS.each do |key, name|
       execute "INSERT INTO permissions (`key`,name,created_at,updated_at) VALUES (#{quote(key)},#{quote(name)},NOW(),NOW())"
     end
@@ -89,17 +89,17 @@ class AddCompanyRbac < ActiveRecord::Migration[8.1]
     end
     # Tenant-local identifiers can repeat between companies; login email stays globally unique.
     remove_index :departments, :code
-    add_index :departments, [:company_id, :code], unique: true
+    add_index :departments, [ :company_id, :code ], unique: true
     remove_index :employees, :employee_code
-    add_index :employees, [:company_id, :employee_code], unique: true
+    add_index :employees, [ :company_id, :employee_code ], unique: true
     remove_index :employees, :email
-    add_index :employees, [:company_id, :email], unique: true
+    add_index :employees, [ :company_id, :email ], unique: true
     remove_index :pay_runs, :period
-    add_index :pay_runs, [:company_id, :period], unique: true
-    %i[users departments employees pay_runs].each { |table| add_index table, [:company_id, :id], unique: true }
-    {employees: {department_id: :departments, user_id: :users}, attendances: {employee_id: :employees}, leave_requests: {employee_id: :employees, reviewer_id: :users}, pay_runs: {created_by_id: :users}, payslips: {employee_id: :employees, pay_run_id: :pay_runs}, audit_logs: {actor_id: :users}}.each do |child, links|
+    add_index :pay_runs, [ :company_id, :period ], unique: true
+    %i[users departments employees pay_runs].each { |table| add_index table, [ :company_id, :id ], unique: true }
+    { employees: { department_id: :departments, user_id: :users }, attendances: { employee_id: :employees }, leave_requests: { employee_id: :employees, reviewer_id: :users }, pay_runs: { created_by_id: :users }, payslips: { employee_id: :employees, pay_run_id: :pay_runs }, audit_logs: { actor_id: :users } }.each do |child, links|
       links.each do |column, parent|
-        add_foreign_key child, parent, column: [:company_id, column], primary_key: [:company_id, :id], name: "fk_tenant_#{child}_#{column}"
+        add_foreign_key child, parent, column: [ :company_id, column ], primary_key: [ :company_id, :id ], name: "fk_tenant_#{child}_#{column}"
       end
     end
   end

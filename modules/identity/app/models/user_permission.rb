@@ -2,5 +2,5 @@ class UserPermission < ApplicationRecord
   belongs_to :user
   belongs_to :permission
   validates :permission_id, uniqueness: { scope: :user_id }
-  validates :granted, inclusion: { in: [true, false] }
+  validates :granted, inclusion: { in: [ true, false ] }
 end
