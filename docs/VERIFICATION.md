@@ -1,3 +1,26 @@
+# Docker conventions và CI đã xác nhận — 13/11/2026
+
+Branch: `codex/docker-verification-conventions`. Origin: `git@github.com:Thanhlong282828/ruby-projec-one.git`. SHA sửa readiness đã kiểm: **`1863b50e37b8f458f7e7fd799e66751eb9559afc`**. [Actions run 43296475877](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43296475877) completed/success, xác nhận trực tiếp qua run head_sha, job steps và logs; không dùng run của SHA khác thay thế.
+
+| Job trên đúng SHA | Kết quả thực tế |
+|---|---|
+| Ruby / Rails lint and format | Success: Ruby 3.4.12 / Bundler 2.6.9 theo cấu hình; RuboCop 554 file / 0 offenses, explicit routes, 12 Engines / 38 bindings, actionlint, Sorbet và negative contract probe đều chạy thành công. |
+| MySQL tests / autoload / security | Success: bootstrap MySQL, tạo hrm_test và **355 runs / 2311 assertions / 0 failures / 0 errors / 0 skips**; Python receiver 8 tests; gem/DSL RBI và shim duplicates; secret scan + negative/redaction probe; fresh SQL constraints; image smoke; Zeitwerk; Brakeman 0 errors / 0 warnings; dependency audit không known vulnerabilities; lockfile unchanged; cleanup success. Không required step nào bị skip. |
+
+Local trên git archive của cùng SHA, build Dockerfile repo, không source mount: Ruby **3.4.12** aarch64-linux +PRISM / Bundler **2.6.9**, bundle check và bin/quality đạt, full MySQL **355/2311**, seed51915 (63.057927s). Image smoke UID1000; structure.sql có, schema.rb/private env/key files không có; /up200, /session/new200, /pay_runs302. Local image ID `sha256:2b8c9ae820d8fa1664f4c3ac78a570be98e18ed34f83a1b6363503ebf6d6454a`. CI image ID `sha256:90e900758ba7046ed9d3abcfa68c5a1e160a44fda5ec78c4d35d1fe994af1352` (runner x86_64 khác kiến trúc local). Đây là image ID, **không phải GHCR registry digest**. Không publish hoặc release.
+
+Lệnh local thực tế: build archive thành `hrm-rules:1863b50`; `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=/Users/lahoathanh/Desktop/xinviec/ruby/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-rules:1863b50 sh -c 'ruby -v && bundle --version && bundle check && ruby bin/quality && bundle exec rails test --seed 51915'`; `/usr/bin/ruby bin/smoke-image hrm-rules:1863b50`. Host system Ruby chỉ điều phối Docker; mọi gate ứng dụng chạy Ruby3.4.12 trong image. actionlint đã chạy trên workflow từ archive; workflow không đổi trong fix.
+
+Đã đọc lại lỗi GRANT1410 tại SHA9b9c014: bootstrap hiện tại dùng MYSQL_USER thật nên lỗi đó không còn. Lượt đầu mới [43295220009](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43295220009) trên9e7fbf0 thất bại riêng ở readiness/root1045, không chạy suite. Tái hiện read-only với mật khẩu cố tình sai: mysqladmin ping exit0 nhưng authenticated SQL exit1. Sửa compose.yaml healthcheck thành authenticated SELECT1 qua TCP, connect-timeout2s, MYSQL_PWD; không bỏ TLS/constraint hoặc cấp thêm quyền. Fresh MySQL/volume dùng một lần, network none và secrets mới: healthcheck, root grant và app truy cập hrm_test đều đạt, đã dọn container/volume. Harness chuyển escape $$ của Compose sang $ khi gọi docker run trực tiếp; không đổi command thực của Compose để né test.
+
+AGENTS.md hợp nhất các quy tắc: Actions build Dockerfile repo và chạy MySQL/image smoke; dùng compose.ci.yaml để tránh bind source/UID; readiness xác thực; review staged + đúng origin/SHA; **GHCR chỉ cho release được yêu cầu riêng, phải ghi full commit SHA và registry manifest digest**. Không thêm release job, packages:write hoặc tự deploy. Giữ strict scope 10 file Payroll.
+
+Chỉ stage AGENTS.md, compose.yaml và tài liệu kiểm chứng trong đợt này; các diff học tập/mapping/make bên ngoài giữ nguyên. Không sửa main, production, Laravel, .env thật, credential/CA hoặc dữ liệu development; không recreate web/MySQL local. Healthcheck mới áp dụng khi container được tạo lại; CI đã kiểm stack mới.
+
+Bản ghi này được bổ sung sau run của SHA1863b50, chỉ thay đổi docs/VERIFICATION.md. Commit báo cáo không đổi ứng dụng/Compose; vẫn theo dõi Actions của commit báo cáo cuối thay vì giả sử kết quả run1863b50 tự áp dụng cho SHA mới. Các checkpoint bên dưới giữ lịch sử, không phải trạng thái hiện tại.
+
+---
+
 # CI MySQL readiness regression — 13/11/2026
 
 Run [43295220009](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43295220009) trên SHA `9e7fbf06cf7aa557be69d496559b8f654e51cb07`: lint/typecheck success, job MySQL failure tại bootstrap ERROR1045 root; suite và các gate sau bị skip, không gọi run này đạt. Khác lỗi GRANT1410 cũ: user provisioning đã sửa, nhưng healthcheck mysqladmin ping có thể trả exit0 khi authentication bị từ chối và chưa chứng minh server chính sẵn sàng.
