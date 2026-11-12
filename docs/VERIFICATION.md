@@ -1,3 +1,11 @@
+# CI MySQL readiness regression — 13/11/2026
+
+Run [43295220009](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43295220009) trên SHA `9e7fbf06cf7aa557be69d496559b8f654e51cb07`: lint/typecheck success, job MySQL failure tại bootstrap ERROR1045 root; suite và các gate sau bị skip, không gọi run này đạt. Khác lỗi GRANT1410 cũ: user provisioning đã sửa, nhưng healthcheck mysqladmin ping có thể trả exit0 khi authentication bị từ chối và chưa chứng minh server chính sẵn sàng.
+
+Đổi readiness MySQL sang authenticated SELECT1 qua TCP127.0.0.1, connect-timeout2s; giữ mật khẩu trong MYSQL_PWD, không dùng password argument. TCP không nhận server socket-only trong pha init; lỗi xác thực khiến healthcheck fail. Không sửa quyền root/app, TLS hoặc dữ liệu, không recreate MySQL/web local hiện có. Kết quả của SHA sửa được bổ sung sau run mới.
+
+---
+
 # Quy ước Docker / kiểm chứng và release riêng — 13/11/2026
 
 AGENTS.md hợp nhất quy ước Docker: Actions build Dockerfile của repo bằng Ruby 3.4.12 / Bundler 2.6.9, full suite MySQL hrm_test, quality gates và image smoke không mount source. CI chỉ mount public CA theo compose.ci.yaml. GHCR chỉ dùng khi có yêu cầu release riêng; bản phát hành phải ghi full commit SHA và registry manifest digest, không nhầm local image ID với registry digest. Đợt này không publish/deploy hoặc đổi runtime, quyền, SQL, strict scope.

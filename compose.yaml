@@ -32,7 +32,8 @@ services:
       MYSQL_PASSWORD: ${DATABASE_PASSWORD}
     volumes: ["mysql_data:/var/lib/mysql"]
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      # mysqladmin ping exits 0 even on access denied; TCP also excludes the init-only socket server.
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql --protocol=TCP --host=127.0.0.1 --user=root --connect-timeout=2 --batch --skip-column-names --execute="SELECT 1"']
       interval: 5s
       timeout: 5s
       retries: 30
