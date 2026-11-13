@@ -1,6 +1,6 @@
 # Menu ERP và luồng Dashboard → nguồn
 
-Phạm vi: source Rails 12 Engines. LaravelDji chỉ tham chiếu cách gom miền, không chứng nhận ngang tính năng. Đã đọc tài liệu read-only `Desktop/laraveldji/admin/docs/erp-navigation-domain-map.md` và `erp-sidebar-feature-audit.md`: giữ nhóm có con được phép, không menu trống. Bản kiểm chứng cụ thể nằm trong VERIFICATION.md.
+Phạm vi: source Rails 13 Engines. LaravelDji chỉ tham chiếu cách gom miền, không chứng nhận ngang tính năng. Đã đọc tài liệu read-only `Desktop/laraveldji/admin/docs/erp-navigation-domain-map.md` và `erp-sidebar-feature-audit.md`: giữ nhóm có con được phép, không menu trống. Bản kiểm chứng cụ thể nằm trong VERIFICATION.md.
 
 ## Registry menu hoạt động
 
@@ -24,6 +24,9 @@ Sidebar và bảng Không gian nghiệp vụ đều dùng `ErpNavigationHelper#e
 | Nghỉ phép / Danh sách và đơn | /leave_requests, /leave_requests/:id | TimeOff::ListLeaveRequests, FindLeaveRequest | leave.read hoặc leave.read_all; show kiểm quyền và scope |
 | Bảng lương / Kỳ lương | /pay_runs, /pay_runs/:id | Payroll::ListPayRuns, FindPayRun, ReconcilePayRun, ListPayslips | payroll.read |
 | Bảng lương / Tệp xuất | /payroll/exports | Payroll::ExportWorkspace | đủ payroll.read + payroll.exports.read |
+| Mua hàng / Yêu cầu mua | /procurement/requests | Procurement::Workspace, FindRequest | procurement.requests.read (của mình) hoặc read_all (công ty) |
+| Mua hàng / Yêu cầu của tôi | /procurement/requests?view=mine | Procurement::Workspace | cùng quyền đọc; thêm created_by=current_user |
+| Mua hàng / Chờ tôi duyệt | /procurement/requests?status=submitted&view=review | Procurement::Workspace | đủ procurement.requests.read_all + review, loại phiếu tự tạo |
 | Tuyển dụng / Ứng viên | /candidates | Recruitment::ListCandidates | recruitment.read |
 | Onboarding / Hồ sơ và checklist | /onboarding/cases, /onboarding/cases/:id | Onboarding::Workspace, FindCase | onboarding.read hoặc onboarding.read_all |
 | Tích hợp / Nhận, kết nối | /integration | Integration::Workspace | integration.read |
@@ -42,6 +45,7 @@ Tên Query ở bảng dùng namespace rút gọn Hrm<Module>::Application::Queri
 | Phần dashboard | Điều kiện / đơn vị | Route helper và bộ lọc nguồn | Dòng chi tiết |
 |---|---|---|---|
 | Nhân viên đang hoạt động | Pundit Employee scope + status=active / người | employees_path(status: active) | employee_path hiện có |
+| Yêu cầu mua chờ duyệt | submitted + Pundit company scope + không tự tạo / phiếu, mọi ngày cần hàng | purchase_requests_path(status: submitted, view: review) | purchase_request_path, giữ bộ lọc; widget 5 phiếu mới nhất |
 | Đơn phép chờ duyệt | Pundit LeaveRequest scope + pending / đơn, tất cả ngày | leave_requests_path(status: pending) | leave_request_path; màn hình mới thuộc TimeOff |
 | Ca đang mở | Pundit Attendance scope + checked_out_at IS NULL / ca, tất cả ngày | attendances_path(status: open) | attendance_path hiện có |
 | Kỳ lương chờ chốt | Pundit PayRun scope + draft + tháng được chọn / kỳ | pay_runs_path(status: draft, period: YYYY-MM) | pay_run_path → đối soát/phiếu lương hiện có |
@@ -60,10 +64,35 @@ Bộ lọc web mới: Employee status(active/probation/inactive), Attendance sta
 
 1. Có nền dữ liệu, cần mở rộng nghiệp vụ riêng: pipeline tuyển dụng sang hồ sơ nhân viên chưa tự provision; OT/thuế/bảo hiểm/khấu trừ và chuẩn xuất kế toán/pháp định chưa có công thức đầy đủ. Payroll hiện vẫn lương cơ bản/snapshot, ca mở và phép chờ chỉ là cảnh báo. Không thêm chỉ số giả vào dashboard.
 2. Có nền tích hợp, chưa là nghiệp vụ ERP: webhook HMAC/outbox/retry và payroll descriptor bridge; adapter tạo đơn mua/bút toán/thanh toán không được suy từ webhook acknowledgement. Cần contract, grant, idempotency và transaction riêng trước menu.
-3. Chưa có module/model/màn hình Rails hoàn chỉnh: mua hàng/AP, sổ cái/AR/treasury, kho/bán hàng/CRM, tài sản, dự án, thuế/pháp định, planning/forecasting. Không thêm menu rỗng hoặc copy số liệu Laravel.
+3. Mua hàng đã có lát cắt yêu cầu mua (mục dưới); đơn mua hàng, nhận hàng, đối chiếu hóa đơn/AP chưa có. Các miền chưa có module/model/màn hình Rails hoàn chỉnh: sổ cái/AR/treasury, kho/bán hàng/CRM, tài sản, dự án, thuế/pháp định, planning/forecasting. Không thêm menu rỗng hoặc copy số liệu Laravel.
 
 ## So sánh cho người chuyển từ Laravel
 
 Laravel: route/middleware → Controller → Query/Action → Repository → Eloquent scope.
 Ruby project này: route tường minh → Controller → Application::Queries → contract qua provider → ActiveRecord repository → Pundit policy_scope.
 Card chỉ sinh URL bằng route helper; policy và scope tại nguồn vẫn chạy lại. Provider bind dependency, không cấp quyền. Command duyệt/chốt/checklist mới ghi dữ liệu và giữ transaction/lock/audit như trước.
+
+## Mua hàng — yêu cầu mua đã có source
+
+Engine `modules/procurement` sở hữu model, Policy, Commands/Queries, contracts, persistence, migration và view. Entry `modules/procurement/lib/hrm_procurement.rb` nạp Engine; `providers/procurement_service_provider.rb` đăng ký 2 repository và catalog quyền (không thay Policy). Routes tường minh ở `modules/procurement/config/routes/procurement.rb`.
+
+Danh sách hỗ trợ `q` (mã/tiêu đề, tối đa 120 ký tự), `status` (draft/submitted/approved/rejected), `view` (mine/review), `page`; chi tiết thêm `history_page`. Không nhận tenant từ client. Liên kết quay lại, sửa/lưu, gửi/duyệt giữ ngữ cảnh danh sách; trang rỗng có xóa lọc và tạo nếu được phép. Menu chọn đúng queue bằng `aria-current`, không cùng đánh dấu cả ba mục có chung pathname.
+
+Nháp → sửa dòng → gửi xác nhận → duyệt hoặc từ chối có lý do → lịch sử. Mỗi dòng tính `BigDecimal(quantity) * unit_price`, làm tròn HALF_UP về nguyên VND rồi cộng tổng tại server. Số lượng tối đa 3 số lẻ; đơn giá nguyên VND 12 chữ số; 1–50 dòng. Không suy từ cột salary_cents sang đơn vị tiền mới. Nội dung trình giữ nguyên sau gửi; maker không tự duyệt. Version cũ trả409; kiểm quyền hiện hành lại bằng locking reads trong transaction; audit/outbox và lịch sử rollback cùng mutation. Mục đích/lý do được mã hóa, payload form bị lọc khỏi log. Realtime metadata yêu cầu read_all, không phát cho người chỉ đọc phiếu của mình.
+
+Quyền MySQL có 6 key dưới `procurement.requests.`: read, read_all, create, update, submit, review. Mặc định provision admin/manager đủ 6; employee/hr đọc của mình + tạo/sửa/gửi. Custom role không tự thêm quyền; deny trực tiếp vẫn thắng. Người có read_all có thể xem nhưng chỉ owner được sửa/gửi nháp; duyệt cần cả read_all+review, khác maker. Không có delete/bulk-approve/API mới trong lát cắt này.
+
+So sánh Laravel → Rails theo từng bước:
+
+| Laravel quen dùng | Rails trong module Mua hàng | Nhiệm vụ |
+|---|---|---|
+| Route + Controller | config/routes/procurement.rb → RequestsController | GET mở màn hình; POST/PATCH gọi command, không SQL ở controller |
+| FormRequest | PurchaseRequestParameters + RequestContent/RequestFilters | allowlist field, kiểm kiểu và tiền chính xác; không tin company/total client |
+| Service Provider bind interface | ProcurementServiceProvider → Hrm::Container | nối contract với ActiveRecord repository; không cấp quyền |
+| Policy/middleware permission | PurchaseRequestPolicy + Pundit scope | kiểm permission từ MySQL và công ty của phiên |
+| Action/Command tạo, duyệt | CreateRequest/UpdateRequest/SubmitRequest/DecideRequest | entrypoint nghiệp vụ; ngoài HTTP vẫn kiểm quyền |
+| Repository Eloquent + transaction/lockForUpdate | ActiveRecordWriteRepository + transaction/.lock | khóa identity/grants/phiếu, kiểm version/trạng thái hiện tại, ghi đồng bộ |
+| Eloquent model/observer | PurchaseRequest/Line/Event + ObservableRecord | quan hệ/validation, audit+outbox, lịch sử phiên bản |
+| Blade và route() | ERB + purchase_requests_path/purchase_request_path | giao diện tiếng Việt, KPI chỉ điều hướng tới Query nguồn |
+
+Lát cắt tiếp: nhà cung cấp/đơn mua hàng, nhận hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; yêu cầu được duyệt chưa tạo các nghiệp vụ đó.

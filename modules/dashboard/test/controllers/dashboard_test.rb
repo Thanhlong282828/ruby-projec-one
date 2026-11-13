@@ -16,7 +16,7 @@ class DashboardModuleTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".metric-card[data-metric='employees'] strong", text: "1"
     assert_select ".metric-card[data-metric='pending']"
-    assert_select ".workspace-board .module-widget", count: 9
+    assert_select ".workspace-board .module-widget", count: 10
     assert_select "nav details summary", text: "Chấm công"
     source = css_select(".metric-card[data-metric='employees']").first["href"]
     get source

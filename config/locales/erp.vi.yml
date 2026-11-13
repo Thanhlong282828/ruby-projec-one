@@ -9,3 +9,9 @@ vi:
       rejected: Từ chối
       draft: Chờ chốt
       finalized: Đã chốt
+  procurement:
+    notices:
+      created: Đã lưu phiếu nháp. Kiểm tra trước khi gửi duyệt.
+      updated: Đã cập nhật bản nháp.
+      submitted: Đã gửi duyệt. Nội dung và dòng hàng đã được khóa.
+      decided: Đã ghi quyết định và lịch sử.

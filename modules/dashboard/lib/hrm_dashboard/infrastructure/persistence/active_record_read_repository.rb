@@ -40,6 +40,10 @@ module HrmDashboard
             integration = Hrm::Container.resolve(HrmIntegration::Domain::Repositories::ReadRepositoryInterface)
             data[:webhooks] = integration.count(actor: actor)
           end
+          if Pundit.policy!(actor, ::PurchaseRequest).review_queue?
+            procurement = Hrm::Container.resolve(HrmProcurement::Domain::Repositories::ReadRepositoryInterface)
+            data[:purchases] = procurement.workspace(actor: actor, filters: { status: "submitted", view: "review", page: 1 }, recent: true)
+          end
           data
         end
       end

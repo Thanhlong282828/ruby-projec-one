@@ -39,7 +39,7 @@ end
 manifest = YAML.safe_load_file("config/engine_boundaries.yml")
 boundaries = manifest.fetch("engines")
 engines = Dir["modules/*/lib/*/engine.rb"].map { |file| file.split("/")[1] }.sort
-violations << "Engine manifest does not match the installed 12 engines" unless engines == boundaries.keys.sort && engines.size == 12
+violations << "Engine manifest does not match the installed engine set" unless engines == boundaries.keys.sort && engines.any?
 files.each do |file|
   code = code_for.call(file)
   manifest.fetch("controller_rescue_exceptions").each_key do |exception|

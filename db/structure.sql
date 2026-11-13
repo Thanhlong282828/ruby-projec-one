@@ -634,6 +634,164 @@ CREATE TABLE `permissions` (
   UNIQUE KEY `index_permissions_on_key` (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `purchase_request_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_request_events` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_request_id` bigint NOT NULL,
+  `actor_id` bigint NOT NULL,
+  `version` int NOT NULL,
+  `action` varchar(20) NOT NULL,
+  `from_status` varchar(20) DEFAULT NULL,
+  `to_status` varchar(20) NOT NULL,
+  `note` text,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `purchase_event_version` (`purchase_request_id`,`version`),
+  KEY `purchase_event_company_source` (`company_id`,`purchase_request_id`),
+  KEY `purchase_event_actor_company` (`company_id`,`actor_id`),
+  CONSTRAINT `purchase_event_actor_company` FOREIGN KEY (`company_id`, `actor_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `purchase_event_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`) REFERENCES `purchase_requests` (`company_id`, `id`),
+  CONSTRAINT `purchase_event_transition` CHECK (((`version` >= 0) and (((`action` = _utf8mb4'created') and (`from_status` is null) and (`to_status` = _utf8mb4'draft')) or ((`action` = _utf8mb4'updated') and (`from_status` = _utf8mb4'draft') and (`to_status` = _utf8mb4'draft')) or ((`action` = _utf8mb4'submitted') and (`from_status` = _utf8mb4'draft') and (`to_status` = _utf8mb4'submitted')) or ((`action` = _utf8mb4'approved') and (`from_status` = _utf8mb4'submitted') and (`to_status` = _utf8mb4'approved')) or ((`action` = _utf8mb4'rejected') and (`from_status` = _utf8mb4'submitted') and (`to_status` = _utf8mb4'rejected')))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `purchase_request_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_request_lines` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_request_id` bigint NOT NULL,
+  `position` int NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `unit` varchar(30) NOT NULL,
+  `quantity` decimal(9,3) NOT NULL,
+  `estimated_unit_price` decimal(12,0) NOT NULL,
+  `line_total` decimal(18,0) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `purchase_line_position` (`purchase_request_id`,`position`),
+  KEY `purchase_line_company_source` (`company_id`,`purchase_request_id`),
+  CONSTRAINT `purchase_line_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`) REFERENCES `purchase_requests` (`company_id`, `id`) ON DELETE CASCADE,
+  CONSTRAINT `purchase_line_amount` CHECK (((`quantity` > 0) and (`estimated_unit_price` >= 0) and (`line_total` = round((`quantity` * `estimated_unit_price`),0)) and (`position` between 1 and 50)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `procurement_line_insert_guard` BEFORE INSERT ON `purchase_request_lines` FOR EACH ROW BEGIN DECLARE parent_status VARCHAR(20); SELECT status INTO parent_status FROM purchase_requests WHERE id=NEW.purchase_request_id AND company_id=NEW.company_id FOR UPDATE; IF parent_status IS NULL OR parent_status<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Submitted purchase lines are immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `procurement_line_update_guard` BEFORE UPDATE ON `purchase_request_lines` FOR EACH ROW BEGIN DECLARE parent_status VARCHAR(20); IF NEW.company_id<>OLD.company_id OR NEW.purchase_request_id<>OLD.purchase_request_id OR NEW.position<>OLD.position THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Purchase line identity is immutable'; END IF; SELECT status INTO parent_status FROM purchase_requests WHERE id=OLD.purchase_request_id AND company_id=OLD.company_id FOR UPDATE; IF parent_status IS NULL OR parent_status<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Submitted purchase lines are immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `procurement_line_delete_guard` BEFORE DELETE ON `purchase_request_lines` FOR EACH ROW BEGIN DECLARE parent_status VARCHAR(20); SELECT status INTO parent_status FROM purchase_requests WHERE id=OLD.purchase_request_id AND company_id=OLD.company_id FOR UPDATE; IF parent_status IS NULL OR parent_status<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Submitted purchase lines are immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `purchase_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_requests` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `created_by_id` bigint NOT NULL,
+  `reviewed_by_id` bigint DEFAULT NULL,
+  `code` varchar(32) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `purpose` text NOT NULL,
+  `needed_on` date NOT NULL,
+  `currency` varchar(3) NOT NULL DEFAULT 'VND',
+  `estimated_total` decimal(18,0) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `submitted_at` datetime(6) DEFAULT NULL,
+  `reviewed_at` datetime(6) DEFAULT NULL,
+  `rejection_reason` text,
+  `lock_version` int NOT NULL DEFAULT '0',
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `purchase_request_company_identity` (`company_id`,`id`),
+  UNIQUE KEY `purchase_request_company_code` (`company_id`,`code`),
+  KEY `index_purchase_requests_on_company_id` (`company_id`),
+  KEY `purchase_request_queue` (`company_id`,`status`,`created_by_id`,`id`),
+  KEY `purchase_request_creator_company` (`company_id`,`created_by_id`),
+  KEY `purchase_request_reviewer_company` (`company_id`,`reviewed_by_id`),
+  CONSTRAINT `fk_rails_fd8a61ba25` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`),
+  CONSTRAINT `purchase_request_creator_company` FOREIGN KEY (`company_id`, `created_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `purchase_request_reviewer_company` FOREIGN KEY (`company_id`, `reviewed_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `purchase_request_chronology` CHECK (((`reviewed_at` is null) or (`reviewed_at` >= `submitted_at`))),
+  CONSTRAINT `purchase_request_maker_checker` CHECK (((`reviewed_by_id` is null) or (`reviewed_by_id` <> `created_by_id`))),
+  CONSTRAINT `purchase_request_money` CHECK (((`currency` = _utf8mb4'VND') and (`estimated_total` >= 0))),
+  CONSTRAINT `purchase_request_state` CHECK ((((`status` = _utf8mb4'draft') and (`submitted_at` is null) and (`reviewed_at` is null) and (`reviewed_by_id` is null) and (`rejection_reason` is null)) or ((`status` = _utf8mb4'submitted') and (`submitted_at` is not null) and (`reviewed_at` is null) and (`reviewed_by_id` is null) and (`rejection_reason` is null)) or ((`status` = _utf8mb4'approved') and (`submitted_at` is not null) and (`reviewed_at` is not null) and (`reviewed_by_id` is not null) and (`rejection_reason` is null)) or ((`status` = _utf8mb4'rejected') and (`submitted_at` is not null) and (`reviewed_at` is not null) and (`reviewed_by_id` is not null) and (`rejection_reason` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `procurement_request_insert_guard` BEFORE INSERT ON `purchase_requests` FOR EACH ROW BEGIN IF NEW.status <> 'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Purchase requests start as draft'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `procurement_request_update_guard` BEFORE UPDATE ON `purchase_requests` FOR EACH ROW BEGIN DECLARE item_count INT; DECLARE item_total DECIMAL(20,0); IF NEW.company_id<>OLD.company_id OR NEW.created_by_id<>OLD.created_by_id OR NEW.code<>OLD.code OR NEW.currency<>OLD.currency THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Purchase identity is immutable'; END IF; IF OLD.status<>'draft' AND (NOT(NEW.title<=>OLD.title) OR NOT(NEW.purpose<=>OLD.purpose) OR NOT(NEW.needed_on<=>OLD.needed_on) OR NOT(NEW.estimated_total<=>OLD.estimated_total)) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Submitted purchase content is immutable'; END IF; IF NOT((OLD.status='draft' AND NEW.status IN ('draft','submitted')) OR (OLD.status='submitted' AND NEW.status IN ('approved','rejected'))) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid purchase transition'; END IF; IF NEW.status='submitted' THEN SELECT COUNT(*),COALESCE(SUM(line_total),0) INTO item_count,item_total FROM purchase_request_lines WHERE purchase_request_id=OLD.id AND company_id=OLD.company_id FOR UPDATE; IF item_count<1 OR item_count>50 OR item_total<>NEW.estimated_total THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Purchase total does not match lines'; END IF; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 DROP TABLE IF EXISTS `role_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -818,8 +976,8 @@ CREATE TABLE `work_shifts` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
-
 INSERT INTO `schema_migrations` (version) VALUES
+('20261113000001'),
 ('20261112000009'),
 ('20261112000008'),
 ('20261112000007'),

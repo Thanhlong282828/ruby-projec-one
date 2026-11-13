@@ -4,7 +4,8 @@ class EngineBindingsTest < ActiveSupport::TestCase
   test "all installed engines load and every provider resolves its owned contract" do
     Rails.application.eager_load!
     engines = Rails::Engine.subclasses.select { |engine| engine.name.start_with?("Hrm") }
-    assert_equal 12, engines.size
+    expected = YAML.safe_load_file(Rails.root.join("config/engine_boundaries.yml")).fetch("engines").keys.map { |name| "hrm_#{name}" }.sort
+    assert_equal expected, engines.map(&:engine_name).sort
     contracts = Rails.root.glob("modules/*/lib/*/domain/repositories/*_interface.rb").map do |file|
       parts = file.to_s.split("/")
       namespace = parts[parts.index("lib") + 1].camelize

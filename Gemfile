@@ -39,3 +39,4 @@ gem "hrm_organization", path: "modules/organization"
 gem "hrm_onboarding", path: "modules/onboarding"
 
 gem "hrm_integration", path: "modules/integration"
+gem "hrm_procurement", path: "modules/procurement"

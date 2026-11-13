@@ -8,7 +8,7 @@ class ArchitectureGateTest < ActiveSupport::TestCase
     Dir.mktmpdir("hrm-architecture-") do |root|
       FileUtils.mkdir_p("#{root}/config")
       FileUtils.cp(Rails.root.join("config/engine_boundaries.yml"), "#{root}/config/engine_boundaries.yml")
-      %w[attendance audit dashboard identity integration onboarding organization payroll platform recruitment time_off workforce].each do |engine|
+      YAML.safe_load_file(Rails.root.join("config/engine_boundaries.yml")).fetch("engines").each_key do |engine|
         FileUtils.mkdir_p("#{root}/modules/#{engine}/lib/hrm_#{engine}")
         File.write("#{root}/modules/#{engine}/lib/hrm_#{engine}/engine.rb", "")
       end

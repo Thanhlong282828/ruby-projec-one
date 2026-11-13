@@ -1,0 +1,7 @@
+<div class="purchase-line" data-line-index="<%= index %>">
+  <div class="field"><label for="item_<%= index %>_description">Mô tả hàng</label><%= text_field_tag "purchase_request[items][#{index}][description]", item["description"], id: "item_#{index}_description", maxlength: 500 %></div>
+  <div class="field"><label for="item_<%= index %>_quantity">Số lượng</label><%= number_field_tag "purchase_request[items][#{index}][quantity]", item["quantity"], id: "item_#{index}_quantity", step: "0.001", min: "0.001", max: "999999.999" %></div>
+  <div class="field"><label for="item_<%= index %>_unit">Đơn vị</label><%= text_field_tag "purchase_request[items][#{index}][unit]", item["unit"], id: "item_#{index}_unit", maxlength: 30 %></div>
+  <div class="field"><label for="item_<%= index %>_price">Đơn giá dự kiến (VND)</label><%= number_field_tag "purchase_request[items][#{index}][estimated_unit_price]", item["estimated_unit_price"], id: "item_#{index}_price", step: 1, min: 0, max: "999999999999" %></div>
+  <button type="button" class="secondary" data-remove-purchase-line>Bỏ dòng</button>
+</div>

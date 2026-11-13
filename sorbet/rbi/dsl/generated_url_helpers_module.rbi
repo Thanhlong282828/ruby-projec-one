@@ -142,6 +142,9 @@ module GeneratedUrlHelpersModule
   def checkout_attendance_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def decide_purchase_request_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def department_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -158,6 +161,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def edit_employee_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def edit_purchase_request_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def edit_shift_assignment_url(*args); end
@@ -230,6 +236,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_pay_run_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_purchase_request_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_session_url(*args); end
@@ -307,6 +316,15 @@ module GeneratedUrlHelpersModule
   def preview_work_shift_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def procurement_requests_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_request_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_requests_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def rails_health_check_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -341,6 +359,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def shift_assignments_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def submit_purchase_request_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def system_companies_url(*args); end

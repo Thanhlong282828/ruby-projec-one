@@ -142,6 +142,9 @@ module GeneratedPathHelpersModule
   def checkout_attendance_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def decide_purchase_request_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def department_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -158,6 +161,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def edit_employee_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def edit_purchase_request_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def edit_shift_assignment_path(*args); end
@@ -230,6 +236,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_pay_run_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_purchase_request_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_session_path(*args); end
@@ -307,6 +316,15 @@ module GeneratedPathHelpersModule
   def preview_work_shift_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def procurement_requests_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_request_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_requests_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def rails_health_check_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -341,6 +359,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def shift_assignments_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def submit_purchase_request_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def system_companies_path(*args); end

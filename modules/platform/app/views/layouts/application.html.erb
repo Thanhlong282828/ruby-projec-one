@@ -19,7 +19,7 @@
       <details class="nav-group" open>
         <summary><%= group[:name] %></summary>
         <% group[:entries].each do |label, path, _| %>
-          <%= link_to label, path, class: (request.path == path || request.path.start_with?("#{path}/") ? "active" : nil), aria: { current: (request.path == path ? "page" : nil) } %>
+          <%= link_to label, path, class: (erp_navigation_active?(path) ? "active" : nil), aria: { current: (erp_navigation_active?(path) ? "page" : nil) } %>
         <% end %>
       </details>
     <% end %>

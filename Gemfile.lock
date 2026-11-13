@@ -67,6 +67,13 @@ PATH
       rails (~> 8.1.0)
 
 PATH
+  remote: modules/procurement
+  specs:
+    hrm_procurement (0.1.0)
+      hrm_platform (= 0.1.0)
+      rails (~> 8.1.0)
+
+PATH
   remote: modules/recruitment
   specs:
     hrm_recruitment (0.1.0)
@@ -421,6 +428,7 @@ DEPENDENCIES
   hrm_organization!
   hrm_payroll!
   hrm_platform!
+  hrm_procurement!
   hrm_recruitment!
   hrm_time_off!
   hrm_workforce!

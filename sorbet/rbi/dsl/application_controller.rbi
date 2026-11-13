@@ -15,6 +15,7 @@ class ApplicationController
   module HelperMethods
     include ::ActionController::Base::HelperMethods
     include ::ApplicationHelper
+    include ::ProcurementHelper
     include ::IntegrationAuditHelper
     include ::IntegrationDeliveryHelper
     include ::IntegrationHubHelper

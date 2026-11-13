@@ -5,10 +5,11 @@ Dir.chdir(File.expand_path("..", __dir__)) do
   preflight = <<~SOURCE
     abort "Expected hrm_test" unless Rails.env.test? && ActiveRecord::Base.connection_db_config.database == "hrm_test"
     Rails.application.eager_load!
-    engines = Rails::Engine.subclasses.count { |engine| engine.name.start_with?("Hrm") }
-    abort "Expected 12 Engines" unless engines == 12
+    engines = Rails::Engine.subclasses.select { |engine| engine.name.start_with?("Hrm") }.map(&:engine_name).sort
+    expected = YAML.safe_load_file("config/engine_boundaries.yml").fetch("engines").keys.map { |key| "hrm_\#{key}" }.sort
+    abort "Engine names differ from declared boundaries" unless engines == expected
     Hrm::Container.bindings.each_key { |name| Hrm::Container.resolve(name.constantize) }
-    puts "RBI preflight: hrm_test, 12 Engines, provider bindings resolved."
+    puts "RBI preflight: hrm_test, \#{engines.size} Engines, provider bindings resolved."
   SOURCE
   abort "Unsafe RBI environment" unless system("bundle", "exec", "rails", "runner", preflight)
   [ %w[bundle exec tapioca gem --verify], %w[bundle exec tapioca dsl --verify --workers=1], %w[bundle exec tapioca check-shims] ].each do |command|

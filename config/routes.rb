@@ -10,5 +10,6 @@ Rails.application.routes.draw do
   draw :audit
   draw :onboarding
   draw :integration
+  draw :procurement
   draw :dashboard
 end

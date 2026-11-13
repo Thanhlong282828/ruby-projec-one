@@ -2,7 +2,7 @@ require "test_helper"
 class ContainerArchitectureTest < ActiveSupport::TestCase
   test "every module provider resolves concrete implementations of its contracts" do
     contracts = Rails.root.glob("modules/*/lib/hrm_*/domain/repositories/*_interface.rb")
-    assert_equal 38, contracts.length
+    assert_equal 40, contracts.length
     contracts.each do |file|
       relative = file.to_s.split("/lib/", 2).last.delete_suffix(".rb")
       contract = relative.camelize.constantize

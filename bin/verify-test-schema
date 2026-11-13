@@ -40,7 +40,7 @@ begin
   abort "Fresh schema definitions differ from hrm_test" unless actual == expected
   puts "Schema definition SHA256: #{Digest::SHA256.hexdigest(actual)}"
 
-  abort "Fresh schema lost membership guards" unless %w[users_membership_insert_guard users_membership_update_guard].all? { |guard| counts.include?(guard) }
+  abort "Fresh schema lost membership guards" unless %w[users_membership_insert_guard users_membership_update_guard procurement_request_insert_guard procurement_request_update_guard procurement_line_insert_guard procurement_line_update_guard procurement_line_delete_guard].all? { |guard| counts.include?(guard) }
   puts "Fresh structure.sql loaded into disposable MySQL test schema #{name}."
   puts counts
 ensure

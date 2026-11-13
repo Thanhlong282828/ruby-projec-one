@@ -27,6 +27,11 @@ module ErpNavigationHelper
       [ "Bảng lương", "/pay_runs", %w[payroll.read] ],
       [ "Tệp xuất bảng lương", "/payroll/exports", %w[payroll.read payroll.exports.read], :all ]
     ] ],
+    [ "Mua hàng", [
+      [ "Yêu cầu mua", "/procurement/requests", %w[procurement.requests.read procurement.requests.read_all] ],
+      [ "Yêu cầu của tôi", "/procurement/requests?view=mine", %w[procurement.requests.read procurement.requests.read_all] ],
+      [ "Chờ tôi duyệt", "/procurement/requests?status=submitted&view=review", %w[procurement.requests.read_all procurement.requests.review], :all ]
+    ] ],
     [ "Tuyển dụng", [ [ "Ứng viên", "/candidates", %w[recruitment.read] ] ] ],
     [ "Onboarding", [ [ "Tiếp nhận nhân viên", "/onboarding/cases", %w[onboarding.read onboarding.read_all] ] ] ],
     [ "Tích hợp", [
@@ -54,5 +59,14 @@ module ErpNavigationHelper
       end
       { name: name, entries: visible } if visible.any?
     end
+  end
+  def erp_navigation_active?(path)
+    target, query = path.split("?", 2)
+    return false unless request.path == target || request.path.start_with?("#{target}/")
+    expected = Rack::Utils.parse_query(query.to_s)
+    if target == "/procurement/requests"
+      return expected["view"].to_s == params[:view].to_s
+    end
+    expected.all? { |key, value| request.query_parameters[key].to_s == value }
   end
 end

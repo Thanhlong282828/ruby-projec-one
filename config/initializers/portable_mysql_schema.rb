@@ -11,7 +11,10 @@ module PortableMysqlSchema
     if File.read(filename).include?("users_membership_insert_guard")
       names = connection.select_values("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE()")
       required = %w[users_membership_insert_guard users_membership_update_guard]
-      raise "Schema load missing membership security triggers; use the migration role" unless (required - names).empty?
+      if File.read(filename).include?("procurement_request_insert_guard")
+        required += %w[procurement_request_insert_guard procurement_request_update_guard procurement_line_insert_guard procurement_line_update_guard procurement_line_delete_guard]
+      end
+      raise "Schema load missing required security triggers; use the migration role" unless (required - names).empty?
     end
   end
   def structure_dump(filename, extra_flags)
@@ -20,7 +23,7 @@ module PortableMysqlSchema
     sql = sql.lines.reject { |line| line.start_with?("/*M!999999") }.join
     sql = sql.gsub(/DEFINER=`[^`]*`@`[^`]*`/, "")
     sql = sql.gsub(/ AUTO_INCREMENT=\d+/, "")
-    File.write(filename, sql)
+    File.write(filename, sql.rstrip + "\n")
   end
   private
   def prepare_command_options
