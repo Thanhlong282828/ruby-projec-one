@@ -2,23 +2,25 @@
   <div>
     <div class="eyebrow">TALENT / ONBOARDING</div>
     <h1>Tiếp nhận nhân viên</h1>
-    <p class="subtitle">Board hồ sơ • tối đa 100 hồ sơ mới nhất • tổng số theo trạng thái tính trên toàn bộ phạm vi quyền.</p>
+    <p class="subtitle">Board hồ sơ • <%= @workspace[:status] ? "25 hồ sơ / trang trong trạng thái đã chọn" : "tối đa 100 hồ sơ mới nhất" %> • tổng số theo trạng thái tính trên toàn bộ phạm vi quyền.</p>
   </div>
   <% if policy(OnboardingCase).create? %>
     <%= link_to "+ Hồ sơ tiếp nhận", "/onboarding/cases/new", class: "button" %>
   <% end %>
 </div>
 
+<%= form_with url: onboarding_cases_path, method: :get, class: "source-filters" do %><label for="status">Trạng thái</label><%= select_tag :status, options_for_select([["Tất cả", ""]] + HrmOnboarding::Domain::Services::CaseStateMachine::TRANSITIONS.keys.map { |key| [onboarding_status_label(key), key] }, params[:status]) %><%= submit_tag "Lọc hồ sơ" %><%= link_to "Xóa bộ lọc", onboarding_cases_path %><% end %>
 <div class="onboarding-board">
   <% HrmOnboarding::Domain::Services::CaseStateMachine::TRANSITIONS.each_key do |status| %>
+    <% next if @workspace[:status] && @workspace[:status] != status %>
     <section class="panel">
       <div class="panel-heading">
-        <h2><%= onboarding_status_label(status) %></h2>
+        <h2><%= link_to onboarding_status_label(status), onboarding_cases_path(status: status) %></h2>
         <span class="badge"><%= @workspace[:counts].fetch(status, 0) %></span>
       </div>
       <% records = @workspace[:cases].select { |record| record.status == status } %>
       <% records.each do |record| %>
-        <%= link_to "/onboarding/cases/#{record.id}", class: "onboarding-card" do %>
+        <%= link_to onboarding_case_path(record), class: "onboarding-card" do %>
           <strong><%= record.employee.full_name %></strong>
           <p><%= record.start_date %></p>
           <small><%= record.checklist.count { |item| item["done"] } %>/<%= record.checklist.size %> checklist • Mở hồ sơ ↗</small>
@@ -28,3 +30,5 @@
     </section>
   <% end %>
 </div>
+
+<%= render "shared/pagination", records: @workspace[:cases] if @workspace[:status] %>

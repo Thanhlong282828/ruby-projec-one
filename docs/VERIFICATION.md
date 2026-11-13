@@ -1,3 +1,98 @@
+# Chốt Dashboard/Sorbet trên snapshot staged — 13/11/2026
+
+Nhánh `codex/verify-dashboard-sorbet`, origin xác nhận `git@github.com:Thanhlong282828/ruby-projec-one.git`; không push remote omega hoặc main. Review69file Dashboard/Sorbet/editor/quy ước; giữ TXT/inventory không liên quan ngoài commit. Bổ sung quy ước trọn luồng người dùng vào AGENTS.md. Sửa CSS badge dùng enum key cho class, chỉ dịch nhãn hiển thị.
+
+Snapshot index xuất riêng `/private/tmp/hrm-dashboard-reviewed`, build Dockerfile repo thành `hrm-ci:dashboard-review`. Ruby3.4.12/Bundler2.6.9/bundle check đạt; `ruby bin/quality && bundle exec rails test --seed 51915` trong image không source mount: **367tests/2461assertions/0failures/errors/skips**,64.470916s. RuboCop557/0,21file strict; routes/architecture/typecheck+3negative probes/RBI/autoload/Brakeman/bundler-audit/secret scan đạt. KPI-source và2company coverage nằm trong367tests. actionlint1.7.7 đạt. Staged snapshot chỉ có SQL `db/structure.sql` (DDL và migration versions), khôngCSV/dump/log/privatekey/env; gitleaksredacted khôngleaks.
+
+Image smoke `/usr/bin/ruby bin/smoke-image hrm-ci:dashboard-review` đạt, UID1000, structure.sql có/schema.rb/privateenv/key khôngcó, /up200 /session/new200 /pay_runs302. LocalimageID `sha256:53bae41618bab81530a17327405adfb8f5e38db2fa2276462e87e7f3abb3e1cb`, khôngGHCRdigest. MountduynhấtpublicCA, RAILS_ENV=test/hrm_test. Tài liệu chứng cứ cập nhật sau image test. SHA/Actions sẽ ghi sau push và kiểm đúng run; chưa trộn code Mua hàng trước khi CI đợt này đạt. GHCR chỉrelease riêng.
+
+---
+
+# ERP menu / Dashboard → nguồn — 13/11/2026
+
+Working tree từ base `8fef4c4799086156884939cbbf5484ec60c9b56e`, branch `codex/docker-verification-conventions`; chưa commit/push. Bằng chứng đợt này là local, không dùng Actions xanh của base để chứng nhận diff. Giữ các thay đổi strict/editor/hướng dẫn có sẵn. LaravelDji read-only, chỉ tham chiếu cách nhóm nghiệp vụ; không copy dữ liệu/secrets hoặc claim ngang tính năng.
+
+## Phần đã triển khai
+
+- Registry menu chung sidebar/Không gian nghiệp vụ chia thành9nhóm: Nhân sự, Cơ cấu tổ chức, Chấm công, Nghỉ phép, Bảng lương, Tuyển dụng, Onboarding, Tích hợp, Quản trị hệ thống. Đưa outbound/audit Integration thành mục dễ tìm; audit cần đủ2quyền. Nhóm rỗng bị ẩn server-side, nguồn vẫn authorize.
+- 8KPI: active employees, pending leave, open attendance, draft payroll theo tháng chọn, in_progress onboarding; tổng phòng ban/ứng viên/webhook ở section phụ. 3widget từ nguồn thật (5đơn chờ,5ca mở, kỳ lương tháng), Xem tất cả giữ đúng predicate. Không mutation tại dashboard.
+- Board8trạng thái CaseStateMachine: cột mở danh sách status, dòng mở hồ sơ, việc tiếp theo mở anchor checklist. Tổng count toàn scope; preview100hồ sơ mới nhất,3dòng/cột. Nguồn theo status phân trang25 và giữ bộ lọc, đã kiểm26hồ sơ.
+- Bộ lọc web allowlist trong Queries qua Hrm::ListFilters, không chọn company từ client. Employee status; Attendance open/closed; Leave pending/approved/rejected; Payroll draft/finalized+YYYY-MM; Onboarding status thật. API hiện có giữ hành vi trước, không claim API filters mới.
+- Trang GET chi tiết phép `/leave_requests/:id` mới thuộc TimeOff: FindLeaveRequest+policy/Pundit scope, guard index trước lookup, no-store hiện có. Link dòng chấm công đến detail hiện có. Các action duyệt/chốt/checklist giữ Command/transaction/lock/audit cũ.
+- Dashboard đọc các contract sở hữu, không SQL xuyên Engine; manifest khai báo Attendance/Payroll và giữ Recruitment/Integration. Bỏ stat cache30s; số liệu đọc trực tiếp theo profile công ty/quyền ở mỗi request, không hứa snapshot giao dịch toàn ERP. Có nhãn đơn vị/phạm vi/kỳ và trạng thái rỗng. Giữ màu vàng, tiếng Việt; source status labels thêm locale ERP.
+
+Bản đồ đầy đủ menu→route→query→quyền, card→source filter, giới hạn và backlog: [ERP_NAVIGATION.md](ERP_NAVIGATION.md). File chính: platform/helper/layout/CSS/ListFilters; dashboard/controller/Overview/read-contract/read-repository/view/tests; query/contracts/repositories/controller/view nguồn trong Workforce, Attendance, TimeOff, Payroll, Onboarding; routeTimeOff/Onboarding;2RBIhelpergenerated và locale ERP. Không migration, không đổi schema/công thức lương/phân quyền MySQL. **21file typed:strict giữ nguyên số lượng**, cập nhật sig filter tương ứng; ListFilters typed:true.
+
+## Kiểm chứng
+
+Ruby **3.4.12** aarch64-linux +PRISM / Bundler **2.6.9** thực tế trong Dockerfile image, bundle check đạt. Baseline local357tests/2341assertions/555Rubyfiles; mới **367tests/2461assertions**, **557Rubyfiles/0offenses**.
+
+- Focused cuối: `bundle exec rails test modules/dashboard/test/controllers modules/attendance/test/application/attendance_use_cases_test.rb`: **22runs/175assertions/0failures/errors/skips**. Nhóm Dashboard+Onboarding trước KPI phụ:22/189đạt. Fullsuite bao gồm cả10regression dashboard mới và các test onboarding/concurrency/rollback/authorization hiện có.
+- Bao phủ2company, admin/employee; count→filter/list, widget→đúngID, onboarding→checklist anchor; số0→nguồn rỗng; đổi membership→counts/source mới và old-company URL404; thu quyền→ẩn giá trị/link, URL403; cross-company detail404; malformed status/hash/array/tháng404; company_id request không đổi scope; phân trang26cases; integration audit yêu cầu đủsource+audit grants. Test double Attendance cập nhật contract status/recent, giữ assertions default và thêm passthrough open.
+- Trong image `hrm-dashboard:workspace`, không source mount: `ruby -v && bundle --version && bundle check && ruby bin/quality && bundle exec rails test --seed 51915`. Full MySQL **367runs/2461assertions/0failures/0errors/0skips**,65.684242s, hrm_test. Query budgets employees9/reconciliation20/export49 ở cả1và20records không đổi.
+- Quality: RuboCop557/0; routes13; architecture48controllers/12Engines/38bindings; Sorbet sạch,3negative probes reject7002; gem/DSL RBIup-to-date+khôngduplicate shim, provider preflight/eager load đạt. Gitleaks1036publishablefiles khôngleaks, outputredacted; Brakeman8.1.0 errors0/warnings0; bundler-audit khôngknownvulnerabilities.
+- `/usr/bin/ruby bin/smoke-image hrm-dashboard:workspace`: UID1000, structure.sql có, schema.rb/privateenv/key khôngcó; /up200, /session/new200, /pay_runs302. ImageID **`sha256:0e52b694bb5c5773f4a7956d6213a8bdcbef100cf5bdf123084de3cfc8a7ba27`**; localID, khôngGHCRdigest. Chỉ mount publicCAreadonly; khôngmountsource. Khôngrelease/deploy.
+- Browser local phiên admin hiện có: viewport CSS đo được390px, document.scrollWidth390; dashboard, nguồn phép/payroll/onboarding không tràn trang. Tabfocus skiplink cóoutline solid; Enter tới main, Entercard phép0→statuspending/0rows; payroll→period2026-11/statusdraft; onboarding→in_progress/1column/0records. Resetviewport sau kiểm tra. Sample2company/2role được kiểm qua MySQL integration tests, không giả là đã đổi company/duyệt dữ liệu development bằng browser.
+- Lỗi local `/session/new`: tab có cookie gặp User::PrincipalIdentity do Puma lâu chạy chưa nhận folderconcerns mới. Restart riêngPuma bằngUSR2 trong xinviec-hrm-web-1 (xác nhận/proc/1làpuma), khôngrecreatecontainer/VSCode; reloadtab đã hếtNameError. KhôngresetDBdevelopment.
+
+Lượt full đầu366runs có1error do testdouble Attendance không nhận keywordstatus, không tínhpass; đã sửa double theo contract mới, chạyregression và fullimage ở trên đạt. MalformedJSON/Rack warnings trong tests khôngfailures. git diff --check đạt. Tài liệu/README cập nhật sauimage-test, không đổi runtime. Không chạy GitHub Actions mới; cần commit/push đợt riêng để cóSHA/runlink chứng nhận bản sửa. Không suy kết quả local thành remoteCI.
+
+## Backlog không đưa vào menu giả
+
+Payroll OT/thuế/bảo hiểm/khấu trừ và xuất pháp định chưa là fullengine; phép chờ/ca mở vẫn chỉ cảnh báo. Onboarding chưa tự provision account/device hoặc nối toàn pipeline offer/requisition. Finance/AP/AR/GL/treasury, mua hàng, kho/bán hàng/CRM, tài sản/dự án, statutory/planning chưa có miền Rails hoàn chỉnh. Webhook/outbox hiện có không tự biến thành business adapter của các miền đó. Thứ tự sẵn sàng được ghi riêng trong ERP_NAVIGATION.md.
+
+---
+
+# Contract negative gates — 13/11/2026
+
+Tiếp tục trên working tree từ base8fef4c4, chưa commit/push. Không mở rộng strict quá21 file đã ghi bên dưới; không migration hoặc đổi nghiệp vụ. `bin/typecheck --self-test` nay tạo ba probe độc lập qua contract thật Payroll/Leave/Identity, lần lượt cố truyền String thay PayRun/LeaveRequest/User. Mỗi probe phải exit nonzero với lỗi7002 và tên kiểu mong đợi; Tempfile đảm bảo xóa probe khi kết thúc. `bin/quality` luôn bật --self-test; CI hiện đã gọi cùng lệnh nên không cần đổi workflow.
+
+Đã sửa duy nhất whitespace cuối comment departments_controller.rb làm snapshot hiện tại fail lint; giữ các diff khác. Hướng dẫn Laravel–Ruby bổ sung giải thích static contract gate, phân biệt với kiểm quyền/transaction/runtime tests.
+
+Dockerfile repo build `hrm-strict:contract-probes`, Ruby3.4.12/Bundler2.6.9, bundle check đạt. Image cuối `sha256:43471bdfa8ef25f84af30352ee93505497ec0f58dc50c2613b1ae17018391b0d` (local ID, không GHCR digest). Không source mount; chỉ public MySQL CA readonly, RAILS_ENV=test/hrm_test.
+
+Lệnh: `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=/Users/lahoathanh/Desktop/xinviec/ruby/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-strict:contract-probes sh -c 'ruby -v && bundle --version && bundle check && ruby bin/quality && bundle exec rails test --seed 51915'`.
+
+Kết quả: RuboCop555/0; routes13; architecture48controllers/12Engines/38bindings; Sorbet sạch và cả3negative probes đạt; RBI gem/DSL up-to-date, shim không duplicates; eager load đạt; secret scan1031files không leaks; Brakeman0errors/0warnings; dependency audit không known vulnerabilities. Full MySQL **357 tests / 2341 assertions / 0 failures/errors/skips**, 64.210411s. Số test giữ nguyên vì bổ sung compiler probes, không thêm business test trùng lặp. Query budget9/20/49 ở cả1và20records không đổi.
+
+`/usr/bin/ruby bin/smoke-image hrm-strict:contract-probes`: UID1000, structure.sql có; schema.rb/private env/key không có; /up200, /session/new200, /pay_runs302. git diff --check đạt. Image kiểm source/code và gate mới; tài liệu giải thích/bản ghi này cập nhật sau test. Lượt đầu fail lint đã được sửa và chạy lại đầy đủ, không tính là pass. Không chạy Actions mới; kết quả remote8fef4c4 chỉ chứng nhận baseline. Không release/deploy hoặc tác động database development/Laravel.
+
+---
+
+# ReviewLeave / RevokePersonalSession strict — 13/11/2026
+
+Base commit `8fef4c4799086156884939cbbf5484ec60c9b56e`, branch `codex/docker-verification-conventions`. Kết quả dưới đây là **local trên working tree chưa commit**, không phải Actions của bản sửa. Giữ các diff học tập và controller ngoài phạm vi. Baseline 355 tests / 2311 assertions, 554 Ruby files; hiện tại **357 tests / 2341 assertions**, RuboCop **555 files / 0 offenses**. Không migration hoặc thay đổi công thức lương/quyền/lock order.
+
+## Phạm vi strict thực tế
+
+Giữ nguyên 10 file Payroll; bổ sung 11 file, tổng 21:
+
+- TimeOff: `application/commands/review_leave.rb`, `domain/repositories/read_repository_interface.rb`, `domain/repositories/write_repository_interface.rb`, `domain/services/leave_review_rules.rb`, `infrastructure/persistence/active_record_read_repository.rb`, `infrastructure/persistence/active_record_write_repository.rb` dưới `modules/time_off/lib/hrm_time_off/`.
+- Identity: `application/commands/revoke_personal_session.rb`, `domain/repositories/write_repository_interface.rb`, `infrastructure/persistence/active_record_write_repository.rb`, `infrastructure/persistence/web_session_access.rb` dưới `modules/identity/lib/hrm_identity/`; thêm `modules/identity/app/models/concerns/principal_identity.rb`.
+
+Contracts dùng overridable, implementation dùng override; command giữ dependency ở kiểu contract. Container.resolve có T.cast tại ranh giới registry động, không dùng T.untyped/T.unsafe mới. PrincipalIdentity giữ nguyên hai body identity_user/identity_id, T.bind xác nhận host Rails là User; User model/validation DSL vẫn gradual. Hai file Outbox repository contract/implementation ở Platform lên typed:true cho append!, không gọi toàn bộ Platform strict.
+
+ReviewLeave nhận request/reviewer nilable, decision:Object để nil, số, mảng, hash, symbol vẫn đi qua authorization/rule hiện hữu; chỉ cast String sau validate!. used_days trả Integer hoặc BigDecimal; transaction/block result nilable đúng khả năng rollback. RevokePersonalSession giữ actor nilable và credential/id:Object để malformed input bị Pundit hoặc RecordNotFound như trước, kể cả Integer ID. Không đổi thành TypeError trước guard. Kết quả revoke nilable AuditLog; identity_id nilable Integer cho User chưa persist.
+
+## Lệnh và bằng chứng local
+
+Ruby 3.4.12 aarch64-linux +PRISM, Bundler 2.6.9; bundle check đạt. Dockerfile repo build image `hrm-strict:leave-session` chứa source ứng dụng và tests mới, không mount source khi chạy. Image ID `sha256:2e145493688d5f8cf5cee0001eb9e71cd44fab495039509b1d8e27d1bc58a86d` (local image ID, không phải registry digest). Chỉ mount public CA MySQL; RAILS_ENV=test/hrm_test.
+
+- Focused: `bundle exec rails test modules/time_off/test/application/leave_use_cases_test.rb modules/time_off/test/application/concurrent_leave_review_test.rb modules/identity/test/application/personal_sessions_test.rb modules/identity/test/application/concurrent_company_context_test.rb`: **14 runs / 111 assertions / 0 failures/errors/skips**, gồm tranh chấp số dư, rollback outbox, session/company context concurrency và hai regression malformed-input mới.
+- Trong image: `ruby -v && bundle --version && bundle check && ruby bin/quality && bundle exec rails test --seed 51915`: **357 runs / 2341 assertions / 0 failures/errors/skips**, 63.269331s.
+- bin/quality: RuboCop555/0, explicit routes13, architecture48 controllers/12 Engines/38 bindings; Sorbet không lỗi, gem/DSL RBI up-to-date, shim không duplicates, eager load đạt; gitleaks1030 publishable files không leaks (output che giá trị); Brakeman8.1.0 errors0/warnings0; bundler-audit không known vulnerabilities. Không sửa RBI artifact. Query budgets employees9/reconciliation20/export49 ở cả 1 và20 nhân viên.
+- `/usr/bin/ruby bin/smoke-image hrm-strict:leave-session`: UID1000, structure.sql có, schema.rb/private env/key không có; /up200, /session/new200, /pay_runs302. Không source mount.
+
+Lượt bin/quality trong Dev Container cũ thiếu binary gitleaks nên không được tính đạt; chạy lại toàn bộ thành công trong Dockerfile image ở trên, không bỏ scanner. Các thông báo malformed JSON và Rack frozen-string trong suite không phải failures. Không chạy Actions mới/không push; CI xanh của8fef4c4 chỉ là baseline, không chứng nhận diff này. Editor config và tài liệu được cập nhật sau image test, không đổi runtime ứng dụng.
+
+## VS Code Cmd+click
+
+Log Dev Container cho thấy Ruby LSP nhường chức năng cho Sorbet khi phát hiện sorbet-static nhưng container thiếu extension Sorbet. Đã cài `sorbet.sorbet-vscode-extension`0.3.47, thêm recommendation và devcontainer extension. `.vscode/settings.json` chọn Sorbet với `--disable-watchman`: config kiểm kiểu chứa cả thư mục và file CLI không extension, làm Watchman mặc định từ chối startup. VS Code gửi thay đổi file qua LSP; không bỏ input khỏi typecheck CI.
+
+JSON-RPC initialize thành công; textDocument/definition trên ApplicationController trong TimeOff controller trả đúng `file:///app/modules/platform/app/controllers/application_controller.rb`. Chưa xác nhận trực tiếp thao tác chuột trong UI; cần Developer: Reload Window để extension mới kích hoạt. Không recreate container hay đụng DB development.
+
+---
+
 # Docker conventions và CI đã xác nhận — 13/11/2026
 
 Branch: `codex/docker-verification-conventions`. Origin: `git@github.com:Thanhlong282828/ruby-projec-one.git`. SHA sửa readiness đã kiểm: **`1863b50e37b8f458f7e7fd799e66751eb9559afc`**. [Actions run 43296475877](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43296475877) completed/success, xác nhận trực tiếp qua run head_sha, job steps và logs; không dùng run của SHA khác thay thế.

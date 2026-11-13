@@ -1,7 +1,7 @@
 class AttendancesController < ApplicationController
   def index
     @can_clock_in = current_user.allowed?("attendance.clock") && HrmWorkforce::Application::Queries::CurrentEmployee.new.call(actor: current_user).present?
-    @attendances = HrmAttendance::Application::Queries::ListAttendances.new.call(actor: current_user, page: params[:page])
+    @attendances = HrmAttendance::Application::Queries::ListAttendances.new.call(actor: current_user, page: params[:page], status: params[:status])
   end
   def show
     @data=HrmAttendance::Application::Queries::AttendanceDetail.new.call(actor: current_user, id: params[:id])

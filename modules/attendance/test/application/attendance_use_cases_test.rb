@@ -2,8 +2,8 @@ require "test_helper"
 class AttendanceUseCasesTest < ActiveSupport::TestCase
   class FakeReadRepository < HrmAttendance::Domain::Repositories::ReadRepositoryInterface
     attr_reader :received
-    def list(actor:, page:)
-      @received = [ actor.id, page ]
+    def list(actor:, page: 1, status: nil, recent: false)
+      @received = [ actor.id, page, status, recent ]
       [ :from_fake_repository ]
     end
   end
@@ -12,7 +12,10 @@ class AttendanceUseCasesTest < ActiveSupport::TestCase
     repository = FakeReadRepository.new
     result = HrmAttendance::Application::Queries::ListAttendances.new(repository: repository).call(actor: actor, page: 2)
     assert_equal [ :from_fake_repository ], result
-    assert_equal [ actor.id, 2 ], repository.received
+    assert_equal [ actor.id, 2, nil, false ], repository.received
+    filtered = HrmAttendance::Application::Queries::ListAttendances.new(repository: repository).call(actor: actor, page: 2, status: "open")
+    assert_equal [ :from_fake_repository ], filtered
+    assert_equal [ actor.id, 2, "open", false ], repository.received
   end
   test "check in and check out go through the real bound repositories" do
     employee = make_employee

@@ -1,7 +1,7 @@
 get "/onboarding/cases/new", to: "onboarding/cases#new"
-get "/onboarding/cases", to: "onboarding/cases#index"
+get "/onboarding/cases", to: "onboarding/cases#index", as: :onboarding_cases
 post "/onboarding/cases", to: "onboarding/cases#create"
-get "/onboarding/cases/:id", to: "onboarding/cases#show"
+get "/onboarding/cases/:id", to: "onboarding/cases#show", as: :onboarding_case
 patch "/onboarding/cases/:id/status", to: "onboarding/cases#transition"
 patch "/onboarding/cases/:id/checklist/:code", to: "onboarding/cases#complete"
 get "/api/v1/onboarding/cases", to: "api/v1/onboarding_cases#index"

@@ -3,8 +3,9 @@ module HrmWorkforce
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
         def all_employee_count(actor:) = Pundit.policy_scope!(actor, ::Employee).count
-        def employees(actor:, page: 1, search: nil, api: false)
+        def employees(actor:, page: 1, search: nil, api: false, status: nil)
           scope = Pundit.policy_scope!(actor, ::Employee).includes(:department).order(api ? :id : :employee_code)
+          scope = scope.where(status: status) if status
           if search.present?
             term = "%#{::Employee.sanitize_sql_like(search.to_s)}%"
             scope = scope.where("full_name LIKE ? OR employee_code LIKE ?", term, term)

@@ -1,7 +1,11 @@
+# typed: strict
+
 module HrmIdentity
   module Infrastructure
     module Persistence
       module WebSessionAccess
+        extend T::Sig
+        sig { params(actor: T.nilable(User), credential: Object).returns(LoginSession) }
         def self.check!(actor:, credential:)
           raise Pundit::NotAuthorizedError unless actor && credential.is_a?(::LoginSession) && credential.persisted?
           ActiveRecord::Base.uncached do

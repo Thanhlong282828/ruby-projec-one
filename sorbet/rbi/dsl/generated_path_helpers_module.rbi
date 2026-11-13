@@ -193,6 +193,9 @@ module GeneratedPathHelpersModule
   def integration_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def leave_request_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def leave_requests_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -236,6 +239,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_work_shift_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def onboarding_case_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def onboarding_cases_new_path(*args); end

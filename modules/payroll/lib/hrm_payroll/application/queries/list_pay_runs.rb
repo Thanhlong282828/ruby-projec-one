@@ -6,9 +6,9 @@ module HrmPayroll
           super()
           @repository = repository
         end
-        def call(actor:, page: 1)
+        def call(actor:, page: 1, status: nil, period: nil)
           authorize!(actor, ::PayRun, :index?)
-          @repository.list(actor: actor, page: page)
+          @repository.list(actor: actor, page: page, status: Hrm::ListFilters.choice(status, allowed: %w[draft finalized]), period: Hrm::ListFilters.month(period))
         end
       end
     end

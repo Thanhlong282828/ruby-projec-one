@@ -2,7 +2,11 @@ module HrmAttendance
   module Infrastructure
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
-        def list(actor:, page: 1) = Hrm::Pagination.call(Pundit.policy_scope!(actor, ::Attendance).includes(:employee).order(work_date: :desc), page).to_a
+        def list(actor:, page: 1, status: nil, recent: false)
+          scope = filtered(actor: actor, status: status).includes(:employee).order(work_date: :desc, id: :desc)
+          recent ? scope.limit(5).to_a : Hrm::Pagination.call(scope, page).to_a
+        end
+        def count(actor:, status: nil) = filtered(actor: actor, status: status).count
         def period(actor:, from:, to:, page: 1)
           scope = Pundit.policy_scope!(actor, ::Attendance).where(work_date: from..to)
           # Fixed SQL expressions, never interpolate request values into SQL.
@@ -15,6 +19,13 @@ module HrmAttendance
               elapsed_seconds: counts[2].to_i, excessive: counts[3].to_i } }
         end
         def find!(actor:, id:) = Pundit.policy_scope!(actor, ::Attendance).includes(:employee).find(id)
+        private
+        def filtered(actor:, status:)
+          scope = Pundit.policy_scope!(actor, ::Attendance)
+          return scope.where(checked_out_at: nil) if status == "open"
+          return scope.where.not(checked_out_at: nil) if status == "closed"
+          scope
+        end
       end
     end
   end

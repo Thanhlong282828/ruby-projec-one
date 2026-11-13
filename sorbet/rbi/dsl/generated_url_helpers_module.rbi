@@ -193,6 +193,9 @@ module GeneratedUrlHelpersModule
   def integration_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def leave_request_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def leave_requests_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -236,6 +239,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_work_shift_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def onboarding_case_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def onboarding_cases_new_url(*args); end

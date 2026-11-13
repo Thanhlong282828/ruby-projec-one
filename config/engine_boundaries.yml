@@ -2,7 +2,7 @@
 engines:
   attendance: [HrmWorkforce]
   audit: []
-  dashboard: [HrmWorkforce, HrmTimeOff, HrmRecruitment, HrmOnboarding, HrmIntegration]
+  dashboard: [HrmWorkforce, HrmTimeOff, HrmOnboarding, HrmAttendance, HrmPayroll, HrmRecruitment, HrmIntegration]
   identity: [HrmPlatform]
   integration: [HrmPayroll]
   onboarding: []

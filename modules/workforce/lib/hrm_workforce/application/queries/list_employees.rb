@@ -6,9 +6,9 @@ module HrmWorkforce
           super()
           @repository = repository
         end
-        def call(actor:, page: 1, search: nil, api: false)
+        def call(actor:, page: 1, search: nil, api: false, status: nil)
           authorize!(actor, ::Employee, :index?)
-          @repository.employees(actor: actor, page: page, search: search, api: api)
+          @repository.employees(actor: actor, page: page, search: search, api: api, status: Hrm::ListFilters.choice(status, allowed: %w[active probation inactive]))
         end
       end
     end

@@ -6,23 +6,49 @@ require "tempfile"
 Dir.chdir(File.expand_path("..", __dir__)) do
   abort "Typecheck failed" unless system("bundle", "exec", "srb", "tc")
   if ARGV.include?("--self-test")
-    # A temporary strict probe exercises the real contract; ensure removes it on every exit.
-    probe = <<~SOURCE
-      # typed: strict
-      class PayrollTypecheckProbe
-        extend T::Sig
-        sig { params(repository: HrmPayroll::Domain::Repositories::WriteRepositoryInterface, actor: User).void }
-        def self.call(repository, actor)
-          repository.finalize!(run: "invalid payroll", actor: actor) { |run| }
+    # Each isolated strict probe must fail at its real contract, not an unrelated error.
+    probes = {
+      "Payroll" => [ "PayRun", <<~SOURCE ],
+        # typed: strict
+        class PayrollTypecheckProbe
+          extend T::Sig
+          sig { params(repository: HrmPayroll::Domain::Repositories::WriteRepositoryInterface, actor: User).void }
+          def self.call(repository, actor)
+            repository.finalize!(run: "invalid payroll", actor: actor) { |run| }
+          end
         end
+      SOURCE
+      "Leave" => [ "LeaveRequest", <<~SOURCE ],
+        # typed: strict
+        class LeaveTypecheckProbe
+          extend T::Sig
+          sig { params(repository: HrmTimeOff::Domain::Repositories::WriteRepositoryInterface, actor: User).void }
+          def self.call(repository, actor)
+            repository.review!(request: "invalid leave", reviewer: actor, decision: "approved")
+          end
+        end
+      SOURCE
+      "Identity" => [ "User", <<~SOURCE ]
+        # typed: strict
+        class IdentityTypecheckProbe
+          extend T::Sig
+          sig { params(repository: HrmIdentity::Domain::Repositories::WriteRepositoryInterface).void }
+          def self.call(repository)
+            repository.revoke_personal_session!(actor: "invalid actor", credential: nil, id: "1")
+          end
+        end
+      SOURCE
+    }
+    probes.each do |name, (expected_type, source)|
+      output, status = Tempfile.create([ "typecheck_probe_", ".rb" ], "sorbet") do |file|
+        file.write(source)
+        file.flush
+        result = Open3.capture2e("bundle", "exec", "srb", "tc")
+        file.close
+        result
       end
-    SOURCE
-    output, status = Tempfile.create([ "typecheck_probe_", ".rb" ], "sorbet") do |file|
-      file.write(probe)
-      file.flush
-      Open3.capture2e("bundle", "exec", "srb", "tc")
+      abort "#{name}: typecheck did not reject the invalid contract call" unless !status.success? && output.include?("7002") && output.include?(expected_type)
+      puts "Negative typecheck passed: #{name} #{expected_type} argument rejected (7002); temporary probe removed."
     end
-    abort "Typecheck did not reject the invalid contract call" unless !status.success? && output.include?("7002") && output.include?("PayRun")
-    puts "Negative typecheck passed: invalid PayRun argument rejected (7002); temporary probe removed."
   end
 end

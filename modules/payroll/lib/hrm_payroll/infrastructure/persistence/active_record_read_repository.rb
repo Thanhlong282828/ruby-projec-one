@@ -5,9 +5,23 @@ module HrmPayroll
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
         extend T::Sig
-        sig { params(actor: User, page: T.nilable(T.any(Integer, String))).returns(T::Array[PayRun]) }
-        # Pundit/Pagination dynamically return scopes; cast only their materialized results.
-        def list(actor:, page: 1) = T.cast(Hrm::Pagination.call(Pundit.policy_scope!(actor, ::PayRun).order(period: :desc), page).to_a, T::Array[PayRun])
+        sig { params(actor: User, page: T.nilable(T.any(Integer, String)), status: T.nilable(String), period: T.nilable(Date), recent: T::Boolean).returns(T::Array[PayRun]) }
+        # Pundit/Pagination are dynamic boundaries; constrain the scope and materialized models.
+        def list(actor:, page: 1, status: nil, period: nil, recent: false)
+          scope = filtered(actor: actor, status: status, period: period).order(period: :desc, id: :desc)
+          T.cast(recent ? scope.limit(5).to_a : Hrm::Pagination.call(scope, page).to_a, T::Array[PayRun])
+        end
+        sig { params(actor: User, status: T.nilable(String), period: T.nilable(Date)).returns(Integer) }
+        def count(actor:, status: nil, period: nil) = filtered(actor: actor, status: status, period: period).count
+        sig { params(actor: User, status: T.nilable(String), period: T.nilable(Date)).returns(ActiveRecord::Relation) }
+        def filtered(actor:, status:, period:)
+          # Pundit returns a dynamic scope; the scope owns PayRun records.
+          scope = T.cast(Pundit.policy_scope!(actor, ::PayRun), ActiveRecord::Relation)
+          scope = scope.where(status: status) if status
+          scope = scope.where(period: period) if period
+          scope
+        end
+        private :filtered
         sig { params(actor: User, id: T.nilable(T.any(Integer, String))).returns(PayRun) }
         def find!(actor:, id:) = T.cast(Pundit.policy_scope!(actor, ::PayRun).find(id), PayRun)
         sig { params(actor: User, run: PayRun).returns(T::Array[Payslip]) }

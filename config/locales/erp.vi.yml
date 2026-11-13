@@ -1,0 +1,11 @@
+vi:
+  erp:
+    statuses:
+      active: Đang hoạt động
+      probation: Thử việc
+      inactive: Ngừng hoạt động
+      pending: Chờ duyệt
+      approved: Đã duyệt
+      rejected: Từ chối
+      draft: Chờ chốt
+      finalized: Đã chốt

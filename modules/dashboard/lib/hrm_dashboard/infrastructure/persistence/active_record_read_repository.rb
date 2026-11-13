@@ -2,25 +2,45 @@ module HrmDashboard
   module Infrastructure
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
-        def snapshot(actor:)
-          workforce = Hrm::Container.resolve(HrmWorkforce::Domain::Repositories::ReadRepositoryInterface)
-          leaves = Hrm::Container.resolve(HrmTimeOff::Domain::Repositories::ReadRepositoryInterface)
-          recruitment = Hrm::Container.resolve(HrmRecruitment::Domain::Repositories::ReadRepositoryInterface)
-          onboarding = Hrm::Container.resolve(HrmOnboarding::Domain::Repositories::ReadRepositoryInterface)
-          integration = Hrm::Container.resolve(HrmIntegration::Domain::Repositories::ReadRepositoryInterface)
-          # User + persisted permission digest prevent cached stats from outliving revocation.
-          digest = Digest::SHA256.hexdigest(actor.effective_permission_keys.sort.join("|"))
-          Rails.cache.fetch([ "dashboard", actor.company_id, actor.id, digest, "erp-v2" ], expires_in: 30.seconds) do
-            {
-              employees: workforce.all_employee_count(actor: actor),
-              departments: workforce.department_count(actor: actor),
-              pending: leaves.pending_count(actor: actor),
-              leaves: leaves.count(actor: actor),
-              candidates: recruitment.count(actor: actor),
-              onboarding: onboarding.count(actor: actor),
-              webhooks: integration.count(actor: actor)
-            }
+        def snapshot(actor:, period:)
+          # Each module owns its scoped predicates; no dashboard-owned cross-engine SQL.
+          data = { period: period }
+          if Pundit.policy!(actor, ::Employee).index?
+            workforce = Hrm::Container.resolve(HrmWorkforce::Domain::Repositories::ReadRepositoryInterface)
+            data[:employees] = workforce.employee_count(actor: actor)
           end
+          if Pundit.policy!(actor, ::LeaveRequest).index?
+            leaves = Hrm::Container.resolve(HrmTimeOff::Domain::Repositories::ReadRepositoryInterface)
+            data[:pending] = leaves.pending_count(actor: actor)
+            data[:requests] = leaves.list(actor: actor, recent: true, status: "pending")
+          end
+          if Pundit.policy!(actor, ::Attendance).index?
+            attendance = Hrm::Container.resolve(HrmAttendance::Domain::Repositories::ReadRepositoryInterface)
+            data[:open] = attendance.count(actor: actor, status: "open")
+            data[:attendances] = attendance.list(actor: actor, status: "open", recent: true)
+          end
+          if Pundit.policy!(actor, ::PayRun).index?
+            payroll = Hrm::Container.resolve(HrmPayroll::Domain::Repositories::ReadRepositoryInterface)
+            data[:drafts] = payroll.count(actor: actor, period: period, status: "draft")
+            data[:runs] = payroll.list(actor: actor, period: period, recent: true)
+          end
+          if Pundit.policy!(actor, ::OnboardingCase).index?
+            onboarding = Hrm::Container.resolve(HrmOnboarding::Domain::Repositories::ReadRepositoryInterface)
+            data[:board] = onboarding.board(actor: actor)
+          end
+          if Pundit.policy!(actor, ::Department).index?
+            workforce = Hrm::Container.resolve(HrmWorkforce::Domain::Repositories::ReadRepositoryInterface)
+            data[:departments] = workforce.department_count(actor: actor)
+          end
+          if Pundit.policy!(actor, ::Candidate).index?
+            recruitment = Hrm::Container.resolve(HrmRecruitment::Domain::Repositories::ReadRepositoryInterface)
+            data[:candidates] = recruitment.count(actor: actor)
+          end
+          if Pundit.policy!(actor, ::IntegrationWebhook).index?
+            integration = Hrm::Container.resolve(HrmIntegration::Domain::Repositories::ReadRepositoryInterface)
+            data[:webhooks] = integration.count(actor: actor)
+          end
+          data
         end
       end
     end

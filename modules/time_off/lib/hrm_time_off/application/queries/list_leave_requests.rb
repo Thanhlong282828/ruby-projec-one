@@ -6,9 +6,9 @@ module HrmTimeOff
           super()
           @repository = repository
         end
-        def call(actor:, page: 1, recent: false)
+        def call(actor:, page: 1, recent: false, status: nil)
           authorize!(actor, ::LeaveRequest, :index?)
-          @repository.list(actor: actor, page: page, recent: recent)
+          @repository.list(actor: actor, page: page, recent: recent, status: Hrm::ListFilters.choice(status, allowed: %w[pending approved rejected]))
         end
       end
     end

@@ -5,7 +5,7 @@ module HrmOnboarding
         def count(actor:)
           raise NotImplementedError
         end
-        def board(actor:)
+        def board(actor:, status: nil, page: 1)
           raise NotImplementedError
         end
         def find!(actor:, id:)

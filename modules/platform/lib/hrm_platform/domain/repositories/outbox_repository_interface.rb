@@ -1,7 +1,11 @@
+# typed: true
+
 module HrmPlatform # Namespace: HrmPlatform::Domain::Repositories::OutboxRepositoryInterface | Tương đương PHP: namespace HrmPlatform\Domain\Repositories; | Đây là Contract thuộc tầng Domain, không trực tiếp chứa logic database.
   module Domain
     module Repositories
       class OutboxRepositoryInterface                                                                            #   Tham số     ý nghĩa
+        extend T::Sig
+        sig { overridable.params(company_id: Integer, event_type: String, payload: T::Hash[T.any(Symbol, String), Object]).returns(OutboxEvent) }
         def append!(company_id:, event_type:, payload:) # A. append! — Thêm sự kiện | Ba tham số keyword bắt buộc: company_id:	Công ty sở hữu sự kiện | event_type:	Loại sự kiện | payload:	Dữ liệu của sự kiện
           ##  repository.append!( company_id: 10,event_type: "salary.updated",payload: { salary_id: 100,amount: 20_000_000 })
           # Dấu ! trong append! là quy ước Ruby thường dùng cho phương thức có tác động đáng chú ý hoặc có thể phát sinh lỗi; bản thân dấu ! không tự tạo transaction hay exception.

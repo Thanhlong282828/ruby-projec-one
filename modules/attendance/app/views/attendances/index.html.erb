@@ -19,6 +19,7 @@
     <% end %>
 </div>
 
+<%= form_with url: attendances_path, method: :get, class: "source-filters" do %><label for="status">Trạng thái</label><%= select_tag :status, options_for_select([["Tất cả", ""], ["Ca đang mở", "open"], ["Ca đã đóng", "closed"]], params[:status]) %><%= submit_tag "Lọc dữ liệu" %><%= link_to "Xóa bộ lọc", attendances_path %><% end %>
 <div class="panel">
     <table>
         <thead>
@@ -35,7 +36,7 @@
             <% @attendances.each do |attendance| %>
                 <tr>
                     <td>
-                        <%= attendance.employee.full_name %>
+                        <%= link_to attendance.employee.full_name, attendance_path(attendance) %>
                     </td>
 
                     <td>

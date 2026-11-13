@@ -4,14 +4,14 @@
     <h1><%= @record.employee.full_name %></h1>
     <p class="subtitle">Bắt đầu <%= @record.start_date %> • <%= onboarding_status_label(@record.status) %> • Phiên bản <%= @record.lock_version %></p>
   </div>
-  <%= link_to "← Board", "/onboarding/cases" %>
+  <%= link_to "← Board", onboarding_cases_path(status: @record.status) %>
 </div>
 
 <div class="panel">
   <h2>Checklist tiếp nhận</h2>
   <ul class="workspace-links">
     <% @record.checklist.each do |item| %>
-      <li>
+      <li id="checklist-<%= item['code'] %>">
         <div class="checklist-row">
           <span><%= item["done"] ? "✓" : "○" %> <%= item["title"] %> <%= "(bắt buộc)" if item["required"] %></span>
           <% if policy(@record).update? && !item["done"] && !%w[completed cancelled].include?(@record.status) %>

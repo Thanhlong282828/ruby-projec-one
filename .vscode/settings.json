@@ -1,0 +1,19 @@
+{
+  "sorbet.enabled": true,
+  "sorbet.selectedLspConfigId": "project",
+  "sorbet.lspConfigs": [
+    {
+      "id": "project",
+      "name": "Sorbet (project)",
+      "description": "Use the project typecheck inputs; VS Code supplies file change notifications without Watchman.",
+      "command": [
+        "bundle",
+        "exec",
+        "srb",
+        "typecheck",
+        "--lsp",
+        "--disable-watchman"
+      ]
+    }
+  ]
+}

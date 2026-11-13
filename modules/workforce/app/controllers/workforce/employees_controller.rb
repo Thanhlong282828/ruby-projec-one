@@ -3,7 +3,7 @@ module Workforce
     before_action :set_employee, only: [ :show, :edit, :update, :destroy ]
 
     def index
-      @employees = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], search: params[:q])
+      @employees = HrmWorkforce::Application::Queries::ListEmployees.new.call(actor: current_user, page: params[:page], search: params[:q], status: params[:status])
     end
     def show; end
     def new

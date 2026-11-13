@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   include CompanyOwned
+  include PrincipalIdentity
   has_many :user_permissions, dependent: :destroy
   belongs_to :principal_user, class_name: "User", optional: true
   has_many :company_profiles, class_name: "User", foreign_key: :principal_user_id, inverse_of: :principal_user, dependent: :restrict_with_error
@@ -30,8 +31,6 @@ class User < ApplicationRecord
       errors.add(:active, "thu hồi quyền quản trị tổng bằng quy trình riêng trước khi khóa định danh") if owner
     end
   end
-  def identity_user = principal_user || self
-  def identity_id = principal_user_id || id
   has_one :employee, dependent: :nullify
   has_many :api_tokens, dependent: :destroy
   has_many :login_sessions, dependent: :destroy

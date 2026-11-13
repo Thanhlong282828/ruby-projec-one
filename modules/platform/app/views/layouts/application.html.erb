@@ -8,6 +8,7 @@
   <%= javascript_include_tag "hrm", defer: true %>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Bỏ qua menu, đến nội dung</a>
 <% if current_user %>
 <aside class="sidebar">
   <a class="brand" href="/">x<span>v</span> <small>ERP WORKSPACE</small></a>
@@ -39,7 +40,7 @@
   </div>
 </header>
 <% end %>
-<section class="content">
+<section class="content" id="main-content" tabindex="-1">
 <% flash.each do |type, message| %><div class="flash <%= type %>"><%= message %></div><% end %>
 <%= yield %>
 </section>

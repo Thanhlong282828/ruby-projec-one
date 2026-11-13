@@ -1,7 +1,11 @@
+# typed: true
+
 module HrmPlatform
   module Infrastructure
     module Persistence
       class ActiveRecordOutboxRepository < Domain::Repositories::OutboxRepositoryInterface # A. Kế thừa Contract | Dấu < trong Ruby là kế thừa Class | Nó tương tự PHP: class ActiveRecordOutboxRepository implements OutboxRepositoryInterface { }  | Nhưng Ruby dùng class < ParentClass, còn PHP sử dụng implements với Interface. | Khi Container gọi: instance.is_a?( HrmPlatform::Domain::Repositories::OutboxRepositoryInterface )  < Kết quả sẽ là true đối với instance của class này.
+        extend T::Sig
+        sig { override.params(company_id: Integer, event_type: String, payload: T::Hash[T.any(Symbol, String), Object]).returns(OutboxEvent) }
         def append!(company_id:, event_type:, payload:) = ::OutboxEvent.create!(company_id: company_id, event_type: event_type, payload: payload) # 2. append! — lưu sự kiện vào Database
         # Ví dụ: repository.append!( company_id: 10, event_type: "salary.updated", payload: { salary_id: 100,amount: 20_000_000 })
         # ActiveRecord thực hiện thao tác INSERT vào bảng outbox_events. | Dấu ::OutboxEvent chỉ định class OutboxEvent ở namespace gốc, tránh Ruby tìm nhầm class trong HrmPlatform. | create! sẽ phát sinh exception nếu lưu thất bại, thay vì chỉ trả về object không hợp lệ.

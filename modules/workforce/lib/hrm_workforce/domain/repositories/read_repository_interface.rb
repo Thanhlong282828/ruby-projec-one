@@ -5,7 +5,7 @@ module HrmWorkforce
         def all_employee_count(actor:)
           raise NotImplementedError
         end
-        def employees(actor:, page: 1, search: nil, api: false)
+        def employees(actor:, page: 1, search: nil, api: false, status: nil)
           raise NotImplementedError, "HrmWorkforce::ReadRepositoryInterface##employees"
         end
         def employee!(actor:, id:)

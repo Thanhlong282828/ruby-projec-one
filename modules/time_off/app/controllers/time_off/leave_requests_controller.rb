@@ -1,7 +1,12 @@
 module TimeOff
   class LeaveRequestsController < ApplicationController
     def index
-      @requests = HrmTimeOff::Application::Queries::ListLeaveRequests.new.call(actor: current_user, page: params[:page])
+      @requests = HrmTimeOff::Application::Queries::ListLeaveRequests.new.call(actor: current_user, page: params[:page], status: params[:status])
+    end
+    def show
+      authorize LeaveRequest, :index?
+      @request = HrmTimeOff::Application::Queries::FindLeaveRequest.new.call(actor: current_user, id: params[:id])
+      authorize @request, :show?
     end
     def new
       @request = LeaveRequest.new

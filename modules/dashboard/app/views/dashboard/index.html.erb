@@ -1,21 +1,39 @@
 <div class="page-heading">
-  <div><div class="eyebrow">ERP / WORKSPACE</div><h1>Dashboard tổng</h1><div class="subtitle"><%= current_user.company.name %> • <%= Date.current.strftime("%d / %m / %Y") %> • Dữ liệu theo quyền của bạn</div></div>
-  <% if current_user.allowed?("employees.create") %><%= link_to "+ Thêm nhân viên", new_employee_path, class: "button" %><% end %>
+  <div><div class="eyebrow">ERP / TỔNG QUAN CÔNG VIỆC</div><h1>Dashboard tổng</h1><p class="subtitle"><%= current_user.company.name %> · Công ty #<%= current_user.company_id %> · Phạm vi theo quyền của bạn</p></div>
+  <a href="#attention" class="button secondary">Việc cần theo dõi ↓</a>
 </div>
+<% if @stats.key?(:drafts) %>
+  <%= form_with url: root_path, method: :get, class: "source-filters" do %><label for="period">Kỳ lương đang xem</label><%= month_field_tag :period, @stats[:period].strftime("%Y-%m"), required: true %><%= submit_tag "Xem kỳ" %><% end %>
+<% end %>
+<p class="hint">Số liệu đọc trực tiếp khi mở trang, không dùng cache. Các chỉ số ngoài bảng lương tính trên toàn bộ dữ liệu bạn được xem.</p>
+<section id="attention" aria-labelledby="attention-title"><h2 id="attention-title">Việc cần theo dõi</h2>
 <div class="stats" aria-label="Chỉ số nghiệp vụ">
-  <% [["Hồ sơ nhân viên", :employees, employees_path, policy(Employee).index?], ["Phòng ban", :departments, departments_path, policy(Department).index?], ["Đơn nghỉ phép", :leaves, leave_requests_path, policy(LeaveRequest).index?], ["Ứng viên", :candidates, candidates_path, policy(Candidate).index?], ["Hồ sơ tiếp nhận", :onboarding, "/onboarding/cases", policy(OnboardingCase).index?], ["Sự kiện webhook", :webhooks, "/integration", policy(IntegrationWebhook).index?]].each do |label, key, path, visible| %>
-    <% if visible %><%= link_to path, class: "stat metric-card", aria: { label: "#{label}: #{@stats[key]}. Mở dữ liệu nguồn" } do %><small><%= label %></small><strong><%= @stats[key] %></strong><span>Mở danh sách dữ liệu nguồn ↗</span><% end %><% end %>
-  <% end %>
+  <% if @stats.key?(:pending) %><%= link_to leave_requests_path(status: "pending"), class: "stat metric-card", data: {metric: "pending"} do %><small>Đơn phép chờ duyệt</small><strong><%= @stats[:pending] %></strong><span>đơn · tất cả ngày · mở danh sách ↗</span><% end %><% end %>
+  <% if @stats.key?(:open) %><%= link_to attendances_path(status: "open"), class: "stat metric-card", data: {metric: "open"} do %><small>Ca đang mở</small><strong><%= @stats[:open] %></strong><span>ca · tất cả ngày · mở danh sách ↗</span><% end %><% end %>
+  <% if @stats.key?(:drafts) %><%= link_to pay_runs_path(status: "draft", period: @stats[:period].strftime("%Y-%m")), class: "stat metric-card", data: {metric: "drafts"} do %><small>Kỳ lương chờ chốt</small><strong><%= @stats[:drafts] %></strong><span>kỳ · tháng <%= @stats[:period].strftime("%m/%Y") %> ↗</span><% end %><% end %>
+  <% if @stats.key?(:employees) %><%= link_to employees_path(status: "active"), class: "stat metric-card", data: {metric: "employees"} do %><small>Nhân viên đang hoạt động</small><strong><%= @stats[:employees] %></strong><span>người · trạng thái hoạt động ↗</span><% end %><% end %>
+  <% if @stats.key?(:board) %><%= link_to onboarding_cases_path(status: "in_progress"), class: "stat metric-card", data: {metric: "onboarding"} do %><small>Đang tiếp nhận nhân viên</small><strong><%= @stats[:board][:counts].fetch("in_progress", 0) %></strong><span>hồ sơ · trạng thái đang tiếp nhận ↗</span><% end %><% end %>
+</div></section>
+<div class="erp-grid dashboard-widgets">
+  <% if @stats.key?(:requests) %><section class="panel"><div class="panel-heading"><h2>Đơn phép đang chờ</h2><%= link_to "Xem tất cả", leave_requests_path(status: "pending") %></div><p class="hint">Tối đa 5 đơn mới nhất · chỉ điều hướng, không duyệt tại dashboard.</p><ul class="workspace-links"><% @stats[:requests].each do |row| %><li><%= link_to leave_request_path(row) do %><span><strong><%= row.employee.full_name %></strong><br><%= row.starts_on %> → <%= row.ends_on %></span><span>Chi tiết ↗</span><% end %></li><% end %></ul><% if @stats[:requests].empty? %><p class="hint">Không có đơn chờ duyệt.</p><% end %></section><% end %>
+  <% if @stats.key?(:attendances) %><section class="panel"><div class="panel-heading"><h2>Ca chưa đóng</h2><%= link_to "Xem tất cả", attendances_path(status: "open") %></div><p class="hint">Tối đa 5 ca mới nhất, kể cả ngày trước.</p><ul class="workspace-links"><% @stats[:attendances].each do |row| %><li><%= link_to attendance_path(row) do %><span><strong><%= row.employee.full_name %></strong><br><%= row.work_date %></span><span>Chi tiết ↗</span><% end %></li><% end %></ul><% if @stats[:attendances].empty? %><p class="hint">Không có ca đang mở.</p><% end %></section><% end %>
+  <% if @stats.key?(:runs) %><section class="panel"><div class="panel-heading"><h2>Bảng lương tháng <%= @stats[:period].strftime("%m/%Y") %></h2><%= link_to "Xem tất cả", pay_runs_path(period: @stats[:period].strftime("%Y-%m")) %></div><ul class="workspace-links"><% @stats[:runs].each do |row| %><li><%= link_to pay_run_path(row) do %><span>Kỳ <%= row.period.strftime("%m/%Y") %> · <%= row.draft? ? "Chờ chốt" : "Đã chốt" %></span><span>Đối soát & phiếu lương ↗</span><% end %></li><% end %></ul><% if @stats[:runs].empty? %><p class="hint">Chưa có kỳ lương trong tháng đang xem.</p><% end %></section><% end %>
 </div>
-<div class="hero"><div><div class="eyebrow">MỘT KHÔNG GIAN, NHIỀU NGHIỆP VỤ</div><h2>Công việc rõ ràng.<br>Dữ liệu trong tầm tay.</h2><p>Chọn nhóm nghiệp vụ bên dưới để đi tới chức năng đang hoạt động. Chỉ số được cập nhật qua bộ nhớ đệm tối đa 30 giây; danh sách nguồn hiển thị dữ liệu mới nhất.</p></div><a href="#workspace-board" class="button">Mở bảng nghiệp vụ ↓</a></div>
-<section class="workspace-board" id="workspace-board" aria-labelledby="board-title">
-  <div class="panel-heading"><h2 id="board-title">Board nghiệp vụ</h2><span class="hint">Các chức năng được cấp quyền</span></div>
-  <div class="erp-grid">
-    <% erp_navigation_groups.each do |group| %>
-      <article class="panel module-widget"><div class="eyebrow">WORKSPACE</div><h2><%= group[:name] %></h2><ul class="workspace-links"><% group[:entries].each do |label, path, _| %><li><%= link_to path do %><span><%= label %></span><span aria-hidden="true">↗</span><% end %></li><% end %></ul></article>
-    <% end %>
-  </div>
-</section>
-<section class="panel" aria-labelledby="getting-started-title"><div class="panel-heading"><h2 id="getting-started-title">Onboarding không gian làm việc</h2><span class="badge">Hướng dẫn bắt đầu</span></div><p class="hint">Chọn một chức năng trong Board để xem dữ liệu, sau đó tạo hoặc cập nhật khi bạn có quyền. Quy trình tiếp nhận nhân viên và checklist nằm trong nhóm Tuyển dụng & tiếp nhận.</p><ol class="getting-started"><li>Xác nhận công ty đang làm việc ở thanh trên.</li><li>Mở nhóm nghiệp vụ theo công việc của bạn.</li><li>Bấm KPI để kiểm tra danh sách nguồn trước khi xử lý.</li></ol></section>
-<% if policy(LeaveRequest).index? %><div class="panel"><div class="panel-heading"><h2>Nghỉ phép gần đây</h2><%= link_to "Mở danh sách nguồn →", leave_requests_path %></div><p class="hint"><%= @stats[:pending] %> đơn chờ duyệt trong phạm vi dữ liệu của bạn.</p><%= render "time_off/leave_requests/table", requests: @requests %></div><% end %>
+<% if @stats.key?(:board) %>
+<section aria-labelledby="onboarding-title"><div class="panel-heading"><h2 id="onboarding-title">Board tiếp nhận nhân viên</h2><%= link_to "Xem tất cả hồ sơ", onboarding_cases_path %></div><p class="hint">Tổng số theo từng trạng thái trên toàn bộ phạm vi. Hiển thị tối đa 100 hồ sơ mới nhất; mở cột để xem trạng thái tương ứng. Hoàn tất vẫn yêu cầu checklist theo quy tắc hiện có.</p>
+<div class="onboarding-board dashboard-onboarding">
+<% HrmOnboarding::Domain::Services::CaseStateMachine::TRANSITIONS.each_key do |status| %><section class="panel"><h3><%= link_to onboarding_cases_path(status: status), class: "board-column-link" do %><%= onboarding_status_label(status) %> <span class="badge"><%= @stats[:board][:counts].fetch(status, 0) %></span><% end %></h3>
+<% rows = @stats[:board][:cases].select { |row| row.status == status }.first(3) %>
+<% rows.each do |row| %><%= link_to onboarding_case_path(row), class: "onboarding-card" do %><strong><%= row.employee.full_name %></strong><p><%= row.start_date %></p><small><%= row.checklist.count { |item| item["done"] } %>/<%= row.checklist.size %> checklist · Mở hồ sơ ↗</small><% end %><% item = %w[completed cancelled].include?(row.status) ? nil : row.checklist.find { |entry| !entry["done"] } %><% if item %><%= link_to "Việc tiếp theo: #{item['title']}", onboarding_case_path(row, anchor: "checklist-#{item['code']}"), class: "checklist-next" %><% end %><% end %>
+<% if rows.empty? %><p class="hint">Chưa có hồ sơ hiển thị.</p><% end %></section><% end %>
+</div></section>
+<% end %>
+<% if [:departments, :candidates, :webhooks].any? { |key| @stats.key?(key) } %>
+<section aria-labelledby="operations-title"><h2 id="operations-title">Tổng quan nghiệp vụ</h2><div class="stats">
+<% if @stats.key?(:departments) %><%= link_to departments_path, class: "stat metric-card", data: {metric: "departments"} do %><small>Phòng ban</small><strong><%= @stats[:departments] %></strong><span>phòng ban · toàn bộ phạm vi ↗</span><% end %><% end %>
+<% if @stats.key?(:candidates) %><%= link_to candidates_path, class: "stat metric-card", data: {metric: "candidates"} do %><small>Ứng viên</small><strong><%= @stats[:candidates] %></strong><span>hồ sơ · tất cả giai đoạn ↗</span><% end %><% end %>
+<% if @stats.key?(:webhooks) %><%= link_to integration_path, class: "stat metric-card", data: {metric: "webhooks"} do %><small>Sự kiện nhận qua webhook</small><strong><%= @stats[:webhooks] %></strong><span>sự kiện · tất cả trạng thái ↗</span><% end %><% end %>
+</div></section>
+<% end %>
+<section class="workspace-board" id="workspace-board" aria-labelledby="board-title"><div class="panel-heading"><h2 id="board-title">Không gian nghiệp vụ</h2><span class="hint">Chức năng hoạt động theo quyền</span></div><div class="erp-grid"><% erp_navigation_groups.each do |group| %><article class="panel module-widget"><h3><%= group[:name] %></h3><ul class="workspace-links"><% group[:entries].each do |label, path, _| %><li><%= link_to path do %><span><%= label %></span><span aria-hidden="true">↗</span><% end %></li><% end %></ul></article><% end %></div></section>
 <% if current_user.allowed?("realtime.read") %><div class="connected" data-realtime>○ Đang kết nối…</div><% end %>

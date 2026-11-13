@@ -11,7 +11,7 @@ module Onboarding
       render plain: "Hồ sơ tiếp nhận đã tồn tại cho ngày này", status: :conflict
     end
     def index
-      @workspace = HrmOnboarding::Application::Queries::Workspace.new.call(actor: current_user)
+      @workspace = HrmOnboarding::Application::Queries::Workspace.new.call(actor: current_user, status: params[:status], page: params[:page])
     end
     def show
       @record = HrmOnboarding::Application::Queries::FindCase.new.call(actor: current_user, id: params[:id])

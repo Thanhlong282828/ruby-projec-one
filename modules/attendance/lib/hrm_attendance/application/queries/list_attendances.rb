@@ -6,9 +6,9 @@ module HrmAttendance
           super()
           @repository = repository
         end
-        def call(actor:, page: 1)
+        def call(actor:, page: 1, status: nil)
           authorize!(actor, ::Attendance, :index?)
-          @repository.list(actor: actor, page: page)
+          @repository.list(actor: actor, page: page, status: Hrm::ListFilters.choice(status, allowed: %w[open closed]))
         end
       end
     end

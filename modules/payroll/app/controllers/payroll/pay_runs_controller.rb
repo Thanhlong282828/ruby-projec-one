@@ -1,7 +1,7 @@
 module Payroll
   class PayRunsController < ApplicationController
     def index
-      @runs = HrmPayroll::Application::Queries::ListPayRuns.new.call(actor: current_user, page: params[:page])
+      @runs = HrmPayroll::Application::Queries::ListPayRuns.new.call(actor: current_user, page: params[:page], status: params[:status], period: params[:period])
     end
     def show
       @run = HrmPayroll::Application::Queries::FindPayRun.new.call(actor: current_user, id: params[:id])

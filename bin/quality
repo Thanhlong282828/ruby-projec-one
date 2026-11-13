@@ -5,7 +5,7 @@ Dir.chdir(File.expand_path("..", __dir__)) do
     [ "bundle", "exec", "rubocop" ],
     [ "ruby", "bin/check-routes" ],
     [ "ruby", "bin/check-architecture" ],
-    [ "ruby", "bin/typecheck" ],
+    [ "ruby", "bin/typecheck", "--self-test" ],
     [ "ruby", "bin/check-secrets" ],
     [ { "RAILS_ENV" => "test" }, "ruby", "bin/check-rbi" ],
     [ "bundle", "exec", "rails", "zeitwerk:check" ],

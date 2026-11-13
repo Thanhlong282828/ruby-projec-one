@@ -5,6 +5,8 @@ post  "/leave_requests",             to: "time_off/leave_requests#create"
 patch "/leave_requests/:id/approve", to: "time_off/leave_requests#approve", as: :approve_leave_request
 patch "/leave_requests/:id/reject",  to: "time_off/leave_requests#reject",  as: :reject_leave_request
 
+get "/leave_requests/:id", to: "time_off/leave_requests#show", as: :leave_request
+
 # REST API v1: leave requests and review actions
 get   "/api/v1/leave_requests",             to: "api/v1/leave_requests#index",   as: :api_v1_leave_requests
 post  "/api/v1/leave_requests",             to: "api/v1/leave_requests#create"

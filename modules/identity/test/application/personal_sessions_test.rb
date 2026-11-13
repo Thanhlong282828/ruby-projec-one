@@ -118,4 +118,21 @@ class PersonalSessionsTest < ActionDispatch::IntegrationTest
     end
     assert LoginSession.exists?(ids.last)
   end
+  test "strict revoke keeps nil credential and malformed id rejection before mutation" do
+    actor = make_user(:employee)
+    current = login(actor)
+    raw = LoginSession.issue!(actor)
+    target = LoginSession.find_by!(digest: Digest::SHA256.hexdigest(raw))
+    command = HrmIdentity::Application::Commands::RevokePersonalSession.new
+    before_counts = [ AuditLog.count, OutboxEvent.count ]
+    assert_raises(Pundit::NotAuthorizedError) { command.call(actor: nil, credential: current, id: target.id.to_s) }
+    [ nil, "not a credential", {}, [] ].each do |credential|
+      assert_raises(Pundit::NotAuthorizedError) { command.call(actor: actor, credential: credential, id: target.id.to_s) }
+    end
+    [ nil, target.id, [], {}, :bad, "0", "1 OR 1=1" ].each do |id|
+      assert_raises(ActiveRecord::RecordNotFound) { command.call(actor: actor, credential: current, id: id) }
+    end
+    assert LoginSession.exists?(target.id)
+    assert_equal before_counts, [ AuditLog.count, OutboxEvent.count ]
+  end
 end
