@@ -2,6 +2,8 @@ module HrmProcurement
   module Infrastructure
     module Persistence
       class ActiveRecordWriteRepository < Domain::Repositories::WriteRepositoryInterface
+        include ReversalWrites
+        include ReturnQuantities
         include OrderWrites
         include ReceiptWrites
         include StockWrites

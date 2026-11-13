@@ -1,12 +1,12 @@
 <div class="page-heading"><div><div class="eyebrow">KHO / TRUY VẾT TỒN</div><h1>Sổ biến động kho</h1><p><%= current_user.company.name %> · <%= @workspace[:warehouse].code %> · <%= @workspace[:item].code %> — <%= @workspace[:item].name %></p></div></div>
 <section class="panel">
   <p>Tồn theo bộ lọc: <strong><%= @workspace[:quantity].to_s("F") %> <%= @workspace[:item].unit %></strong> · <%= @workspace[:count] %> dòng. Mới nhất trước; tổng bao gồm tất cả các trang.</p>
-  <p>Sổ gồm nhập (+) và trả nhà cung cấp (−) đã ghi sổ; chưa bao gồm các loại xuất hoặc điều chỉnh khác.</p>
+  <p>Sổ gồm nhập (+), trả nhà cung cấp (−) và đảo phiếu trả (+) đã ghi sổ; chưa bao gồm các loại xuất hoặc điều chỉnh khác.</p>
   <%= link_to "Về tồn theo kho", stock_balances_path(warehouse_id: @workspace[:warehouse].id) %>
   <div class="stock-ledger-scroll" tabindex="0" role="region" aria-label="Các dòng biến động kho">
-  <table><thead><tr><th>Ghi sổ</th><th>Chứng từ</th><th>Mã / tên lúc ghi</th><th>Dòng nhận / PO</th><th>Biến động</th></tr></thead><tbody>
+  <table><thead><tr><th>Ghi sổ</th><th>Loại / chứng từ</th><th>Mã / tên lúc ghi</th><th>Dòng nhận / PO</th><th>Biến động</th></tr></thead><tbody>
     <% @workspace[:records].each do |line| %>
-      <tr><td><%= line[:posted_at].in_time_zone.strftime("%d/%m/%Y %H:%M") %></td><td><% if line[:document_kind] == "receipt" && @workspace[:receipts_visible] %><%= link_to line[:document_code], stock_receipt_path(line[:document_id]) %><% elsif line[:document_kind] == "return" && @workspace[:returns_visible] %><%= link_to line[:document_code], stock_return_path(line[:document_id]) %><% else %><%= line[:document_code] %><% end %></td><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %></td><td>#<%= line.goods_receipt_line_id %> / #<%= line.purchase_order_line_id %></td><td><%= "+" if line.quantity.positive? %><%= line.quantity.to_s("F") %> <%= line.unit %></td></tr>
+      <tr><td><%= line[:posted_at].in_time_zone.strftime("%d/%m/%Y %H:%M") %></td><td><%= { "receipt" => "Nhập kho", "return" => "Trả nhà cung cấp", "reversal" => "Đảo phiếu trả" }.fetch(line[:document_kind]) %> · <% if line[:document_kind] == "receipt" && @workspace[:receipts_visible] %><%= link_to line[:document_code], stock_receipt_path(line[:document_id]) %><% elsif line[:document_kind] == "return" && @workspace[:returns_visible] %><%= link_to line[:document_code], stock_return_path(line[:document_id]) %><% elsif line[:document_kind] == "reversal" && @workspace[:reversals_visible] %><%= link_to line[:document_code], stock_return_reversal_path(line[:document_id]) %><% else %><%= line[:document_code] %><% end %></td><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %></td><td>#<%= line.goods_receipt_line_id %> / #<%= line.purchase_order_line_id %></td><td><%= "+" if line.quantity.positive? %><%= line.quantity.to_s("F") %> <%= line.unit %></td></tr>
     <% end %>
   </tbody></table>
   </div>

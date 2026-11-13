@@ -2,6 +2,8 @@ module HrmProcurement
   module Infrastructure
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
+        include ReversalReads
+        include ReturnQuantities
         include OrderReads
         include ReceiptReads
         include StockReads

@@ -28,9 +28,9 @@ module HrmProcurement
                   raise Domain::Services::RequestContent::Invalid, "Dòng trả không thuộc phiếu nhập nguồn"
                 end
                 # Current locking reads, never a consistent-read SUM from the caller's older snapshot.
-                returned = ::StockReturnLine.where(company_id: context.company_id, stock_movement_id: movements.keys).order(:id).lock.to_a.group_by(&:stock_movement_id)
+                returned = net_returned_quantities(company_id: context.company_id, stock_receipt_id: source.id, lock: true)
                 content[:items].each do |row|
-                  used = returned.fetch(row[:stock_movement_id], []).sum(BigDecimal("0"), &:quantity)
+                  used = returned.fetch(row[:stock_movement_id], BigDecimal("0"))
                   if row[:quantity] > movements.fetch(row[:stock_movement_id]).quantity - used
                     raise Domain::Services::RequestConflict, "Số lượng trả vượt phần còn lại của dòng nhập; hãy tải lại phiếu"
                   end

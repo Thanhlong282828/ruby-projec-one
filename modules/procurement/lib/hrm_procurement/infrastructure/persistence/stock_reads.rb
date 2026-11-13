@@ -56,7 +56,7 @@ module HrmProcurement
           scope = signed_stock_scope(actor).where(warehouse_id: warehouse.id, stock_item_id: item.id)
           records = scope.order(posted_at: :desc, document_kind: :asc, id: :desc).limit(25).offset((filters.fetch(:page) - 1) * 25).to_a
           { records: records, count: scope.count, quantity: scope.sum(:quantity), warehouse: warehouse, item: item,
-            filters: filters, receipts_visible: Pundit.policy!(actor, ::StockReceipt).index?, returns_visible: Pundit.policy!(actor, ::StockReturn).index? }
+            filters: filters, receipts_visible: Pundit.policy!(actor, ::StockReceipt).index?, returns_visible: Pundit.policy!(actor, ::StockReturn).index?, reversals_visible: Pundit.policy!(actor, ::StockReturnReversal).index? }
         end
         private
         def stock_read_model(kind)

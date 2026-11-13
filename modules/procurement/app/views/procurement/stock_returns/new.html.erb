@@ -1,12 +1,12 @@
 <div class="page-heading"><div><div class="eyebrow">KHO / TRẢ NHÀ CUNG CẤP</div><h1>Trả hàng từ <%= @record.code %></h1><p><%= current_user.company.name %> · <%= @record.warehouse_code_snapshot %> · nguồn và kho lấy từ server</p></div><%= link_to "Về phiếu nhập", stock_receipt_path(@record) %></div>
 <% if @errors %><div class="alert" role="alert"><%= @errors %></div><% end %>
-<p>Để trống dòng không trả. Dòng được trả phải có số lượng dương, tối đa 3 số thập phân. Ghi sổ sẽ giảm tồn; nội dung phiếu không sửa/xóa sau khi ghi.</p>
+<p>Đã trả ròng là số đã trả trừ phần đã đảo ghi sổ. Để trống dòng không trả. Dòng được trả phải có số lượng dương, tối đa 3 số thập phân. Ghi sổ sẽ giảm tồn; nội dung phiếu không sửa/xóa sau khi ghi.</p>
 <%= form_with url: stock_returns_path, method: :post do %>
   <%= hidden_field_tag "stock_return[stock_receipt_id]", @record.id %>
   <%= hidden_field_tag "stock_return[idempotency_key]", @input[:idempotency_key] %>
   <%= label_tag "return_reason", "Lý do trả hàng (bắt buộc)" %><%= text_area_tag "stock_return[reason]", @input[:reason], id: "return_reason", required: true, maxlength: 2000, rows: 3 %>
   <section class="panel"><div class="stock-ledger-scroll" tabindex="0" role="region" aria-label="Các dòng trả hàng">
-  <table><thead><tr><th>Mã hàng / đơn vị</th><th>Đã nhập</th><th>Đã trả</th><th>Còn được trả</th><th>Trả lần này</th></tr></thead><tbody>
+  <table><thead><tr><th>Mã hàng / đơn vị</th><th>Đã nhập</th><th>Đã trả ròng</th><th>Còn được trả</th><th>Trả lần này</th></tr></thead><tbody>
     <% @detail[:lines].each_with_index do |row, index| %><% line = row[:movement] %><tr><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %> (<%= line.unit %>) · dòng #<%= line.id %></td><td><%= line.quantity.to_s("F") %></td><td><%= row[:returned].to_s("F") %></td><td><%= row[:remaining].to_s("F") %></td><td>
       <%= hidden_field_tag "stock_return[items][#{index}][stock_movement_id]", line.id %>
       <%= label_tag "return_quantity_#{line.id}", "Số lượng trả dòng ##{line.id}" %>

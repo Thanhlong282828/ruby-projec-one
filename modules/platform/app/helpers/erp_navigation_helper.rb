@@ -40,6 +40,7 @@ module ErpNavigationHelper
     [ "Kho", [
       [ "Chờ nhập kho", "/inventory/receipts/pending", %w[inventory.receipts.read inventory.receipts.post procurement.receipts.read], :all ],
       [ "Lịch sử nhập", "/inventory/receipts", %w[inventory.receipts.read] ],
+      [ "Đảo phiếu trả", "/inventory/return-reversals", %w[inventory.return_reversals.read] ],
       [ "Trả nhà cung cấp", "/inventory/returns", %w[inventory.returns.read] ],
       [ "Tồn theo kho", "/inventory/balances", %w[inventory.balances.read] ],
       [ "Danh mục kho", "/inventory/warehouses", %w[inventory.catalog.read] ],

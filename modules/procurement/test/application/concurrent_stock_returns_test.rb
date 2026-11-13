@@ -23,6 +23,8 @@ class ConcurrentStockReturnsTest < ActiveSupport::TestCase
     raise "Test cleanup must stay isolated" unless Rails.env.test? && ActiveRecord::Base.connection_db_config.database == "hrm_test"
     connection = ActiveRecord::Base.connection
     connection.disable_referential_integrity do
+      connection.execute("TRUNCATE TABLE stock_return_reversal_lines")
+      connection.execute("TRUNCATE TABLE stock_return_reversals")
       connection.execute("TRUNCATE TABLE stock_return_lines")
       connection.execute("TRUNCATE TABLE stock_returns")
     end

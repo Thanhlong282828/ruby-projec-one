@@ -2,6 +2,9 @@ module HrmProcurement
   module Domain
     module Repositories
       class ReadRepositoryInterface
+        def stock_return_reversal_workspace(actor:, filters:) = raise(NotImplementedError)
+        def find_stock_return_reversal!(actor:, id:) = raise(NotImplementedError)
+        def stock_return_reversal_source(actor:, id:) = raise(NotImplementedError)
         def stock_return_workspace(actor:, filters:) = raise(NotImplementedError)
         def stock_return_source(actor:, id:) = raise(NotImplementedError)
         def find_stock_return!(actor:, id:) = raise(NotImplementedError)

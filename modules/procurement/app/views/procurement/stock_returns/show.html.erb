@@ -9,3 +9,6 @@
 <% @record.lines.each do |line| %><tr><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %></td><td>#<%= line.stock_movement_id %></td><td><%= line.quantity.to_s("F") %> <%= line.unit %></td><td>−<%= line.quantity.to_s("F") %></td></tr><% end %>
 </tbody></table></div>
 <% if policy(StockMovement).index? %><p><%= link_to "Tồn kho đích", stock_balances_path(warehouse_id: @record.warehouse_id) %></p><% @record.lines.map(&:stock_item_id).uniq.each do |item_id| %><p><%= link_to "Sổ biến động mã hàng ##{item_id}", stock_ledger_path(warehouse_id: @record.warehouse_id, stock_item_id: item_id) %></p><% end %><% end %></section>
+
+<% if @detail[:can_reverse] %><p><%= link_to "Đảo phiếu trả", new_stock_return_reversal_path(stock_return_id: @record.id), class: "button" %></p><% end %>
+<% if @detail[:reversal] %><p><%= link_to "Xem chứng từ đảo #{@detail[:reversal].code}", stock_return_reversal_path(@detail[:reversal]) %></p><% end %>

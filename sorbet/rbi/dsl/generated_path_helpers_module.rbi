@@ -226,6 +226,9 @@ module GeneratedPathHelpersModule
   def inventory_receipts_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def inventory_return_reversals_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def inventory_returns_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -305,6 +308,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_stock_return_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_stock_return_reversal_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_work_shift_path(*args); end
@@ -440,6 +446,12 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def stock_return_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_return_reversal_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_return_reversals_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def stock_returns_path(*args); end

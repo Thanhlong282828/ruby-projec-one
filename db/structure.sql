@@ -1364,6 +1364,7 @@ CREATE TABLE `stock_return_lines` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `stock_return_line_unique_source` (`stock_return_id`,`stock_movement_id`),
+  UNIQUE KEY `return_line_reversal_identity` (`company_id`,`stock_return_id`,`stock_receipt_id`,`warehouse_id`,`stock_item_id`,`stock_movement_id`,`id`),
   KEY `stock_return_source_totals` (`company_id`,`stock_movement_id`,`id`),
   KEY `stock_return_balance_ledger` (`company_id`,`warehouse_id`,`stock_item_id`,`id`),
   KEY `stock_return_line_parent_company` (`company_id`,`stock_receipt_id`,`warehouse_id`,`stock_return_id`),
@@ -1413,6 +1414,161 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 /*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_line_delete_guard` BEFORE DELETE ON `stock_return_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Supplier return ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `stock_return_reversal_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stock_return_reversal_lines` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `stock_return_reversal_id` bigint NOT NULL,
+  `stock_return_line_id` bigint NOT NULL,
+  `stock_return_id` bigint NOT NULL,
+  `stock_receipt_id` bigint NOT NULL,
+  `stock_movement_id` bigint NOT NULL,
+  `warehouse_id` bigint NOT NULL,
+  `stock_item_id` bigint NOT NULL,
+  `item_code_snapshot` varchar(40) NOT NULL,
+  `item_name_snapshot` varchar(200) NOT NULL,
+  `unit` varchar(30) NOT NULL,
+  `quantity` decimal(9,3) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `return_reversal_line_once` (`stock_return_line_id`),
+  KEY `return_reversal_net_totals` (`company_id`,`stock_receipt_id`,`id`),
+  KEY `return_reversal_balance_ledger` (`company_id`,`warehouse_id`,`stock_item_id`,`id`),
+  KEY `return_reversal_line_parent` (`company_id`,`stock_return_id`,`stock_receipt_id`,`warehouse_id`,`stock_return_reversal_id`),
+  KEY `return_reversal_line_source` (`company_id`,`stock_return_id`,`stock_receipt_id`,`warehouse_id`,`stock_item_id`,`stock_movement_id`,`stock_return_line_id`),
+  CONSTRAINT `return_reversal_line_parent` FOREIGN KEY (`company_id`, `stock_return_id`, `stock_receipt_id`, `warehouse_id`, `stock_return_reversal_id`) REFERENCES `stock_return_reversals` (`company_id`, `stock_return_id`, `stock_receipt_id`, `warehouse_id`, `id`),
+  CONSTRAINT `return_reversal_line_source` FOREIGN KEY (`company_id`, `stock_return_id`, `stock_receipt_id`, `warehouse_id`, `stock_item_id`, `stock_movement_id`, `stock_return_line_id`) REFERENCES `stock_return_lines` (`company_id`, `stock_return_id`, `stock_receipt_id`, `warehouse_id`, `stock_item_id`, `stock_movement_id`, `id`),
+  CONSTRAINT `return_reversal_line_positive` CHECK ((`quantity` > 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_line_insert_guard` BEFORE INSERT ON `stock_return_reversal_lines` FOR EACH ROW BEGIN DECLARE receipt_state VARCHAR(20); DECLARE parent_state VARCHAR(20); DECLARE source_qty DECIMAL(9,3); DECLARE source_code VARCHAR(40); DECLARE source_name VARCHAR(200); DECLARE source_unit VARCHAR(30); SELECT status INTO receipt_state FROM stock_receipts WHERE company_id=NEW.company_id AND id=NEW.stock_receipt_id FOR UPDATE; SELECT status INTO parent_state FROM stock_return_reversals WHERE company_id=NEW.company_id AND id=NEW.stock_return_reversal_id FOR UPDATE; SELECT quantity,item_code_snapshot,item_name_snapshot,unit INTO source_qty,source_code,source_name,source_unit FROM stock_return_lines WHERE company_id=NEW.company_id AND stock_return_id=NEW.stock_return_id AND stock_receipt_id=NEW.stock_receipt_id AND warehouse_id=NEW.warehouse_id AND stock_item_id=NEW.stock_item_id AND stock_movement_id=NEW.stock_movement_id AND id=NEW.stock_return_line_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'posting' OR source_qty IS NULL OR NEW.quantity<>source_qty OR BINARY NEW.item_code_snapshot<>BINARY source_code OR BINARY NEW.item_name_snapshot<>BINARY source_name OR BINARY NEW.unit<>BINARY source_unit THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Reversal line must exactly match return line'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_line_update_guard` BEFORE UPDATE ON `stock_return_reversal_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Return reversal ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_line_delete_guard` BEFORE DELETE ON `stock_return_reversal_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Return reversal ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `stock_return_reversals`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stock_return_reversals` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `stock_return_id` bigint NOT NULL,
+  `stock_receipt_id` bigint NOT NULL,
+  `warehouse_id` bigint NOT NULL,
+  `supplier_id` bigint NOT NULL,
+  `posted_by_id` bigint NOT NULL,
+  `code` varchar(32) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'posting',
+  `idempotency_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `content_digest` varchar(64) NOT NULL,
+  `warehouse_code_snapshot` varchar(40) NOT NULL,
+  `warehouse_name_snapshot` varchar(200) NOT NULL,
+  `supplier_code_snapshot` varchar(40) NOT NULL,
+  `supplier_name_snapshot` varchar(200) NOT NULL,
+  `reason` text NOT NULL,
+  `posted_at` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `return_reversal_once` (`company_id`,`stock_return_id`),
+  UNIQUE KEY `return_reversal_idempotency` (`company_id`,`idempotency_key`),
+  UNIQUE KEY `return_reversal_code` (`company_id`,`code`),
+  UNIQUE KEY `return_reversal_source_identity` (`company_id`,`stock_return_id`,`stock_receipt_id`,`warehouse_id`,`id`),
+  KEY `return_reversal_source_company` (`company_id`,`stock_receipt_id`,`warehouse_id`,`stock_return_id`),
+  KEY `return_reversal_actor_company` (`company_id`,`posted_by_id`),
+  CONSTRAINT `return_reversal_actor_company` FOREIGN KEY (`company_id`, `posted_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `return_reversal_source_company` FOREIGN KEY (`company_id`, `stock_receipt_id`, `warehouse_id`, `stock_return_id`) REFERENCES `stock_returns` (`company_id`, `stock_receipt_id`, `warehouse_id`, `id`),
+  CONSTRAINT `return_reversal_state` CHECK ((((`status` = _utf8mb4'posting') and (`posted_at` is null)) or ((`status` = _utf8mb4'posted') and (`posted_at` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_insert_guard` BEFORE INSERT ON `stock_return_reversals` FOR EACH ROW BEGIN DECLARE receipt_state VARCHAR(20); DECLARE source_state VARCHAR(20); DECLARE source_supplier BIGINT; DECLARE warehouse_code VARCHAR(40); DECLARE warehouse_name VARCHAR(200); DECLARE supplier_code VARCHAR(40); DECLARE supplier_name VARCHAR(200); SELECT status INTO receipt_state FROM stock_receipts WHERE company_id=NEW.company_id AND warehouse_id=NEW.warehouse_id AND id=NEW.stock_receipt_id FOR UPDATE; SELECT status,supplier_id,warehouse_code_snapshot,warehouse_name_snapshot,supplier_code_snapshot,supplier_name_snapshot INTO source_state,source_supplier,warehouse_code,warehouse_name,supplier_code,supplier_name FROM stock_returns WHERE company_id=NEW.company_id AND stock_receipt_id=NEW.stock_receipt_id AND warehouse_id=NEW.warehouse_id AND id=NEW.stock_return_id FOR UPDATE; IF receipt_state IS NULL OR receipt_state<>'posted' OR source_state IS NULL OR source_state<>'posted' OR NEW.status<>'posting' OR NEW.posted_at IS NOT NULL OR NEW.supplier_id<>source_supplier OR BINARY NEW.warehouse_code_snapshot<>BINARY warehouse_code OR BINARY NEW.warehouse_name_snapshot<>BINARY warehouse_name OR BINARY NEW.supplier_code_snapshot<>BINARY supplier_code OR BINARY NEW.supplier_name_snapshot<>BINARY supplier_name THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Reversal requires immutable posted return source'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_update_guard` BEFORE UPDATE ON `stock_return_reversals` FOR EACH ROW BEGIN DECLARE receipt_state VARCHAR(20); DECLARE source_state VARCHAR(20); DECLARE expected_count INT; DECLARE actual_count INT; SELECT status INTO receipt_state FROM stock_receipts WHERE company_id=OLD.company_id AND id=OLD.stock_receipt_id FOR UPDATE; SELECT status INTO source_state FROM stock_returns WHERE company_id=OLD.company_id AND id=OLD.stock_return_id FOR UPDATE; SELECT COUNT(*) INTO expected_count FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.stock_return_id FOR UPDATE; SELECT COUNT(*) INTO actual_count FROM stock_return_reversal_lines WHERE company_id=OLD.company_id AND stock_return_reversal_id=OLD.id FOR UPDATE; IF OLD.status<>'posting' OR NEW.status<>'posted' OR NEW.posted_at IS NULL OR source_state IS NULL OR source_state<>'posted' OR receipt_state<>'posted' OR actual_count<1 OR actual_count<>expected_count OR NEW.id<>OLD.id OR NEW.company_id<>OLD.company_id OR NEW.stock_return_id<>OLD.stock_return_id OR NEW.stock_receipt_id<>OLD.stock_receipt_id OR NEW.warehouse_id<>OLD.warehouse_id OR NEW.supplier_id<>OLD.supplier_id OR NEW.posted_by_id<>OLD.posted_by_id OR BINARY NEW.code<>BINARY OLD.code OR BINARY NEW.idempotency_key<>BINARY OLD.idempotency_key OR BINARY NEW.content_digest<>BINARY OLD.content_digest OR BINARY NEW.reason<>BINARY OLD.reason OR BINARY NEW.warehouse_code_snapshot<>BINARY OLD.warehouse_code_snapshot OR BINARY NEW.warehouse_name_snapshot<>BINARY OLD.warehouse_name_snapshot OR BINARY NEW.supplier_code_snapshot<>BINARY OLD.supplier_code_snapshot OR BINARY NEW.supplier_name_snapshot<>BINARY OLD.supplier_name_snapshot OR NEW.created_at<>OLD.created_at THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Reversal seal requires all exact source lines and immutable header'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `return_reversal_delete_guard` BEFORE DELETE ON `stock_return_reversals` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Return reversal ledger is immutable'; END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -1477,7 +1633,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_update_guard` BEFORE UPDATE ON `stock_returns` FOR EACH ROW BEGIN DECLARE finished INT DEFAULT 0; DECLARE movement_id BIGINT; DECLARE source_qty DECIMAL(9,3); DECLARE used_qty DECIMAL(18,3); DECLARE source_state VARCHAR(20); DECLARE line_count INT; DECLARE source_cursor CURSOR FOR SELECT stock_movement_id FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id ORDER BY stock_movement_id; DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished=1; SELECT status INTO source_state FROM stock_receipts WHERE company_id=OLD.company_id AND id=OLD.stock_receipt_id FOR UPDATE; SELECT COUNT(*) INTO line_count FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id FOR UPDATE; IF OLD.status<>'posting' OR NEW.status<>'posted' OR NEW.posted_at IS NULL OR source_state<>'posted' OR line_count<1 OR NEW.company_id<>OLD.company_id OR NEW.stock_receipt_id<>OLD.stock_receipt_id OR NEW.warehouse_id<>OLD.warehouse_id OR NEW.supplier_id<>OLD.supplier_id OR NEW.posted_by_id<>OLD.posted_by_id OR BINARY NEW.code<>BINARY OLD.code OR BINARY NEW.idempotency_key<>BINARY OLD.idempotency_key OR BINARY NEW.content_digest<>BINARY OLD.content_digest OR BINARY NEW.reason<>BINARY OLD.reason OR BINARY NEW.warehouse_code_snapshot<>BINARY OLD.warehouse_code_snapshot OR BINARY NEW.warehouse_name_snapshot<>BINARY OLD.warehouse_name_snapshot OR BINARY NEW.supplier_code_snapshot<>BINARY OLD.supplier_code_snapshot OR BINARY NEW.supplier_name_snapshot<>BINARY OLD.supplier_name_snapshot OR NEW.created_at<>OLD.created_at THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Posted return is immutable and requires lines'; END IF; OPEN source_cursor; source_loop: LOOP FETCH source_cursor INTO movement_id; IF finished=1 THEN LEAVE source_loop; END IF; SELECT quantity INTO source_qty FROM stock_movements WHERE company_id=OLD.company_id AND id=movement_id AND stock_receipt_id=OLD.stock_receipt_id FOR UPDATE; SELECT COALESCE(SUM(quantity),0) INTO used_qty FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_movement_id=movement_id FOR UPDATE; IF source_qty IS NULL OR used_qty>source_qty THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Returned quantity exceeds original movement'; END IF; END LOOP; CLOSE source_cursor; END */;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_update_guard` BEFORE UPDATE ON `stock_returns` FOR EACH ROW BEGIN DECLARE finished INT DEFAULT 0; DECLARE movement_id BIGINT; DECLARE source_qty DECIMAL(9,3); DECLARE used_qty DECIMAL(18,3); DECLARE reversed_qty DECIMAL(18,3); DECLARE source_state VARCHAR(20); DECLARE line_count INT; DECLARE source_cursor CURSOR FOR SELECT stock_movement_id FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id ORDER BY stock_movement_id; DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished=1; SELECT status INTO source_state FROM stock_receipts WHERE company_id=OLD.company_id AND id=OLD.stock_receipt_id FOR UPDATE; SELECT COUNT(*) INTO line_count FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id FOR UPDATE; IF OLD.status<>'posting' OR NEW.status<>'posted' OR NEW.posted_at IS NULL OR source_state<>'posted' OR line_count<1 OR NEW.company_id<>OLD.company_id OR NEW.stock_receipt_id<>OLD.stock_receipt_id OR NEW.warehouse_id<>OLD.warehouse_id OR NEW.supplier_id<>OLD.supplier_id OR NEW.posted_by_id<>OLD.posted_by_id OR BINARY NEW.code<>BINARY OLD.code OR BINARY NEW.idempotency_key<>BINARY OLD.idempotency_key OR BINARY NEW.content_digest<>BINARY OLD.content_digest OR BINARY NEW.reason<>BINARY OLD.reason OR BINARY NEW.warehouse_code_snapshot<>BINARY OLD.warehouse_code_snapshot OR BINARY NEW.warehouse_name_snapshot<>BINARY OLD.warehouse_name_snapshot OR BINARY NEW.supplier_code_snapshot<>BINARY OLD.supplier_code_snapshot OR BINARY NEW.supplier_name_snapshot<>BINARY OLD.supplier_name_snapshot OR NEW.created_at<>OLD.created_at THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Posted return is immutable and requires lines'; END IF; OPEN source_cursor; source_loop: LOOP FETCH source_cursor INTO movement_id; IF finished=1 THEN LEAVE source_loop; END IF; SELECT quantity INTO source_qty FROM stock_movements WHERE company_id=OLD.company_id AND id=movement_id AND stock_receipt_id=OLD.stock_receipt_id FOR UPDATE; SELECT COALESCE(SUM(quantity),0) INTO used_qty FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_movement_id=movement_id FOR UPDATE; SELECT COALESCE(SUM(l.quantity),0) INTO reversed_qty FROM stock_return_reversal_lines l INNER JOIN stock_return_reversals h ON h.company_id=l.company_id AND h.id=l.stock_return_reversal_id WHERE l.company_id=OLD.company_id AND l.stock_movement_id=movement_id AND h.status='posted' FOR UPDATE; IF source_qty IS NULL OR used_qty-reversed_qty>source_qty THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Returned quantity exceeds original movement'; END IF; END LOOP; CLOSE source_cursor; END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -1695,6 +1851,7 @@ CREATE TABLE `work_shifts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 INSERT INTO `schema_migrations` (version) VALUES
+('20261114000002'),
 ('20261114000001'),
 ('20261113000004'),
 ('20261113000003'),

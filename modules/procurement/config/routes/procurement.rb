@@ -50,3 +50,8 @@ get "/inventory/returns", to: "procurement/stock_returns#index", as: :stock_retu
 get "/inventory/returns/new", to: "procurement/stock_returns#new", as: :new_stock_return
 post "/inventory/returns", to: "procurement/stock_returns#create"
 get "/inventory/returns/:id", to: "procurement/stock_returns#show", as: :stock_return
+
+get "/inventory/return-reversals", to: "procurement/stock_return_reversals#index", as: :stock_return_reversals
+get "/inventory/return-reversals/new", to: "procurement/stock_return_reversals#new", as: :new_stock_return_reversal
+post "/inventory/return-reversals", to: "procurement/stock_return_reversals#create"
+get "/inventory/return-reversals/:id", to: "procurement/stock_return_reversals#show", as: :stock_return_reversal

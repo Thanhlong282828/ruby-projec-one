@@ -2,6 +2,7 @@ module HrmProcurement
   module Domain
     module Repositories
       class WriteRepositoryInterface
+        def post_stock_return_reversal!(actor:, id:, attributes:) = raise(NotImplementedError)
         def post_stock_return!(actor:, id:, attributes:) = raise(NotImplementedError)
         def save_stock_catalog!(actor:, kind:, id:, attributes:, lock_version:) = raise(NotImplementedError)
         def post_stock_receipt!(actor:, id:, attributes:) = raise(NotImplementedError)

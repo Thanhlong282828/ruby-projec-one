@@ -1,0 +1,12 @@
+<div class="page-heading"><div><div class="eyebrow">KHO / SỬA SAI GHI SỔ</div><h1>Đảo toàn bộ <%= @record.code %></h1><p><%= current_user.company.name %> · <%= @record.warehouse_code_snapshot %></p></div><%= link_to "Về phiếu trả", stock_return_path(@record) %></div>
+<% if @errors %><div class="alert" role="alert"><%= @errors %></div><% end %>
+<p>Chỉ dùng để sửa sai ghi sổ. Xác nhận đảo toàn bộ các dòng dưới đây, cộng lại số lượng vào đúng kho/mã hàng nguồn. Phiếu trả và phiếu nhập vẫn giữ nguyên; mỗi phiếu trả chỉ được đảo một lần.</p>
+<section class="panel"><div class="stock-ledger-scroll" tabindex="0" role="region" aria-label="Số lượng sẽ cộng lại"><table><thead><tr><th>Mã hàng / đơn vị</th><th>Dòng trả / nhập nguồn</th><th>Cộng lại vào kho</th></tr></thead><tbody>
+<% @record.lines.each do |line| %><tr><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %> (<%= line.unit %>)</td><td>#<%= line.id %> / #<%= line.stock_movement_id %></td><td>+<%= line.quantity.to_s("F") %></td></tr><% end %>
+</tbody></table></div></section>
+<%= form_with url: stock_return_reversals_path, method: :post do %>
+  <%= hidden_field_tag "stock_return_reversal[stock_return_id]", @record.id %>
+  <%= hidden_field_tag "stock_return_reversal[idempotency_key]", @input[:idempotency_key] %>
+  <%= label_tag "reversal_reason", "Lý do sửa sai / đảo phiếu (bắt buộc)" %><%= text_area_tag "stock_return_reversal[reason]", @input[:reason], id: "reversal_reason", required: true, maxlength: 2000, rows: 3 %>
+  <%= submit_tag "Xác nhận ghi sổ đảo toàn bộ (cộng tồn)" %>
+<% end %>

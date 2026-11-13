@@ -1,0 +1,7 @@
+<div class="page-heading"><div><div class="eyebrow">KHO / NHÀ CUNG CẤP</div><h1>Đảo phiếu đảo nhà cung cấp</h1><p><%= current_user.company.name %> · <%= @workspace[:count] %> phiếu đã ghi sổ</p></div></div>
+<p>Để sửa sai, mở phiếu trả nguồn và chọn Đảo phiếu. Chỉ đảo toàn bộ một lần, không sửa chứng từ cũ.</p>
+<%= form_with url: stock_return_reversals_path, method: :get, class: "source-filters" do %><%= label_tag :q, "Tìm mã phiếu / mã nhà cung cấp" %><%= search_field_tag :q, @workspace[:filters][:q], maxlength: 120 %><%= submit_tag "Tìm kiếm" %><% end %>
+<section class="panel"><table><thead><tr><th>Phiếu đảo</th><th>Kho lúc ghi</th><th>Nhà cung cấp lúc ghi</th><th>Ngày ghi</th></tr></thead><tbody>
+<% @workspace[:records].each do |record| %><tr><td><%= link_to record.code, stock_return_reversal_path(record) %></td><td><%= record.warehouse_code_snapshot %></td><td><%= record.supplier_code_snapshot %> · <%= record.supplier_name_snapshot %></td><td><%= record.posted_at.in_time_zone.strftime("%d/%m/%Y %H:%M") %></td></tr><% end %>
+</tbody></table><% if @workspace[:records].empty? %><p class="empty">Chưa có phiếu đảo trong phạm vi và bộ lọc này.</p><% end %></section>
+<%= render "procurement/orders/pagination", workspace: @workspace, destination: :stock_return_reversals_path %>

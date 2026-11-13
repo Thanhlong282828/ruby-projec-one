@@ -2,6 +2,8 @@ module HrmProcurement
   module Domain
     class PermissionDefinitions
       ORDER_DEFINITIONS = {
+        "inventory.return_reversals.read" => "Xem đảo phiếu trả",
+        "inventory.return_reversals.post" => "Ghi sổ đảo phiếu trả",
         "inventory.returns.read" => "Xem phiếu trả nhà cung cấp",
         "inventory.returns.post" => "Ghi sổ trả nhà cung cấp",
         "inventory.catalog.read" => "Xem kho và mã hàng",
