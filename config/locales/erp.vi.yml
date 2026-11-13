@@ -15,3 +15,7 @@ vi:
       updated: Đã cập nhật bản nháp.
       submitted: Đã gửi duyệt. Nội dung và dòng hàng đã được khóa.
       decided: Đã ghi quyết định và lịch sử.
+      supplier_saved: Đã lưu nhà cung cấp.
+      order_created: Đã mở PO nháp từ phiếu đã duyệt. Nếu gửi lặp, hệ thống mở PO đã tạo.
+      order_updated: Đã lưu đơn giá, ngày giao và lý do trên PO nháp.
+      order_issued: Đã phát hành PO và khóa nội dung đặt hàng.

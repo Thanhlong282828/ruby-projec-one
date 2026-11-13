@@ -634,6 +634,207 @@ CREATE TABLE `permissions` (
   UNIQUE KEY `index_permissions_on_key` (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `procurement_suppliers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `procurement_suppliers` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `code` varchar(40) NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'active',
+  `lock_version` int NOT NULL DEFAULT '0',
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `supplier_company_code` (`company_id`,`code`),
+  UNIQUE KEY `supplier_company_identity` (`company_id`,`id`),
+  KEY `index_procurement_suppliers_on_company_id` (`company_id`),
+  CONSTRAINT `fk_rails_2732028422` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`),
+  CONSTRAINT `supplier_state` CHECK ((`status` in (_utf8mb4'active',_utf8mb4'inactive')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `supplier_identity_guard` BEFORE UPDATE ON `procurement_suppliers` FOR EACH ROW BEGIN IF NEW.company_id<>OLD.company_id THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Supplier company is immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `purchase_order_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_order_events` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_order_id` bigint NOT NULL,
+  `actor_id` bigint NOT NULL,
+  `action` varchar(20) NOT NULL,
+  `version` int NOT NULL,
+  `note` text,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_history_version` (`purchase_order_id`,`version`),
+  KEY `order_history_company_source` (`company_id`,`purchase_order_id`),
+  KEY `order_history_actor_company` (`company_id`,`actor_id`),
+  CONSTRAINT `order_history_actor_company` FOREIGN KEY (`company_id`, `actor_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `order_history_company_source` FOREIGN KEY (`company_id`, `purchase_order_id`) REFERENCES `purchase_orders` (`company_id`, `id`),
+  CONSTRAINT `order_history_action` CHECK (((`version` >= 0) and (`action` in (_utf8mb4'created',_utf8mb4'updated',_utf8mb4'issued'))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `purchase_order_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_order_lines` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_order_id` bigint NOT NULL,
+  `purchase_request_id` bigint NOT NULL,
+  `source_line_id` bigint NOT NULL,
+  `position` int NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `unit` varchar(30) NOT NULL,
+  `quantity` decimal(9,3) NOT NULL,
+  `source_unit_price` decimal(12,0) NOT NULL,
+  `unit_price` decimal(12,0) NOT NULL,
+  `line_total` decimal(18,0) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_unique_source_line` (`purchase_order_id`,`source_line_id`),
+  KEY `order_line_parent_company_source` (`company_id`,`purchase_request_id`,`purchase_order_id`),
+  KEY `order_line_original_company_source` (`company_id`,`purchase_request_id`,`source_line_id`),
+  CONSTRAINT `order_line_original_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`, `source_line_id`) REFERENCES `purchase_request_lines` (`company_id`, `purchase_request_id`, `id`),
+  CONSTRAINT `order_line_parent_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`, `purchase_order_id`) REFERENCES `purchase_orders` (`company_id`, `purchase_request_id`, `id`) ON DELETE CASCADE,
+  CONSTRAINT `order_line_money` CHECK (((`quantity` > 0) and (`source_unit_price` >= 0) and (`unit_price` >= 0) and (`line_total` = round((`quantity` * `unit_price`),0)) and (`position` between 1 and 50)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `purchase_order_line_insert_guard` BEFORE INSERT ON `purchase_order_lines` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); DECLARE source_matches INT; SELECT status INTO parent_state FROM purchase_orders WHERE company_id=NEW.company_id AND id=NEW.purchase_order_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Only draft PO lines can change'; END IF; SELECT COUNT(*) INTO source_matches FROM purchase_request_lines WHERE company_id=NEW.company_id AND purchase_request_id=NEW.purchase_request_id AND id=NEW.source_line_id AND position=NEW.position AND description=NEW.description AND unit=NEW.unit AND quantity=NEW.quantity AND estimated_unit_price=NEW.source_unit_price FOR UPDATE; IF source_matches<>1 OR NEW.unit_price<>NEW.source_unit_price THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='PO line must snapshot approved source'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `purchase_order_line_update_guard` BEFORE UPDATE ON `purchase_order_lines` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); DECLARE source_matches INT; SELECT status INTO parent_state FROM purchase_orders WHERE company_id=OLD.company_id AND id=OLD.purchase_order_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Only draft PO lines can change'; END IF; IF NEW.company_id<>OLD.company_id OR NEW.purchase_order_id<>OLD.purchase_order_id OR NEW.purchase_request_id<>OLD.purchase_request_id OR NEW.source_line_id<>OLD.source_line_id OR NEW.position<>OLD.position OR NEW.description<>OLD.description OR NEW.unit<>OLD.unit OR NEW.quantity<>OLD.quantity OR NEW.source_unit_price<>OLD.source_unit_price THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='PO line source snapshot is immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `purchase_order_line_delete_guard` BEFORE DELETE ON `purchase_order_lines` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); DECLARE source_matches INT; SELECT status INTO parent_state FROM purchase_orders WHERE company_id=OLD.company_id AND id=OLD.purchase_order_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'draft' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Only draft PO lines can change'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `purchase_orders`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_orders` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_request_id` bigint NOT NULL,
+  `supplier_id` bigint NOT NULL,
+  `created_by_id` bigint NOT NULL,
+  `issued_by_id` bigint DEFAULT NULL,
+  `code` varchar(32) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `currency` varchar(3) NOT NULL DEFAULT 'VND',
+  `supplier_code_snapshot` varchar(40) NOT NULL,
+  `supplier_name_snapshot` varchar(200) NOT NULL,
+  `request_code_snapshot` varchar(32) NOT NULL,
+  `title_snapshot` varchar(200) NOT NULL,
+  `request_total_snapshot` decimal(18,0) NOT NULL,
+  `ordered_total` decimal(18,0) NOT NULL,
+  `expected_on` date NOT NULL,
+  `price_change_reason` text,
+  `issued_at` datetime(6) DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT '0',
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `one_order_per_company_request` (`company_id`,`purchase_request_id`),
+  UNIQUE KEY `order_company_source_identity` (`company_id`,`purchase_request_id`,`id`),
+  UNIQUE KEY `order_company_identity` (`company_id`,`id`),
+  UNIQUE KEY `order_company_code` (`company_id`,`code`),
+  KEY `order_company_queue` (`company_id`,`status`,`id`),
+  KEY `order_supplier_company` (`company_id`,`supplier_id`),
+  KEY `order_creator_company` (`company_id`,`created_by_id`),
+  KEY `order_issuer_company` (`company_id`,`issued_by_id`),
+  CONSTRAINT `order_creator_company` FOREIGN KEY (`company_id`, `created_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `order_issuer_company` FOREIGN KEY (`company_id`, `issued_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `order_request_company` FOREIGN KEY (`company_id`, `purchase_request_id`) REFERENCES `purchase_requests` (`company_id`, `id`),
+  CONSTRAINT `order_supplier_company` FOREIGN KEY (`company_id`, `supplier_id`) REFERENCES `procurement_suppliers` (`company_id`, `id`),
+  CONSTRAINT `order_money` CHECK (((`currency` = _utf8mb4'VND') and (`request_total_snapshot` >= 0) and (`ordered_total` >= 0))),
+  CONSTRAINT `order_state` CHECK ((((`status` = _utf8mb4'draft') and (`issued_at` is null) and (`issued_by_id` is null)) or ((`status` = _utf8mb4'issued') and (`issued_at` is not null) and (`issued_by_id` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `purchase_order_insert_guard` BEFORE INSERT ON `purchase_orders` FOR EACH ROW BEGIN DECLARE request_state VARCHAR(20); DECLARE source_total DECIMAL(18,0); DECLARE source_code VARCHAR(32); DECLARE source_title VARCHAR(200); DECLARE supplier_state VARCHAR(20); DECLARE vendor_code VARCHAR(40); DECLARE vendor_name VARCHAR(200); SELECT status,estimated_total,code,title INTO request_state,source_total,source_code,source_title FROM purchase_requests WHERE company_id=NEW.company_id AND id=NEW.purchase_request_id FOR UPDATE; SELECT status,code,name INTO supplier_state,vendor_code,vendor_name FROM procurement_suppliers WHERE company_id=NEW.company_id AND id=NEW.supplier_id FOR UPDATE; IF NEW.status<>'draft' OR request_state IS NULL OR request_state<>'approved' OR supplier_state IS NULL OR supplier_state<>'active' OR NOT(NEW.request_total_snapshot<=>source_total) OR NOT(NEW.ordered_total<=>source_total) OR NOT(NEW.request_code_snapshot<=>source_code) OR NOT(NEW.title_snapshot<=>source_title) OR NOT(NEW.supplier_code_snapshot<=>vendor_code) OR NOT(NEW.supplier_name_snapshot<=>vendor_name) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='PO requires approved source and active same-company supplier snapshots'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `purchase_order_update_guard` BEFORE UPDATE ON `purchase_orders` FOR EACH ROW BEGIN DECLARE item_count INT; DECLARE source_count INT; DECLARE changed_prices INT; DECLARE item_total DECIMAL(20,0); DECLARE supplier_state VARCHAR(20); IF OLD.status='issued' OR NEW.status NOT IN ('draft','issued') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Issued PO is immutable'; END IF; IF NEW.company_id<>OLD.company_id OR NEW.purchase_request_id<>OLD.purchase_request_id OR NEW.supplier_id<>OLD.supplier_id OR NEW.created_by_id<>OLD.created_by_id OR NEW.code<>OLD.code OR NEW.currency<>OLD.currency OR NEW.supplier_code_snapshot<>OLD.supplier_code_snapshot OR NEW.supplier_name_snapshot<>OLD.supplier_name_snapshot OR NEW.request_code_snapshot<>OLD.request_code_snapshot OR NEW.title_snapshot<>OLD.title_snapshot OR NEW.request_total_snapshot<>OLD.request_total_snapshot THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='PO source and snapshots are immutable'; END IF; IF NEW.status='issued' THEN SELECT status INTO supplier_state FROM procurement_suppliers WHERE company_id=OLD.company_id AND id=OLD.supplier_id FOR UPDATE; SELECT COUNT(*),COALESCE(SUM(line_total),0),COALESCE(SUM(unit_price<>source_unit_price),0) INTO item_count,item_total,changed_prices FROM purchase_order_lines WHERE company_id=OLD.company_id AND purchase_order_id=OLD.id FOR UPDATE; SELECT COUNT(*) INTO source_count FROM purchase_request_lines WHERE company_id=OLD.company_id AND purchase_request_id=OLD.purchase_request_id FOR UPDATE; IF supplier_state<>'active' OR item_count<1 OR item_count<>source_count OR item_total<>NEW.ordered_total OR (changed_prices>0 AND NEW.price_change_reason IS NULL) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='PO issue requires active supplier exact lines total and price reason'; END IF; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 DROP TABLE IF EXISTS `purchase_request_events`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -675,7 +876,7 @@ CREATE TABLE `purchase_request_lines` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `purchase_line_position` (`purchase_request_id`,`position`),
-  KEY `purchase_line_company_source` (`company_id`,`purchase_request_id`),
+  UNIQUE KEY `request_line_company_source_identity` (`company_id`,`purchase_request_id`,`id`),
   CONSTRAINT `purchase_line_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`) REFERENCES `purchase_requests` (`company_id`, `id`) ON DELETE CASCADE,
   CONSTRAINT `purchase_line_amount` CHECK (((`quantity` > 0) and (`estimated_unit_price` >= 0) and (`line_total` = round((`quantity` * `estimated_unit_price`),0)) and (`position` between 1 and 50)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -977,6 +1178,7 @@ CREATE TABLE `work_shifts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 INSERT INTO `schema_migrations` (version) VALUES
+('20261113000002'),
 ('20261113000001'),
 ('20261112000009'),
 ('20261112000008'),

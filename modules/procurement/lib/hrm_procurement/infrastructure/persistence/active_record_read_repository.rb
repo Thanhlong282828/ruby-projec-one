@@ -2,9 +2,13 @@ module HrmProcurement
   module Infrastructure
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
+        include OrderReads
         def workspace(actor:, filters:, recent: false)
           scope = Pundit.policy_scope!(actor, ::PurchaseRequest)
-          if filters[:view] == "review"
+          if filters[:view] == "awaiting_po"
+            Pundit.authorize(actor, ::PurchaseOrder, :create?)
+            scope = scope.where(status: "approved").where.not(id: ::PurchaseOrder.where(company_id: actor.company_id).select(:purchase_request_id))
+          elsif filters[:view] == "review"
             Pundit.authorize(actor, ::PurchaseRequest, :review_queue?)
             scope = scope.where(status: "submitted").where.not(created_by_id: actor.id)
           elsif filters[:view] == "mine"
@@ -25,7 +29,10 @@ module HrmProcurement
           Pundit.authorize(actor, record, :show?)
           page = Domain::Services::RequestFilters.page_number(history_page)
           events = record.events.order(version: :desc).limit(26).offset((page - 1) * 25).to_a
-          { record: record, events: events.first(25), history_page: page, more_history: events.length > 25 }
+          order_access = Pundit.policy!(actor, ::PurchaseOrder)
+          order = order_access.index? ? Pundit.policy_scope!(actor, ::PurchaseOrder).find_by(purchase_request_id: record.id) : nil
+          { record: record, events: events.first(25), history_page: page, more_history: events.length > 25,
+            order: order, can_create_order: order_access.create? && record.status == "approved" && order.nil? }
         end
       end
     end

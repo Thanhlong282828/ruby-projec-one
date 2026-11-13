@@ -1,3 +1,50 @@
+# PO từ yêu cầu mua đã duyệt — 13/11/2026
+
+Nhánh `codex/procurement-purchase-orders`, baseline **bc6084e06a9a93a3539916e08fd5b0aabca20859** / repo `Thanhlong282828/ruby-projec-one`. Đã đọc AGENTS, toàn bộ diff hiện có, ERP_NAVIGATION và evidence cũ; giữ 26 thay đổi học tập/inventory/make ngoài phạm vi. Baseline chạy lại bằng image baseline trên hrm_test: **379 tests / 2.591 assertions**, 0 failures/errors/skips, 76,195313 giây. Source vẫn **21 file typed: strict**; không mở rộng strict trong đợt PO.
+
+## Thực hiện
+
+- Trong Engine procurement hiện có: `ProcurementSupplier`, `PurchaseOrder`, `PurchaseOrderLine`, `PurchaseOrderEvent`; controllers Suppliers/Orders; policies riêng; Commands SaveSupplier/CreateOrder/UpdateOrder/IssueOrder và Queries Suppliers/FindSupplier/Orders/FindOrder/OrderSource. Hai contracts cũ mở rộng, implementation include OrderReads/OrderWrites; vẫn **13 Engines / 40 bindings**.
+- Supplier theo company có code/name/active-inactive, list/new/edit, grant riêng và version. Tạo PO chỉ chọn projection supplier active cùng công ty; lúc ghi và phát hành kiểm lại dưới khóa. Snapshot code/name giữ tại lúc tạo, không đổi khi supplier đổi tên/ngừng; issued PO lịch sử vẫn hiển thị.
+- Một PO/company/source: source phải approved và nằm trong Pundit scope của actor; create cần orders.read/create và đọc chính source. Khóa IAM/grants/company/source trong transaction; unique `(company_id,purchase_request_id)` bảo vệ SQL/race. Replay trả PO gốc, không âm thầm đổi vendor/date/prices. PO nháp giữ vendor đã chọn.
+- Snapshot source code/title/total và từng dòng có FK nguồn, quantity/description/unit/source price. Chỉ draft prices/date/reason được sửa; đúng tập dòng, không thêm/bớt/đổi quantity. VND nguyên đồng, BigDecimal × quantity, HALF_UP từng dòng rồi cộng tổng. Hiển thị dự toán/tổng đặt/chênh lệch; một dòng đổi giá vẫn cần reason trước issue dù tổng chênh bằng 0.
+- Issue grant riêng, kiểm version/state/supplier active với locking reads hiện hành; issued content/lines bất biến. Audit/outbox và history actor/time/version/reason chung transaction. Reason/history note encrypt, form payload lọc log. Realtime prefix yêu cầu orders.read hoặc suppliers.read, không dùng realtime.read để vượt quyền nghiệp vụ.
+- Menu Nhà cung cấp / Đơn mua hàng / Phiếu đã duyệt chờ lập PO. KPI nguồn dùng cùng Workspace approved + awaiting_po + scoped readable + chưa có order. Phiếu có nút tạo hoặc xem PO theo quyền; PO có link về phiếu khi actor được đọc phiếu. Search/status/page 25; PO detail/back giữ filters; history 25 bước. Nhập kho/invoice/AP còn backlog, không phát hành GHCR.
+
+## Kiểm chứng local đã chạy
+
+Ruby **3.4.12**, Bundler **2.6.9**, MySQL **8.4**, bundle check đạt. `docker build -t hrm-ci:po-review .`; chạy `bin/quality && bundle exec rails test` trong image, chỉ mount public CA, RAILS_ENV=test/hrm_test, không source mount:
+
+| Gate | Kết quả |
+|---|---|
+| Full suite sau sửa lỗi form browser | **396 tests / 2.748 assertions**, 0 failures/errors/skips, 99,274180 giây; thêm một regression realtime sau lượt này đạt riêng 1 test / 9 assertions. Full snapshot tổng sẽ được chốt trước bàn giao |
+| RuboCop | **613 files / 0 offenses** |
+| Routes / architecture | 14 route files; 51 controllers, 13 Engines, 40 bindings |
+| Sorbet / RBI / autoload | 21 strict files giữ nguyên; 3 negative probes bị từ chối và file tạm đã xóa; gem/DSL verify/check-shims đạt, Zeitwerk đạt |
+| Security / workflow | Brakeman 0 errors/0 warnings (41 models/83 templates); bundler-audit không vulnerability; gitleaks publishable source không leak; actionlint 1.7.7 đạt; receiver 8 tests đạt |
+| Schema fresh | `RAILS_ENV=test ruby bin/verify-test-schema`: 30 CHECK, 90 FK, 41 PK, 58 UNIQUE, 302 index parts, 19 versions, 13 triggers. Definition SHA256 **a2e4c2667bc13768b9426e6aaa092b9eb041df134126996adabe5339740ef438**; schema tạm đã drop |
+| Image smoke | `ruby bin/smoke-image hrm-ci:po-review`: UID1000, SQL schema có, schema.rb/private env/key không có; /up200 /session/new200 /pay_runs302. Local arm64 image ID **sha256:1d3fb89699d1fc23b0bd5f1228aaa1c62dc902f027fc2665a01530a49022c22a**, không registry digest |
+
+Lệnh app container: `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=$PWD/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-ci:po-review sh -c 'bin/quality && bundle exec rails test'`. Logs local `/private/tmp/hrm-po-{baseline,focused-final,full-final,realtime-test,rbi-verify,brakeman,fresh-schema,image-smoke-final,actionlint,receiver}.log`. Full suite có các negative HTTP payload tests cố ý gửi JSON hỏng; không phải lỗi suite. Query budget cũ vẫn employees9/reconciliation20/export49 ở 1 và20 nhân viên mẫu.
+
+Coverage mới: supplier HTTP/tenant/active/version; unapproved/cross-company source và supplier; revoked create/issue/read/source-read; create/issue race thật; unique SQL bypass; audit/outbox rollback creation/edit/issue/history/lines; exact VND/zero net delta reason; malformed prices/source rows/version; immutable SQL snapshots/issued; supplier inactive lịch sử; KPI→source→create/edit/issue/backlinks→0; 26 PO pagination/filter; CSRF bật thật; realtime permissions/revocation. Role HR/employee không nhận grants PO/supplier mới; admin/manager provision 7 keys, custom role không tự cấp. Issue không thêm maker-checker PO; maker-checker duyệt yêu cầu mua vẫn giữ.
+
+## Nâng cấp baseline và sửa lỗi phát hiện
+
+- `git show bc6084e:db/structure.sql`, SHA256 **567f9c47926286f5a4c6d2e85375f600b396628d2f3c795196658f9a6a7aad21**, latest trước **20261113000001**. Restore MySQL8.4 dùng một lần, hrm_test, network/volume riêng không host port, CA riêng với verify_identity. Image baseline tạo 2 công ty, phiếu approved 2 dòng/1126 VND/3 history và purpose encrypt trước migration.
+- Migration mới **20261113000002** bằng root process ngắn hạn (không cấp SUPER app). Sau nâng: cả2 công ty đọc lại source/history/purpose cũ không đổi; tạo PO, đổi giá thành2252, lưu lý do, phát hành, 3 history; supplier ngừng hoạt động vẫn xem PO snapshot; source queue mới đúng. Không pending migration, đủ13 guard. DDL thật upgrade so cùng truy vấn của verify-test-schema khớp toàn bộ fresh definition SHA256 ở trên, không chỉ count. Logs `/private/tmp/hrm-po-upgrade-{setup,before,migrate,after,definitions}.log`.
+- Migration test đầu dùng sai cột permissions.description; sửa theo schema thật name + timestamps. MySQL DDL không rollback: chỉ dọn 4 bảng PO mới đã xác nhận rỗng và khôi phục index FK gốc trước khi bỏ index mới MySQL đã tái dùng; không tắt FK/trigger và không reset/xóa dữ liệu yêu cầu mua. Reapply test thành công. Development chỉ chạy sau rehearsal/full suite đạt, có backup0600 `tmp/backups/po-before-development.sql` bị ignore Git/image; additive migration/13 guards đạt, giữ container VS Code và chỉ USR2 đúng Puma PID1 đã quan sát. Laravel không bị đụng.
+- Tapioca mặc định DSL environment=development dù shell RAILS_ENV=test. Sửa `sorbet/tapioca/config.yml` và `bin/check-rbi` truyền rõ **--environment=test**; sinh/verify được khi development còn pending migration. RBI chỉ bỏ helpers rails_info/rails_mailers chỉ có ở development và thêm helpers/model thực từ test; không hand-edit hoặc fake constants.
+- Browser tìm lỗi GET edit: DECIMAL scale0 do Rails đọc thành Integer, `.to_s("F")` gây TypeError. Dùng `.to_i.to_s` cho đơn giá VND đã chuẩn hóa nguyên đồng, sửa cả form nguồn cùng lỗi; quantity scale3 vẫn BigDecimal. Thêm GET edit và invalid PATCH422 render regression, không đổi công thức tiền.
+
+## Browser và giới hạn
+
+Browser localhost3111 trên image/DB rehearsal, 2 company mẫu. Buyer company1: KPI1→source đúng→form chỉ supplier active company1→PO nháp→sửa2000/1500 + reason→2252 VND, dự toán1126/chênh1126→Enter issue→issued/version2/history3, mất nút sửa/issue; KPI0 mở queue rỗng đúng. Company2 context/KPI riêng, URL PO#3 company1 trả không tìm thấy. Supplier catalog/create form Enter lưu mẫu hoạt động, supplier inactive vẫn có trong list lịch sử nhưng không có trong options tạo PO. CSS innerWidth=scrollWidth=390 trên các màn form/detail/list/dashboard đã đo; Tab focus link nguồn outline solid. Có quan sát screenshot giao diện hẹp; không lưu ảnh vào repo. Không phải audit WCAG đầy đủ hay pentest production.
+
+PO issuance là trạng thái nội bộ, chưa tự gửi nhà cung cấp/nhập kho/hóa đơn/công nợ/thanh toán. Source/current supplier names có thể đổi sau khi chụp snapshot; PO giữ snapshot tại thời điểm tạo. Privileged SQL vẫn có thể bỏ qua model/history; không có delete app route. Remote CI chỉ được báo đạt sau khi đối chiếu run đúng SHA của branch này.
+
+---
+
 # Mua hàng — biên nhận GitHub Actions đúng SHA
 
 Commit **`0b3566314f81baba05aaf20c731b7924792cbccf`**, nhánh `codex/procurement-request-workflow`, repo `Thanhlong282828/ruby-projec-one`. [Actions run 43352273439](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43352273439) completed/success. Đã đối chiếu headSha, toàn bộ step conclusion và log; không có required step bị skip.

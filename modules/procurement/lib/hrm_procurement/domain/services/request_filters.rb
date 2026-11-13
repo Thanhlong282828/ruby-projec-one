@@ -6,7 +6,7 @@ module HrmProcurement
         def self.read(search: nil, status: nil, view: nil, page: nil)
           raise ActiveRecord::RecordNotFound unless search.nil? || (search.is_a?(String) && search.valid_encoding? && search.length <= 120)
           { q: search&.strip, status: Hrm::ListFilters.choice(status, allowed: STATUSES),
-            view: Hrm::ListFilters.choice(view, allowed: %w[mine review]), page: page_number(page) }.compact
+            view: Hrm::ListFilters.choice(view, allowed: %w[mine review awaiting_po]), page: page_number(page) }.compact
         end
         def self.page_number(value)
           return 1 if value.nil? || value == ""

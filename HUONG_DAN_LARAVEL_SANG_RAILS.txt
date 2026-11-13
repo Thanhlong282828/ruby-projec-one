@@ -535,3 +535,26 @@ KPI mở purchase_requests_path(status: submitted, view: review), không duyệt
 Phạm vi queue loại phiếu tự tạo và chỉ hiện khi có read_all + review trong MySQL.
 Xem bảng Laravel/Rails, file và backlog chi tiết tại docs/ERP_NAVIGATION.md
 và modules/procurement/README.md. Chưa có đơn mua hàng/nhập kho/công nợ tự động.
+
+
+=== BỔ SUNG PO TỪ PHIẾU ĐÃ DUYỆT — 13/11/2026 ===
+Vẫn Engine modules/procurement, không tạo Engine mới.
+Laravel Route/Controller/Action/Repository/Eloquent tương ứng:
+procurement.rb -> OrdersController -> CreateOrder/UpdateOrder/IssueOrder
+  -> WriteRepositoryInterface -> ActiveRecordWriteRepository include OrderWrites -> MySQL.
+SuppliersController -> SaveSupplier quản lý nhà cung cấp theo công ty.
+Đọc dùng Orders/FindOrder/OrderSource/Suppliers -> ReadRepositoryInterface -> OrderReads.
+Provider cũ bind 2 contracts; Policy mới kiểm grant MySQL, không dùng role để bypass.
+Từ phiếu approved -> chọn supplier active -> PO draft -> sửa giá/ngày -> issue.
+Khóa source trong transaction + unique company/source = tối đa một PO; gửi lặp mở PO cũ.
+Giống lockForUpdate của Laravel: .lock, rồi kiểm quyền/version/state lại lúc ghi.
+Dòng PO giữ source_line_id và snapshot số lượng/mô tả/giá nguồn; không sửa quantity.
+VND tính BigDecimal, làm tròn từng dòng HALF_UP rồi cộng; không dùng Float.
+Đổi bất kỳ giá nào cần lý do trước issue, dù tổng chênh bằng 0.
+Issue cần orders.issue riêng và supplier còn active; issue rồi khóa nội dung.
+Audit/outbox/history cùng transaction; lỗi thì rollback cả PO và dòng hàng.
+Supplier ngừng hoạt động không chọn tạo/issue mới, PO cũ vẫn đọc snapshot tên/mã.
+KPI Phiếu đã duyệt chờ lập PO mở requests?status=approved&view=awaiting_po.
+RBI: tapioca dsl --environment=test --workers=1 (không chỉ đặt RAILS_ENV).
+Chi tiết grants/routes/so sánh Laravel ở docs/ERP_NAVIGATION.md; bằng chứng ở VERIFICATION.md.
+Nhập kho, hóa đơn và công nợ vẫn là đợt sau; chưa có thanh toán hoặc gửi PO ra ngoài.

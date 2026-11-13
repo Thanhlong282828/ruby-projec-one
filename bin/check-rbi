@@ -12,7 +12,7 @@ Dir.chdir(File.expand_path("..", __dir__)) do
     puts "RBI preflight: hrm_test, \#{engines.size} Engines, provider bindings resolved."
   SOURCE
   abort "Unsafe RBI environment" unless system("bundle", "exec", "rails", "runner", preflight)
-  [ %w[bundle exec tapioca gem --verify], %w[bundle exec tapioca dsl --verify --workers=1], %w[bundle exec tapioca check-shims] ].each do |command|
+  [ %w[bundle exec tapioca gem --verify], %w[bundle exec tapioca dsl --environment=test --verify --workers=1], %w[bundle exec tapioca check-shims] ].each do |command|
     abort "RBI verification failed" unless system(*command)
   end
 end

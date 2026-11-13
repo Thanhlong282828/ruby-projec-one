@@ -28,6 +28,9 @@ module ErpNavigationHelper
       [ "Tệp xuất bảng lương", "/payroll/exports", %w[payroll.read payroll.exports.read], :all ]
     ] ],
     [ "Mua hàng", [
+      [ "Nhà cung cấp", "/procurement/suppliers", %w[procurement.suppliers.read] ],
+      [ "Đơn mua hàng", "/procurement/orders", %w[procurement.orders.read] ],
+      [ "Phiếu đã duyệt chờ lập PO", "/procurement/requests?status=approved&view=awaiting_po", %w[procurement.orders.read procurement.orders.create], :all ],
       [ "Yêu cầu mua", "/procurement/requests", %w[procurement.requests.read procurement.requests.read_all] ],
       [ "Yêu cầu của tôi", "/procurement/requests?view=mine", %w[procurement.requests.read procurement.requests.read_all] ],
       [ "Chờ tôi duyệt", "/procurement/requests?status=submitted&view=review", %w[procurement.requests.read_all procurement.requests.review], :all ]
@@ -51,7 +54,8 @@ module ErpNavigationHelper
   def erp_navigation_groups
     # Memoized only within this request. No cross-user authorization cache.
     @erp_navigation_groups ||= ERP_AREAS.filter_map do |name, entries|
-      visible = entries.select do |_, _, permissions, match|
+      visible = entries.select do |_, path, permissions, match|
+        next false if path.include?("view=awaiting_po") && !Pundit.policy!(current_user, PurchaseRequest).index?
         match == :all ? permissions.all? { |key| current_user.allowed?(key) } : permissions.any? { |key| current_user.allowed?(key) }
       end
       if name == "Cơ cấu tổ chức" && HEADCOUNT_PERMISSIONS.all? { |key| current_user.allowed?(key) }

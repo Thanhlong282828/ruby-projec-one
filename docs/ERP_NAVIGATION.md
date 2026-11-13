@@ -24,6 +24,9 @@ Sidebar và bảng Không gian nghiệp vụ đều dùng `ErpNavigationHelper#e
 | Nghỉ phép / Danh sách và đơn | /leave_requests, /leave_requests/:id | TimeOff::ListLeaveRequests, FindLeaveRequest | leave.read hoặc leave.read_all; show kiểm quyền và scope |
 | Bảng lương / Kỳ lương | /pay_runs, /pay_runs/:id | Payroll::ListPayRuns, FindPayRun, ReconcilePayRun, ListPayslips | payroll.read |
 | Bảng lương / Tệp xuất | /payroll/exports | Payroll::ExportWorkspace | đủ payroll.read + payroll.exports.read |
+| Mua hàng / Nhà cung cấp | /procurement/suppliers | Procurement::Suppliers, FindSupplier | procurement.suppliers.read; tạo/sửa cần create/update riêng |
+| Mua hàng / Đơn mua hàng | /procurement/orders | Procurement::Orders, FindOrder | procurement.orders.read |
+| Mua hàng / Phiếu chờ lập PO | /procurement/requests?status=approved&view=awaiting_po | Procurement::Workspace | orders.read + orders.create và Pundit PurchaseRequest scope |
 | Mua hàng / Yêu cầu mua | /procurement/requests | Procurement::Workspace, FindRequest | procurement.requests.read (của mình) hoặc read_all (công ty) |
 | Mua hàng / Yêu cầu của tôi | /procurement/requests?view=mine | Procurement::Workspace | cùng quyền đọc; thêm created_by=current_user |
 | Mua hàng / Chờ tôi duyệt | /procurement/requests?status=submitted&view=review | Procurement::Workspace | đủ procurement.requests.read_all + review, loại phiếu tự tạo |
@@ -45,6 +48,7 @@ Tên Query ở bảng dùng namespace rút gọn Hrm<Module>::Application::Queri
 | Phần dashboard | Điều kiện / đơn vị | Route helper và bộ lọc nguồn | Dòng chi tiết |
 |---|---|---|---|
 | Nhân viên đang hoạt động | Pundit Employee scope + status=active / người | employees_path(status: active) | employee_path hiện có |
+| Phiếu đã duyệt chờ lập PO | approved + cùng Pundit request scope + chưa có PO / phiếu | purchase_requests_path(status: approved, view: awaiting_po) | purchase_request_path → tạo hoặc xem PO; count/list dùng cùng contract |
 | Yêu cầu mua chờ duyệt | submitted + Pundit company scope + không tự tạo / phiếu, mọi ngày cần hàng | purchase_requests_path(status: submitted, view: review) | purchase_request_path, giữ bộ lọc; widget 5 phiếu mới nhất |
 | Đơn phép chờ duyệt | Pundit LeaveRequest scope + pending / đơn, tất cả ngày | leave_requests_path(status: pending) | leave_request_path; màn hình mới thuộc TimeOff |
 | Ca đang mở | Pundit Attendance scope + checked_out_at IS NULL / ca, tất cả ngày | attendances_path(status: open) | attendance_path hiện có |
@@ -64,7 +68,7 @@ Bộ lọc web mới: Employee status(active/probation/inactive), Attendance sta
 
 1. Có nền dữ liệu, cần mở rộng nghiệp vụ riêng: pipeline tuyển dụng sang hồ sơ nhân viên chưa tự provision; OT/thuế/bảo hiểm/khấu trừ và chuẩn xuất kế toán/pháp định chưa có công thức đầy đủ. Payroll hiện vẫn lương cơ bản/snapshot, ca mở và phép chờ chỉ là cảnh báo. Không thêm chỉ số giả vào dashboard.
 2. Có nền tích hợp, chưa là nghiệp vụ ERP: webhook HMAC/outbox/retry và payroll descriptor bridge; adapter tạo đơn mua/bút toán/thanh toán không được suy từ webhook acknowledgement. Cần contract, grant, idempotency và transaction riêng trước menu.
-3. Mua hàng đã có lát cắt yêu cầu mua (mục dưới); đơn mua hàng, nhận hàng, đối chiếu hóa đơn/AP chưa có. Các miền chưa có module/model/màn hình Rails hoàn chỉnh: sổ cái/AR/treasury, kho/bán hàng/CRM, tài sản, dự án, thuế/pháp định, planning/forecasting. Không thêm menu rỗng hoặc copy số liệu Laravel.
+3. Mua hàng đã có yêu cầu mua, danh mục nhà cung cấp và PO nháp → phát hành; nhận hàng, đối chiếu hóa đơn/AP chưa có. Các miền chưa có module/model/màn hình Rails hoàn chỉnh: sổ cái/AR/treasury, kho/bán hàng/CRM, tài sản, dự án, thuế/pháp định, planning/forecasting. Không thêm menu rỗng hoặc copy số liệu Laravel.
 
 ## So sánh cho người chuyển từ Laravel
 
@@ -95,4 +99,28 @@ So sánh Laravel → Rails theo từng bước:
 | Eloquent model/observer | PurchaseRequest/Line/Event + ObservableRecord | quan hệ/validation, audit+outbox, lịch sử phiên bản |
 | Blade và route() | ERB + purchase_requests_path/purchase_request_path | giao diện tiếng Việt, KPI chỉ điều hướng tới Query nguồn |
 
-Lát cắt tiếp: nhà cung cấp/đơn mua hàng, nhận hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; yêu cầu được duyệt chưa tạo các nghiệp vụ đó.
+Lát cắt tiếp: nhận hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; phát hành PO chưa tự tạo các nghiệp vụ đó.
+
+## Đơn mua hàng (PO) từ phiếu đã duyệt
+
+PO nằm trong Engine procurement hiện có, vẫn 13 Engines / 40 bindings. Contracts Read/Write hiện có bổ sung methods cho supplier/order; hai implementation include `OrderReads` và `OrderWrites`. Không SQL ở Controller, không query xuyên Engine tại Dashboard.
+
+| Bước | Route / use case Rails | So sánh Laravel | Quy tắc |
+|---|---|---|---|
+| Nhà cung cấp | /procurement/suppliers; Suppliers/FindSupplier/SaveSupplier | Eloquent catalog + FormRequest + Policy/Action | code duy nhất trong company; name/status; create/update riêng, optimistic version |
+| Phiếu chờ lập PO | /procurement/requests?status=approved&view=awaiting_po; Workspace | scoped approved + whereDoesntHave(order) | cùng predicate với KPI, cần đọc phiếu + orders.read/create |
+| Form từ nguồn | GET /procurement/orders/new?purchase_request_id=ID; OrderSource | scoped findOrFail + options query | source phải approved; chỉ options supplier active cùng company; chiếu code/name/ID theo quyền tạo PO |
+| Tạo nháp | POST /procurement/orders; CreateOrder | DB::transaction + lockForUpdate + unique index | khóa IAM/company/grants, khóa source; tối đa một PO/company/source. Gửi lặp trả PO gốc, không đổi supplier/ngày/giá |
+| Sửa nháp | GET edit + PATCH /procurement/orders/:id; UpdateOrder | Action + transaction + optimistic lock | giữ vendor/source/snapshot/số lượng; chỉ ngày giao, đơn giá và lý do. Đúng tập source_line_id, không lặp/thêm/bớt dòng |
+| Phát hành | POST /procurement/orders/:id/issue; IssueOrder | Policy + locked state transition + Observer | quyền orders.issue riêng + orders.read; version/state/current supplier active kiểm dưới khóa; phát hành rồi khóa nội dung |
+| Lịch sử | GET /procurement/orders/:id; FindOrder | eager-loaded show + audit projection | actor/thời điểm/version/lý do mã hóa, 25 bước/trang; source link chỉ hiện nếu có quyền đọc phiếu |
+
+Quyền MySQL mới: `procurement.suppliers.{read,create,update}` và `procurement.orders.{read,create,update,issue}`. Provision admin/manager; employee/hr/custom role không tự cấp quyền mới. Không suy quyền từ enum runtime. Người chỉ được tạo PO có thể chọn projection supplier active tối thiểu qua OrderSource; không vì vậy được vào màn hình quản lý supplier. Tạo PO cần đọc chính phiếu nguồn; đọc PO dùng grant PO riêng trong cùng company. Có quyền sửa PO không đồng nghĩa quyền phát hành. Không thêm maker-checker cho PO trong đợt này; maker-checker của bước duyệt phiếu vẫn giữ nguyên.
+
+`PurchaseOrder` lưu snapshot mã/tiêu đề/tổng phiếu và mã/tên supplier tại lúc tạo, currency VND. `PurchaseOrderLine` giữ FK đến từng source line, snapshot mô tả/đơn vị/số lượng/đơn giá nguồn và giá đặt. Composite FK chặn ghép sai company/source/parent; unique `(company_id,purchase_request_id)` chặn trùng, kể cả SQL bypass. Số lượng không cho sửa; giá đặt nguyên đồng, tính BigDecimal × quantity, từng dòng HALF_UP rồi cộng. Chi tiết hiển thị dự toán, tổng đặt và chênh lệch có dấu. Một dòng đổi giá cũng cần lý do trước phát hành, kể cả tổng chênh bằng 0. Reason/history note mã hóa, form payload bị lọc khỏi log; audit/outbox chỉ metadata cùng transaction, rollback nếu journal lỗi.
+
+Supplier có thể đổi mã/tên/status; snapshot PO lịch sử không thay đổi. Supplier ngừng hoạt động không có trong options tạo mới và bị chặn lúc phát hành (cả khi form mở trước lúc ngừng). PO nháp giữ supplier đã chọn; nếu cần phát hành sau khi supplier ngừng, người có quyền phải xử lý lại catalog theo nghiệp vụ, không có tự đổi vendor hoặc bypass. Menu/KPI dùng company từ profile đăng nhập; không nhận company_id client. PO issued vẫn được đọc khi supplier inactive. Không có delete/cancel/receipt/invoice/AP hoặc API PO mới.
+
+Danh sách PO hỗ trợ `q` mã/tiêu đề, `status=draft|issued`, `page`; supplier hỗ trợ q mã/tên, status active/inactive, page. Cả hai 25 dòng/trang; PO detail/edit/back links giữ q/status/page, lịch sử thêm history_page. Queue `awaiting_po` và `review` hiển thị đúng trạng thái cố định, tránh lọc mâu thuẫn. KPI 0 vẫn mở queue rỗng có giải thích và reset. Tạo PO chỉ ở form/command; KPI/link không tự ghi hoặc phát hành.
+
+Trên MySQL/Rails hiện tại, DECIMAL scale 0 có thể đọc thành Integer: form dùng `.to_i.to_s` cho đơn giá VND đã được chuẩn hóa nguyên đồng; quantity scale 3 vẫn BigDecimal. Không gọi Integer#to_s("F"), không dùng Float để tính tiền.

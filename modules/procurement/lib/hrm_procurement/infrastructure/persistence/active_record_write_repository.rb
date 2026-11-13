@@ -2,6 +2,7 @@ module HrmProcurement
   module Infrastructure
     module Persistence
       class ActiveRecordWriteRepository < Domain::Repositories::WriteRepositoryInterface
+        include OrderWrites
         def create!(actor:, attributes:)
           ::PurchaseRequest.transaction do
             ActiveRecord::Base.uncached do

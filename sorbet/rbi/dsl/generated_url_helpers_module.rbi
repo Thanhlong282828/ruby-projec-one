@@ -163,6 +163,12 @@ module GeneratedUrlHelpersModule
   def edit_employee_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def edit_procurement_supplier_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def edit_purchase_order_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def edit_purchase_request_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -197,6 +203,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def integration_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def issue_purchase_order_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def leave_request_url(*args); end
@@ -236,6 +245,12 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_pay_run_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_procurement_supplier_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_purchase_order_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_purchase_request_url(*args); end
@@ -316,7 +331,22 @@ module GeneratedUrlHelpersModule
   def preview_work_shift_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def procurement_orders_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def procurement_requests_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_supplier_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_suppliers_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_order_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_orders_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def purchase_request_url(*args); end
@@ -326,21 +356,6 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def rails_health_check_url(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_notes_url(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_properties_url(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_routes_url(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_url(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_mailers_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def reject_api_v1_leave_request_url(*args); end

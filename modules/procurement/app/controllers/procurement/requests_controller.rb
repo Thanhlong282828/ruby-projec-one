@@ -66,7 +66,7 @@ module Procurement
     end
     def procurement_form_input(record)
       { title: record.title, purpose: record.purpose, needed_on: record.needed_on.iso8601,
-        items: record.lines.map { |line| { "description" => line.description, "quantity" => line.quantity.to_s("F"), "unit" => line.unit, "estimated_unit_price" => line.estimated_unit_price.to_s("F").delete_suffix(".0") } } }
+        items: record.lines.map { |line| { "description" => line.description, "quantity" => line.quantity.to_s("F"), "unit" => line.unit, "estimated_unit_price" => line.estimated_unit_price.to_i.to_s } } }
     end
   end
 end

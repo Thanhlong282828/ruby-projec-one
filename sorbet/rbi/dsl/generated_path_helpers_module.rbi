@@ -163,6 +163,12 @@ module GeneratedPathHelpersModule
   def edit_employee_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def edit_procurement_supplier_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def edit_purchase_order_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def edit_purchase_request_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -197,6 +203,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def integration_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def issue_purchase_order_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def leave_request_path(*args); end
@@ -236,6 +245,12 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_pay_run_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_procurement_supplier_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_purchase_order_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_purchase_request_path(*args); end
@@ -316,7 +331,22 @@ module GeneratedPathHelpersModule
   def preview_work_shift_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def procurement_orders_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def procurement_requests_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_supplier_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_suppliers_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_order_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def purchase_orders_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def purchase_request_path(*args); end
@@ -326,21 +356,6 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def rails_health_check_path(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_notes_path(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_path(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_properties_path(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_info_routes_path(*args); end
-
-  sig { params(args: T.untyped).returns(String) }
-  def rails_mailers_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def reject_api_v1_leave_request_path(*args); end

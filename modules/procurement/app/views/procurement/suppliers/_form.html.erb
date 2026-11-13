@@ -1,0 +1,7 @@
+<% if @errors %><div class="errors" role="alert"><%= @errors %></div><% end %>
+<%= form_with url: @record.persisted? ? procurement_supplier_path(@record) : procurement_suppliers_path, method: @record.persisted? ? :patch : :post, class: "panel field" do %>
+<% if @record.persisted? %><%= hidden_field_tag :lock_version, @record.lock_version %><% end %>
+<label for="supplier_code">Mã nhà cung cấp</label><%= text_field_tag "supplier[code]", @input[:code], id: "supplier_code", required: true, maxlength: 40 %>
+<label for="supplier_name">Tên nhà cung cấp</label><%= text_field_tag "supplier[name]", @input[:name], id: "supplier_name", required: true, maxlength: 200 %>
+<label for="supplier_status">Trạng thái</label><%= select_tag "supplier[status]", options_for_select([["Hoạt động", "active"], ["Ngừng hoạt động", "inactive"]], @input[:status]), id: "supplier_status" %>
+<p class="hint">Ngừng hoạt động sẽ chặn tạo/phát hành PO mới. Snapshot nhà cung cấp trên PO lịch sử vẫn giữ nguyên.</p><div class="form-actions"><%= submit_tag "Lưu nhà cung cấp" %><%= link_to "Danh sách", procurement_suppliers_path %></div><% end %>

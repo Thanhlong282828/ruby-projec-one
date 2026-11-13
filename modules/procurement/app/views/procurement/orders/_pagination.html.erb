@@ -1,0 +1,1 @@
+<div class="pagination"><% page = workspace[:filters][:page] %><% if page > 1 %><%= link_to "Trang trước", public_send(destination, workspace[:filters].merge(page: page - 1)) %><% end %><span>Trang <%= page %></span><% if workspace[:count] > page * 25 %><%= link_to "Trang tiếp", public_send(destination, workspace[:filters].merge(page: page + 1)) %><% end %></div>
