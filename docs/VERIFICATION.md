@@ -1,3 +1,52 @@
+# Trả nhà cung cấp — bản cuối local trước push
+
+Source bản cuối trên `codex/inventory-supplier-returns` đã review **46 file**, không TXT trong staged/net diff; snapshot staged và cả diff (kể cả dòng xóa) quét Gitleaks `--redact=100`: **no leaks**. 27 thay đổi local ở checkout Desktop khớp manifest SHA256 ban đầu từng byte. Không đưa env/private keys/dump/CSV/log vào commit.
+
+- `docker build -t hrm-ci:supplier-returns-final .` từ Dockerfile worktree riêng; `docker run --rm --network hrm-returns-test --env-file /private/tmp/hrm-returns-test/runtime.env --mount type=bind,src=/private/tmp/hrm-returns-test/ca.pem,dst=/run/mysql-ca.pem,readonly hrm-ci:supplier-returns-final sh -c 'ruby -v && bundle --version && bundle check && bin/quality && bundle exec rails test'`: **PASS**. Ruby3.4.12/Bundler2.6.9, **459 tests /3.310 assertions**,0fail/error/skip,125,757305s (seed38082). Baseline438/3140 → +21tests/+170assertions. Gồm test hai kết nối MySQL và assertion invalid UTF-8 key cuối. Không source mount.
+- Quality bản cuối: **679files/0offenses**, routes14;59controllers/13Engines/40bindings; **21strict** và3negativecontractprobes, dependency/DSL RBI+shim/preflight và autoload đạt. Gitleaks1179publishablefiles/negative/redaction đạt, Brakeman0warnings/errors, bundler-audit1359/no vulnerabilities. Không thêm ignore để che lỗi.
+- Fresh schema comparator bản cuối đạt lại: definitionSHA256 **49c01f3fa052075e0821f8717e47a9d7c031668637835905fd93b5ed21f8ed50**,33guards; nguồn nâng cấp af4272a/dữ liệu cũ được chứng minh ở dưới. `db/structure.sql` chỉ DDL/migration versions, không dump nghiệp vụ.
+- Smoke image cuối cùng logic bin/smoke-image/stack riêng: **UID1000**, structure.sql có, schema.rb/env/key vắng, HTTP200/200/302 đúng; imageID **sha256:e9b0313668c50e5c5a02056080d50d82ec4e6959f41d3203bd0547b0364c8a63** (local arm64, không registry digest). Browser dùng cùng application/view bytes ngoại trừ nhánh input key invalid UTF-8 đã thêm hồi quy.
+- Receiver `python3 -m unittest discover -s services/event_sink -p test_server.py`: **8tests/OK**. Lần đầu trong sandbox không được bind loopback nên chưa chạy; chạy lại quyền socket tạm đạt. actionlint1.7.7 đạt. Query budgets hiện có1/20employees vẫn9/20/49.
+
+Logs `/private/tmp/returns-final-{quality-full,build,smoke,fresh}.log`, `returns-{receiver,staged-scan,diff-scan}.log`. Image build trước cập nhật tài liệu thuần Markdown này; không giả documentation byte parity. Snapshot index sạch/build và application manifest được đối chiếu trước push. Remote CI mới chưa được dùng làm bằng chứng tại thời điểm viết phần này; biên nhận đúng SHA/run sẽ bổ sung sau khi thực sự kết thúc. Không release GHCR.
+
+---
+
+# Trả nhà cung cấp — kiểm chứng local 14/11/2026
+
+Nhánh `codex/inventory-supplier-returns`, worktree riêng `/private/tmp/ruby-supplier-returns`, base chính xác **af4272aa69c49bea53c409e61b7838902ebee4e4**; origin `git@github.com:Thanhlong282828/ruby-projec-one.git`. Không push omega/main, không GHCR. Giữ thay đổi học tập trong checkout Desktop; không sửa/stage TXT. CI base run43445088326 không thay bằng chứng của diff mới.
+
+Triển khai phiếu/dòng trả riêng, composite FK RESTRICT, 6 trigger seal/immutable, hai quyền returns.read/post, MVC + CQRS, replay/digest/unique/savepoint, scope menu/form/URL, sổ UNION nhập dương/trả âm dùng chung với tồn. Không đổi quantity hay lịch sử PO/GR/IN gốc. Permission DB/provisioning không dùng role bypass; realtime thêm prefix có quyền. Generated RBI từ test DB, giữ **21 file strict**.
+
+## Môi trường và schema
+
+- Ruby **3.4.12**, Bundler **2.6.9**, MySQL **8.4**, Dockerfile repo. Network/volume/container `hrm-returns-test*` dùng một lần, MySQL không host port, CA/hostname mysql được xác minh; private keys trong volume. Chỉ schema test `hrm_test` và scratch `hrm_test_returns_schema_*`, không đổi development/Laravel hoặc container VS Code.
+- SQL lịch sử lấy trực tiếp `git show af4272a:db/structure.sql`, SHA256 **073cd080d206780b44108bdb8d49338236129ab7e3c4f6326793221d721820c8**, migration cuối20261113000004. Image cũ `hrm-ci:ledger-no-txt` chạy baseline trên SQL này: **438/3140**,0fail/error/skip. Nạp hai công ty giả có cùng MAIN/SKU001, PO10, hai lần nhận/nhập4+6 trước nâng cấp.
+- `python3 /private/tmp/returns-migrate.py`: tiến trình migration root ngắn hạn trên MySQL riêng, `bundle exec rails db:migrate db:verify_tenant_guards`; áp dụng20261114000001, dump structure.sql. Không cấp runtime SUPER. Script/env migration tạm không commit và secret được xóa sau dùng.
+- `/private/tmp/returns-upgrade-after.rb` chạy qua `bundle exec rails runner` trong image: hồ sơ mã hóa cũ đọc được, snapshot PO/GR/IN/movement giữ nguyên; trả3 từ nhập4, ledger+4/+6/−3=7, còn được trả1; replay cùng ID; công ty2 vẫn10; URL/query foreign return bị từ chối. Đây là nâng cấp có dữ liệu cũ thật từ schema xác định, không chỉ db:migrate trên DB trống.
+- `python3 /private/tmp/returns-fresh-compare.py`: structure.sql tạo schema scratch từ rỗng, đối chiếu toàn định nghĩa với DB nâng cấp (cột/collation, thứ tự index, composite FK và DELETE/UPDATE rules, CHECK, body trigger, migrations), rồi DROP scratch. SHA256 **49c01f3fa052075e0821f8717e47a9d7c031668637835905fd93b5ed21f8ed50**; **38 CHECK/107 FK/49 PK/79 UNIQUE/418 index parts/33 triggers/22 migrations**, khớp. Hash dùng comparator mở rộng, không so trực tiếp hash thuật toán cũ.
+- Browser xong mới khởi tạo lại duy nhất hrm_test trong stack riêng từ structure.sql hiện tại, chạy full suite sạch. Không copy DB/secrets Laravel. SQL privileged posting chưa seal giữ chỗ và fail closed; chưa có công cụ sửa posting đặc quyền, không tự xóa lịch sử.
+
+## Browser thật trên dữ liệu mẫu test
+
+Image candidate `hrm-ci:supplier-returns`, chỉ mount public CA, cổng127.0.0.1:3113, 390×844. Công ty2 admin: Tab/Enter từ tồn10 → đúng cặp kho33/SKU35 → IN34(+4) → form dòng59, nhập lý do/3 và Tab/Enter ghi sổ → RT2 → ledger+4,+6,−3=7; IN34 còn1. Ghi tiếp1 → RT3, tồn6. Các nguồn và snapshot vẫn hiển thị ban đầu. Test server bao phủ trả vượt0,001 bị chặn.
+
+Nhân viên chỉ balances.read thấy đủ−1/−3/+6/+4 và tổng6, không có link IN/RT; URL RT cùng công ty báo từ chối. Admin công ty2 mở RT1 của công ty1 báo Không tìm thấy dữ liệu. Sau đó thêm26 phiếu mẫu0,001 từ dòng nhập6 để kiểm phân trang thực:30 dòng, trang1=25/trang2=5, tổng **5,974** không đổi theo trang; Enter Trang tiếp/trước giữ warehouse33/item35. Đây là dữ liệu bổ sung kiểm paging, không lẫn số tồn6 của ca nghiệm thu trước đó.
+
+DOM đo innerWidth=documentElement.scrollWidth=390 ở form/ledger/page2; bảng cuộn riêng308px/nội dung756px, region có tên/tabindex0. Tab/Enter thực sự submit và mở link. Không claim WCAG audit đầy đủ. Viewport reset, tab test đóng; không lưu ảnh vào repo. Test tích hợp riêng chứng minh mixed paging, quyền bị thu hồi, source links và IDOR với hai công ty. Candidate browser có cùng view/controller/command với bản cuối; thay đổi cuối chỉ thêm kiểm invalid encoding cho khóa Hash input và schema verifier, không thay UI.
+
+## Kiểm thử và quality
+
+- Focused candidate: `bundle exec rails test modules/procurement/test/integration/stock_returns_test.rb modules/procurement/test/application/concurrent_stock_returns_test.rb`: **21/164**,0fail/error/skip. Bao phủ BigDecimal/3dp, nhiều dòng cùng SKU, source ngoại, inactive catalog, SQL composite FK/immutable/over-return, current permission/replay, hai kết nối tranh chấp quantity/same key/different source, RR snapshot cũ, audit/outbox lỗi sau ghi dòng rollback. Thêm một assertion invalid UTF-8 Hash key sau lượt này.
+- Full candidate Docker/MySQL: **459/3309**,0fail/error/skip,130,497238s. Sau đó bổ sung nhánh UTF-8 key nói trên; kết quả bản cuối ghi ở biên nhận tiếp theo, không dùng lượt cũ thay cho source mới.
+- `bin/quality` candidate đạt: RuboCop **679files/0offenses**, routes14; architecture59controllers/13Engines/40bindings; Sorbet21strict+3negativeprobes, RBI/preflight/DSL/shim/zeitwerk; Gitleaks fully redacted và negative probe; Brakeman0warnings/errors; bundler-audit1359 advisory/no vulnerabilities (database cập nhật13/11/2026). RBI sinh bằng `bundle exec tapioca dsl --environment=test --workers=1`.
+- `docker run ... rhysd/actionlint:1.7.7 -color /work/ci.yml`: đạt.
+- Local smoke dùng `/usr/bin/ruby /private/tmp/returns-smoke.rb hrm-ci:supplier-returns`: giữ nguyên assertions bin/smoke-image, chỉ thay tên service/đường dẫn env+publicCA cho stack riêng. UID1000, structure có/schema.rb/.env/key vắng; /up200, /session/new200, /pay_runs302; không source mount. Candidate image ID **sha256:25fef6c62851496c66c08a1a3b980aa15f442b963419192d0d03e0434173e092**, không registry digest. Mac system Ruby chỉ điều phối, app vẫn3.4.12.
+
+Logs local `/private/tmp/returns-{baseline-test,focused,full,quality,fresh-compare,upgrade-after,smoke}.log`; scripts fixture chỉ test, không commit. Source final/commit/CI chưa dùng số liệu dự đoán; biên nhận bản cuối bổ sung sau kiểm chứng. Không định giá tồn, AP/invoice, đảo chứng từ hoặc phát hành GHCR.
+
+---
+
 # Sổ biến động — biên nhận GitHub Actions đúng SHA
 
 Source **`b8f434b17db00c83eb4150105af06375c53dae80`**, nhánh **`codex/inventory-stock-ledger`**, repo `Thanhlong282828/ruby-projec-one`. [Actions run43444086156](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43444086156) **completed/success**, attempt1. Đã đối chiếu headSha và log từng job/step, không required step nào skip.

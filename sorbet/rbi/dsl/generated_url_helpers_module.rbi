@@ -226,6 +226,9 @@ module GeneratedUrlHelpersModule
   def inventory_receipts_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def inventory_returns_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def inventory_warehouse_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -299,6 +302,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_stock_receipt_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_stock_return_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_work_shift_url(*args); end
@@ -431,6 +437,12 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def stock_receipts_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_return_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_returns_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def submit_purchase_request_url(*args); end

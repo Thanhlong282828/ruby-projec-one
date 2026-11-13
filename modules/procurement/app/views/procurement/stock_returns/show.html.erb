@@ -1,0 +1,11 @@
+<div class="page-heading"><div><div class="eyebrow">KHO / PHIẾU TRẢ ĐÃ GHI SỔ</div><h1><%= @record.code %></h1><p><%= current_user.company.name %> · nội dung giữ nguyên</p></div><%= link_to "Lịch sử trả hàng", stock_returns_path %></div>
+<section class="panel"><h2>Chứng từ nguồn</h2>
+<p><% if @detail[:source_visible] %><%= link_to @record.stock_receipt.code, stock_receipt_path(@record.stock_receipt) %><% else %>Phiếu nhập nguồn (không có quyền mở)<% end %></p>
+<p>Kho: <%= @record.warehouse_code_snapshot %> · <%= @record.warehouse_name_snapshot %></p>
+<p>Nhà cung cấp: <%= @record.supplier_code_snapshot %> · <%= @record.supplier_name_snapshot %></p>
+<p>Người ghi: Tài khoản #<%= @record.posted_by_id %> · <%= @record.posted_at.in_time_zone.strftime("%d/%m/%Y %H:%M:%S") %></p>
+<p>Lý do: <%= @record.reason %></p>
+<div class="stock-ledger-scroll" tabindex="0" role="region" aria-label="Dòng phiếu trả đã ghi"><table><thead><tr><th>Mã / tên lúc ghi</th><th>Dòng nhập nguồn</th><th>Số lượng trả</th><th>Ảnh hưởng tồn</th></tr></thead><tbody>
+<% @record.lines.each do |line| %><tr><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %></td><td>#<%= line.stock_movement_id %></td><td><%= line.quantity.to_s("F") %> <%= line.unit %></td><td>−<%= line.quantity.to_s("F") %></td></tr><% end %>
+</tbody></table></div>
+<% if policy(StockMovement).index? %><p><%= link_to "Tồn kho đích", stock_balances_path(warehouse_id: @record.warehouse_id) %></p><% @record.lines.map(&:stock_item_id).uniq.each do |item_id| %><p><%= link_to "Sổ biến động mã hàng ##{item_id}", stock_ledger_path(warehouse_id: @record.warehouse_id, stock_item_id: item_id) %></p><% end %><% end %></section>

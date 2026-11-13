@@ -10,12 +10,12 @@ module HrmProcurement
         end
         def self.page_number(value)
           return 1 if value.nil? || value == ""
-          valid = (value.is_a?(Integer) && value.between?(1, 10_000)) || (value.is_a?(String) && /\A[1-9]\d{0,4}\z/.match?(value) && value.to_i <= 10_000)
+          valid = (value.is_a?(Integer) && value.between?(1, 10_000)) || (value.is_a?(String) && value.valid_encoding? && /\A[1-9]\d{0,4}\z/.match?(value) && value.to_i <= 10_000)
           raise ActiveRecord::RecordNotFound unless valid
           value.to_i
         end
         def self.id(value)
-          valid = (value.is_a?(Integer) && value.positive?) || (value.is_a?(String) && /\A[1-9]\d{0,17}\z/.match?(value))
+          valid = (value.is_a?(Integer) && value.positive?) || (value.is_a?(String) && value.valid_encoding? && /\A[1-9]\d{0,17}\z/.match?(value))
           raise ActiveRecord::RecordNotFound unless valid
           value
         end

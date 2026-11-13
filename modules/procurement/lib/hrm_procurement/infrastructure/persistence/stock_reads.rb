@@ -22,8 +22,9 @@ module HrmProcurement
         def find_stock_receipt!(actor:, id:)
           record = Pundit.policy_scope!(actor, ::StockReceipt).includes(:movements, goods_receipt: { purchase_order: :purchase_request }).find(Domain::Services::RequestFilters.id(id))
           Pundit.authorize(actor, record, :show?)
+          progress = stock_return_progress(record)
           receipt = record.goods_receipt
-          { record: record, receipt_visible: Pundit.policy!(actor, receipt).show?, order_visible: Pundit.policy!(actor, receipt.purchase_order).show?,
+          { record: record, return_lines: progress, can_return: Pundit.policy!(actor, ::StockReturn).create? && progress.any? { |row| row[:remaining].positive? }, receipt_visible: Pundit.policy!(actor, receipt).show?, order_visible: Pundit.policy!(actor, receipt.purchase_order).show?,
             source_visible: Pundit.policy!(actor, receipt.purchase_order.purchase_request).show? }
         end
         def stock_source(actor:, id:, item_search: nil, warehouse_search: nil)
@@ -38,7 +39,7 @@ module HrmProcurement
         end
         def stock_balances(actor:, filters:)
           Pundit.authorize(actor, ::StockMovement, :index?)
-          scope = Pundit.policy_scope!(actor, ::StockMovement)
+          scope = signed_stock_scope(actor)
           scope = scope.where(warehouse_id: filters[:warehouse_id]) if filters[:warehouse_id]
           grouped = scope.group(:warehouse_id, :stock_item_id).select("stock_movements.warehouse_id, stock_movements.stock_item_id, SUM(stock_movements.quantity) AS balance_quantity")
           count = ::StockMovement.unscoped.from(grouped, :stock_movements).count
@@ -52,10 +53,10 @@ module HrmProcurement
           Pundit.authorize(actor, ::StockMovement, :index?)
           warehouse = ::Warehouse.where(company_id: actor.company_id).find(filters.fetch(:warehouse_id))
           item = ::StockItem.where(company_id: actor.company_id).find(filters.fetch(:stock_item_id))
-          scope = Pundit.policy_scope!(actor, ::StockMovement).where(warehouse_id: warehouse.id, stock_item_id: item.id)
-          records = scope.includes(:stock_receipt).order(id: :desc).limit(25).offset((filters.fetch(:page) - 1) * 25).to_a
+          scope = signed_stock_scope(actor).where(warehouse_id: warehouse.id, stock_item_id: item.id)
+          records = scope.order(posted_at: :desc, document_kind: :asc, id: :desc).limit(25).offset((filters.fetch(:page) - 1) * 25).to_a
           { records: records, count: scope.count, quantity: scope.sum(:quantity), warehouse: warehouse, item: item,
-            filters: filters, receipts_visible: Pundit.policy!(actor, ::StockReceipt).index? }
+            filters: filters, receipts_visible: Pundit.policy!(actor, ::StockReceipt).index?, returns_visible: Pundit.policy!(actor, ::StockReturn).index? }
         end
         private
         def stock_read_model(kind)

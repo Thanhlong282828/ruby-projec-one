@@ -5,6 +5,7 @@ module HrmProcurement
         include OrderReads
         include ReceiptReads
         include StockReads
+        include ReturnReads
         def workspace(actor:, filters:, recent: false)
           scope = Pundit.policy_scope!(actor, ::PurchaseRequest)
           if filters[:view] == "awaiting_po"

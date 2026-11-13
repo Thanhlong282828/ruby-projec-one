@@ -99,7 +99,7 @@ So sánh Laravel → Rails theo từng bước:
 | Eloquent model/observer | PurchaseRequest/Line/Event + ObservableRecord | quan hệ/validation, audit+outbox, lịch sử phiên bản |
 | Blade và route() | ERB + purchase_requests_path/purchase_request_path | giao diện tiếng Việt, KPI chỉ điều hướng tới Query nguồn |
 
-Lát cắt tiếp: tồn kho, trả hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; phát hành PO chưa tự tạo các nghiệp vụ đó.
+Nhập kho và trả nhà cung cấp đã được bổ sung bên dưới. Đối chiếu hóa đơn, công nợ và thanh toán vẫn cần contract/quyền/transaction riêng; phát hành PO chưa tự tạo các nghiệp vụ đó.
 
 ## Đơn mua hàng (PO) từ phiếu đã duyệt
 
@@ -147,7 +147,7 @@ Ghi header nội bộ `recording`, autosave lines, chốt `recorded`, audit/outb
 
 Quyền MySQL mới `procurement.receipts.read/create`; provision admin/manager, không runtime role bypass. Đọc tiến độ giao thuộc orders.read, đọc chứng từ nhận thuộc receipts.read. Realtime goods_receipt.* yêu cầu receipts.read và realtime.read hiện hành. Audit/outbox chỉ metadata; delivery reference encrypt at rest. Các FK cascade từ parent giữ cơ chế cleanup đặc quyền hiện có: SQL đặc quyền xóa PO có thể cascade lịch sử; ứng dụng không có delete PO/receipt và model chặn. Không xem trigger là cơ chế chống root DB phá dữ liệu.
 
-Nhận hàng chỉ là tiến độ giao PO; nhập kho từ phiếu nhận đã bổ sung ở lát cắt bên dưới. Backlog tiếp: vị trí kho/lô/serial, chuyển kho, kiểm kê, trả hàng/đảo bút toán, hóa đơn/đối soát ba bên, công nợ và thanh toán.
+Nhận hàng chỉ là tiến độ giao PO; nhập kho từ phiếu nhận đã bổ sung ở lát cắt bên dưới. Backlog tiếp: vị trí kho/lô/serial, chuyển kho, kiểm kê, đảo bút toán, hóa đơn/đối soát ba bên, công nợ và thanh toán.
 
 
 ## Nhập kho từ phiếu nhận đã ghi nhận
@@ -161,7 +161,7 @@ Source chưa có inventory catalog/ledger trước e47812f. Lát cắt mới thu
 | Form ánh xạ | GET `/inventory/receipts/new?goods_receipt_id=ID`; StockSource | quyền tạo/đọc nguồn; chọn một kho, từng GR line → StockItem đúng đơn vị. Kho/SKU active cùng company. Tìm mã/tên, options tối đa500 mỗi loại; không tin lựa chọn cũ lúc ghi |
 | Ghi sổ | POST `/inventory/receipts`; PostStockReceipt | khóa IAM/company/grants → receipt → entry hiện có → warehouse → SKU theo ID → source PO lines. Policy authoritative sau khóa receipt khi grant locks còn giữ. Unique company/receipt, digest kho+mapping canonical. Toàn phiếu, số lượng lấy server từ GR line |
 | Phiếu nhập / chuỗi nguồn | GET `/inventory/receipts/:id`; FindStockReceipt | inventory.receipts.read, posted/same-company; actor/time, warehouse/item snapshots, received line/PO line IDs; link PR→PO→GR→IN chỉ mở khi được đọc nguồn tương ứng |
-| Tồn theo kho | GET `/inventory/balances?warehouse_id=ID`; StockBalances | inventory.balances.read; SUM StockMovement.quantity JOIN StockReceipt posted, GROUP warehouse/SKU ID; không có cột tồn cập nhật tay. Lọc warehouse vẫn company-scoped; phân trang25 cặp, count subquery theo group |
+| Tồn theo kho | GET `/inventory/balances?warehouse_id=ID`; StockBalances | inventory.balances.read; SUM nguồn UNION ALL nhập posted (+) và trả posted (−), GROUP warehouse/SKU ID; không có cột tồn cập nhật tay. Lọc warehouse vẫn company-scoped; phân trang25 cặp, count subquery theo group |
 | Danh mục kho / mã hàng | GET/POST `/inventory/warehouses`, `/inventory/items`, GET edit/PATCH/PUT individual | inventory.catalog.read/manage; search/status/page25; optimistic version, code duy nhất trong company, trạng thái active/inactive |
 
 Warehouse/StockItem có code ổn định; unit StockItem bất biến từ lúc tạo, không tự đổi/quy đổi theo mô tả PO. ID mã hàng là khóa cộng tồn, description chỉ tham chiếu. Tên/status được sửa; ngừng hoạt động vẫn có trong lịch sử/tồn nhưng không chọn để ghi mới. Header lưu snapshot mã/tên kho, movement lưu snapshot mã/tên/unit SKU và exact source quantity. Composite FK giữ company, kho, receipt/line và PO line đúng nguồn. Phiếu nhận và PO không cập nhật/touch khi nhập.
@@ -172,12 +172,35 @@ Replay cùng receipt, kho và tập mapping (chuẩn hóa ID/sắp xếp dòng) 
 
 Catalog read/manage, receipts.read/post, balances.read là grants MySQL riêng, provision admin/manager, không suy từ role enum runtime. Người được ghi nhưng thiếu catalog.read chỉ nhận projection tối thiểu active kho/SKU cho form, không vào trang quản lý catalog. Người chỉ xem tồn không tự được mở chứng từ nguồn. Realtime warehouse./stock_item. yêu cầu catalog.read; stock_receipt. yêu cầu receipts.read, kèm realtime.read hiện hành. Payload form/catalog được filter khỏi log; outbox/audit chỉ metadata.
 
-Trả hàng, xuất/chuyển/kiểm kê, giá vốn/định giá tồn, lô/serial/vị trí, chuyển đổi đơn vị, đảo bút toán, invoice/AP/đối soát ba bên còn backlog. Tồn đợt này chỉ là số lượng nhập từ GR đã ghi sổ, chưa phải đầy đủ WMS hoặc kế toán kho.
+Xuất/chuyển/kiểm kê, giá vốn/định giá tồn, lô/serial/vị trí, chuyển đổi đơn vị, đảo bút toán, invoice/AP/đối soát ba bên còn backlog. Tồn gồm nhập từ GR trừ trả nhà cung cấp đã ghi sổ, chưa phải đầy đủ WMS hoặc kế toán kho.
 
 ## Truy vết tồn kho theo cặp kho / mã hàng
 
 - Từ số lượng ở `/inventory/balances`, mở `/inventory/ledger?warehouse_id=ID&stock_item_id=ID`. Route helper `stock_ledger_path`; Query `HrmProcurement::Application::Queries::StockLedger` gọi ReadRepositoryInterface → StockReads. Không truy vấn trong controller/view.
-- Quyền `inventory.balances.read`; company lấy từ actor. Cả warehouse và stock_item phải tồn tại trong công ty hiện hành, ID malformed/cross-company trả 404. Chỉ lấy movements của phiếu `posted`, đúng cặp kho/mã hàng; tổng tất cả trang, 25 dòng/trang mới nhất trước.
-- Dòng hiển thị thời điểm ghi sổ, mã phiếu nhập, snapshot mã/tên/đơn vị và tham chiếu dòng nhận/PO. Link phiếu nhập chỉ hiện khi còn `inventory.receipts.read`; quyền đọc tồn không tự cấp quyền mở chứng từ. Thu quyền đọc tồn chặn cả URL trực tiếp và Query.
-- Phân trang giữ warehouse_id + stock_item_id. Cặp hợp lệ chưa nhập hiển thị tổng 0/danh sách rỗng; không biến ID khác công ty thành màn hình rỗng. Không có mutation, export hay lũy kế giả. Sổ hiện chỉ gồm nhập từ GR, chưa phải WMS đầy đủ.
+- Quyền `inventory.balances.read`; company lấy từ actor. Cả warehouse và stock_item phải tồn tại trong công ty hiện hành, ID malformed/cross-company trả 404. Dùng chung ReturnReads#signed_stock_scope với Tồn theo kho: UNION ALL nhập posted và trả posted, đúng cặp kho/mã hàng; tổng tất cả trang, 25 dòng/trang. Thứ tự posted_at giảm dần, loại chứng từ rồi ID giảm dần để ổn định khi trùng thời điểm.
+- Dòng hiển thị thời điểm ghi sổ, mã phiếu nhập/trả, lượng có dấu, snapshot mã/tên/đơn vị và tham chiếu dòng nhận/PO. Link phiếu nhập cần `inventory.receipts.read`, link trả cần `inventory.returns.read`; thiếu grant vẫn thấy số biến động nhưng không có link. Quyền đọc tồn không tự cấp quyền mở chứng từ. Thu quyền đọc tồn chặn cả URL trực tiếp và Query.
+- Phân trang giữ warehouse_id + stock_item_id. Cặp hợp lệ chưa nhập hiển thị tổng 0/danh sách rỗng; không biến ID khác công ty thành màn hình rỗng. Không có mutation, export hay lũy kế giả. Sổ gồm nhập từ GR (+) và trả nhà cung cấp (−), chưa phải WMS đầy đủ.
 - Bảng ledger có region tên “Các dòng biến động kho”, `tabindex=0` và focus-visible; Tab vào rồi dùng trái/phải để cuộn cột trong màn hình hẹp. Khung bảng cuộn riêng, không kéo cả phần tổng/link về kho.
+
+
+## Trả hàng nhà cung cấp từ phiếu nhập đã ghi sổ
+
+Engine procurement giữ Module + MVC + CQRS. Menu **Kho → Trả nhà cung cấp** chỉ hiện với grant MySQL `inventory.returns.read`. Không mở rộng Sorbet strict khỏi 21 file hiện có.
+
+| Màn hình / thao tác | Route → Controller → Query/Command → Repository | Quyền và phạm vi |
+|---|---|---|
+| Lịch sử trả | GET `/inventory/returns?q=...&page=...` → StockReturnsController#index → StockReturns → stock_return_workspace | returns.read; posted, company từ actor; tìm mã phiếu/mã NCC, 25 phiếu/trang |
+| Form theo phiếu nhập | GET `/inventory/returns/new?stock_receipt_id=ID` → StockReturnSource → stock_return_source | returns.read + returns.post + receipts.read; nguồn posted cùng công ty; hiện Đã nhập/Đã trả/Còn được trả/Trả lần này |
+| Ghi sổ | POST `/inventory/returns` → PostStockReturn → post_stock_return! | kiểm quyền hiện hành sau khóa IAM/company/grants; server lấy toàn bộ kho/SKU/đơn vị/NCC từ nguồn |
+| Chi tiết | GET `/inventory/returns/:id` → FindStockReturn → find_stock_return! | returns.read; company/posted scope; nguồn chỉ có link khi còn receipts.read |
+| Tồn / sổ | StockBalances và StockLedger → StockReads + ReturnReads#signed_stock_scope | balances.read, cùng UNION đã scope; cộng nhập posted và trừ trả posted; không đòi returns.read để tính đúng tồn |
+
+Mỗi StockReturn liên kết một StockReceipt posted; StockReturnLine liên kết đúng StockMovement gốc. Dòng gốc vẫn là số dương và vẫn đối chiếu exact quantity với GR; bảng trả riêng giữ lượng dương DECIMAL(9,3). Chỉ projection đọc trả hiển thị âm. Nhiều lần trả hoặc nhiều dòng cùng SKU vẫn giới hạn **theo từng movement gốc**, không lấy tồn toàn SKU để cấp quyền trả. BigDecimal, tối đa 3 chữ số lẻ; blank không chọn dòng, 0/âm/Float/sai định dạng bị từ chối. Lý do bắt buộc, mã hóa at rest; form/key/reason không ghi log.
+
+Ghi mới: khóa IAM → phiếu nhập → idempotency hiện có → movements theo ID → các dòng trả hiện hành; dùng locking read dưới MySQL REPEATABLE READ, không dùng SUM consistent-read từ snapshot cũ. Header posting, lines, seal posted, audit và outbox cùng transaction/savepoint. Unique case-sensitive `(company_id,idempotency_key)` là hàng rào cuối. Retry unique lỗi tối đa một lần ngoài savepoint, đi lại toàn đường kiểm quyền. Cùng key/source/reason/tập dòng đã normalize trả phiếu cũ nếu còn returns.read, không cần giữ quyền ghi; khác payload/source trả409. Đổi quyền xem thì replay bị từ chối. Không tự cập nhật/touch PO/GR/IN gốc.
+
+Composite FK ràng buộc company/phiếu/kho/dòng/SKU đúng nguồn. Sáu trigger mới bảo vệ insert, seal và bất biến; kiểm tổng ở seal header, không SUM/khóa đọc chính bảng đang INSERT trong trigger dòng. FK mới dùng RESTRICT, nên cả xóa nguồn cha có cascade cũ cũng bị chặn khi đã có phiếu trả. Model chặn sửa/xóa, không có route edit/delete. Tài khoản DB đặc quyền vẫn có thể DROP/TRUNCATE hoặc đổi trigger, không tuyên bố chống root DB.
+
+Catalog đã inactive vẫn dùng snapshot nguồn để trả hàng lịch sử; không chọn kho/SKU/NCC mới. Dòng posting do operator SQL bỏ dở giữ chỗ số đã trả và fail closed; tồn chỉ tính posted. App không có luồng commit riêng posting. Cần operator xử lý pending đặc quyền, không tự xóa lịch sử. Realtime stock_return.* cần returns.read cùng generic realtime.read, không phát lý do/raw payload.
+
+Phiếu nhập hiện nút Trả hàng chỉ khi đủ quyền và còn lượng. Phiếu trả có nguồn IN và link tồn/sổ theo grant. Bảng form/chi tiết/sổ cuộn ngang riêng, region có tên và tabindex; submit bằng Tab/Enter. Giữ warehouse_id/SKU khi phân trang và quay về tồn; tổng tính toàn bộ kết quả. Không có định giá, invoice/AP, xuất/chuyển, hoàn tác/đảo chứng từ hoặc GHCR release trong lát cắt này.

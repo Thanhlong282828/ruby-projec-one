@@ -15,6 +15,13 @@ module ProcurementHelper
     rows.find { |row| row["goods_receipt_line_id"].to_s == line_id.to_s }&.fetch("stock_item_id", nil)
   end
 
+  def return_input_quantity(input, id)
+    rows = input[:items]
+    rows = rows.values if rows.is_a?(Hash)
+    return nil unless rows.is_a?(Array)
+    rows.find { |row| row.is_a?(Hash) && row["stock_movement_id"].to_s == id.to_s }&.fetch("quantity", nil)
+  end
+
   def receipt_input_quantity(input, id)
     rows = input[:items]
     rows = rows.values if rows.is_a?(Hash)

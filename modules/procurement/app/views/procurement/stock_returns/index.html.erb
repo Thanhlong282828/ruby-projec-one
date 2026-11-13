@@ -1,0 +1,7 @@
+<div class="page-heading"><div><div class="eyebrow">KHO / NHÀ CUNG CẤP</div><h1>Trả hàng nhà cung cấp</h1><p><%= current_user.company.name %> · <%= @workspace[:count] %> phiếu đã ghi sổ</p></div></div>
+<p>Để lập phiếu trả, mở phiếu nhập nguồn trong Lịch sử nhập. Mỗi dòng chỉ trả tối đa số đã nhập từ chính dòng đó.</p>
+<%= form_with url: stock_returns_path, method: :get, class: "source-filters" do %><%= label_tag :q, "Tìm mã phiếu / mã nhà cung cấp" %><%= search_field_tag :q, @workspace[:filters][:q], maxlength: 120 %><%= submit_tag "Tìm kiếm" %><% end %>
+<section class="panel"><table><thead><tr><th>Phiếu trả</th><th>Kho lúc ghi</th><th>Nhà cung cấp lúc ghi</th><th>Ngày ghi</th></tr></thead><tbody>
+<% @workspace[:records].each do |record| %><tr><td><%= link_to record.code, stock_return_path(record) %></td><td><%= record.warehouse_code_snapshot %></td><td><%= record.supplier_code_snapshot %> · <%= record.supplier_name_snapshot %></td><td><%= record.posted_at.in_time_zone.strftime("%d/%m/%Y %H:%M") %></td></tr><% end %>
+</tbody></table><% if @workspace[:records].empty? %><p class="empty">Chưa có phiếu trả trong phạm vi và bộ lọc này.</p><% end %></section>
+<%= render "procurement/orders/pagination", workspace: @workspace, destination: :stock_returns_path %>

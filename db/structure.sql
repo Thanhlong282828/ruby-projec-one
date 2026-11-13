@@ -1214,6 +1214,7 @@ CREATE TABLE `stock_movements` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `stock_movement_unique_source` (`stock_receipt_id`,`goods_receipt_line_id`),
+  UNIQUE KEY `stock_movement_return_identity` (`company_id`,`stock_receipt_id`,`warehouse_id`,`stock_item_id`,`id`),
   KEY `stock_balance_ledger` (`company_id`,`warehouse_id`,`stock_item_id`,`id`),
   KEY `stock_movement_parent_company` (`company_id`,`goods_receipt_id`,`warehouse_id`,`stock_receipt_id`),
   KEY `stock_movement_source_company` (`company_id`,`goods_receipt_id`,`goods_receipt_line_id`,`purchase_order_line_id`),
@@ -1290,6 +1291,7 @@ CREATE TABLE `stock_receipts` (
   UNIQUE KEY `one_stock_entry_per_receipt` (`company_id`,`goods_receipt_id`),
   UNIQUE KEY `stock_entry_source_destination` (`company_id`,`goods_receipt_id`,`warehouse_id`,`id`),
   UNIQUE KEY `stock_entry_company_code` (`company_id`,`code`),
+  UNIQUE KEY `stock_receipt_return_identity` (`company_id`,`warehouse_id`,`id`),
   KEY `stock_entry_warehouse_company` (`company_id`,`warehouse_id`),
   KEY `stock_entry_actor_company` (`company_id`,`posted_by_id`),
   CONSTRAINT `stock_entry_actor_company` FOREIGN KEY (`company_id`, `posted_by_id`) REFERENCES `users` (`company_id`, `id`),
@@ -1338,6 +1340,159 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 /*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_receipt_delete_guard` BEFORE DELETE ON `stock_receipts` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stock ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `stock_return_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stock_return_lines` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `stock_return_id` bigint NOT NULL,
+  `stock_receipt_id` bigint NOT NULL,
+  `stock_movement_id` bigint NOT NULL,
+  `warehouse_id` bigint NOT NULL,
+  `stock_item_id` bigint NOT NULL,
+  `item_code_snapshot` varchar(40) NOT NULL,
+  `item_name_snapshot` varchar(200) NOT NULL,
+  `unit` varchar(30) NOT NULL,
+  `quantity` decimal(9,3) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `stock_return_line_unique_source` (`stock_return_id`,`stock_movement_id`),
+  KEY `stock_return_source_totals` (`company_id`,`stock_movement_id`,`id`),
+  KEY `stock_return_balance_ledger` (`company_id`,`warehouse_id`,`stock_item_id`,`id`),
+  KEY `stock_return_line_parent_company` (`company_id`,`stock_receipt_id`,`warehouse_id`,`stock_return_id`),
+  KEY `stock_return_line_source_company` (`company_id`,`stock_receipt_id`,`warehouse_id`,`stock_item_id`,`stock_movement_id`),
+  CONSTRAINT `stock_return_line_parent_company` FOREIGN KEY (`company_id`, `stock_receipt_id`, `warehouse_id`, `stock_return_id`) REFERENCES `stock_returns` (`company_id`, `stock_receipt_id`, `warehouse_id`, `id`),
+  CONSTRAINT `stock_return_line_source_company` FOREIGN KEY (`company_id`, `stock_receipt_id`, `warehouse_id`, `stock_item_id`, `stock_movement_id`) REFERENCES `stock_movements` (`company_id`, `stock_receipt_id`, `warehouse_id`, `stock_item_id`, `id`),
+  CONSTRAINT `stock_return_line_positive` CHECK ((`quantity` > 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_line_insert_guard` BEFORE INSERT ON `stock_return_lines` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); DECLARE source_qty DECIMAL(9,3); DECLARE source_code VARCHAR(40); DECLARE source_name VARCHAR(200); DECLARE source_unit VARCHAR(30); SELECT status INTO parent_state FROM stock_returns WHERE company_id=NEW.company_id AND id=NEW.stock_return_id FOR UPDATE; SELECT quantity,item_code_snapshot,item_name_snapshot,unit INTO source_qty,source_code,source_name,source_unit FROM stock_movements WHERE company_id=NEW.company_id AND stock_receipt_id=NEW.stock_receipt_id AND id=NEW.stock_movement_id AND warehouse_id=NEW.warehouse_id AND stock_item_id=NEW.stock_item_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'posting' OR source_qty IS NULL OR NEW.quantity>source_qty OR BINARY NEW.item_code_snapshot<>BINARY source_code OR BINARY NEW.item_name_snapshot<>BINARY source_name OR BINARY NEW.unit<>BINARY source_unit THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Return line must match original movement'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_line_update_guard` BEFORE UPDATE ON `stock_return_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Supplier return ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_line_delete_guard` BEFORE DELETE ON `stock_return_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Supplier return ledger is immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `stock_returns`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stock_returns` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `stock_receipt_id` bigint NOT NULL,
+  `warehouse_id` bigint NOT NULL,
+  `supplier_id` bigint NOT NULL,
+  `posted_by_id` bigint NOT NULL,
+  `code` varchar(32) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'posting',
+  `idempotency_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `content_digest` varchar(64) NOT NULL,
+  `warehouse_code_snapshot` varchar(40) NOT NULL,
+  `warehouse_name_snapshot` varchar(200) NOT NULL,
+  `supplier_code_snapshot` varchar(40) NOT NULL,
+  `supplier_name_snapshot` varchar(200) NOT NULL,
+  `reason` text NOT NULL,
+  `posted_at` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `stock_return_idempotency` (`company_id`,`idempotency_key`),
+  UNIQUE KEY `stock_return_code` (`company_id`,`code`),
+  UNIQUE KEY `stock_return_source_identity` (`company_id`,`stock_receipt_id`,`warehouse_id`,`id`),
+  KEY `stock_return_receipt_company` (`company_id`,`warehouse_id`,`stock_receipt_id`),
+  KEY `stock_return_supplier_company` (`company_id`,`supplier_id`),
+  KEY `stock_return_actor_company` (`company_id`,`posted_by_id`),
+  CONSTRAINT `stock_return_actor_company` FOREIGN KEY (`company_id`, `posted_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `stock_return_receipt_company` FOREIGN KEY (`company_id`, `warehouse_id`, `stock_receipt_id`) REFERENCES `stock_receipts` (`company_id`, `warehouse_id`, `id`),
+  CONSTRAINT `stock_return_supplier_company` FOREIGN KEY (`company_id`, `supplier_id`) REFERENCES `procurement_suppliers` (`company_id`, `id`),
+  CONSTRAINT `stock_return_state` CHECK ((((`status` = _utf8mb4'posting') and (`posted_at` is null)) or ((`status` = _utf8mb4'posted') and (`posted_at` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_insert_guard` BEFORE INSERT ON `stock_returns` FOR EACH ROW BEGIN DECLARE source_state VARCHAR(20); DECLARE source_supplier BIGINT; DECLARE source_warehouse BIGINT; DECLARE warehouse_code VARCHAR(40); DECLARE warehouse_name VARCHAR(200); DECLARE supplier_code VARCHAR(40); DECLARE supplier_name VARCHAR(200); SELECT s.status,s.warehouse_id,s.warehouse_code_snapshot,s.warehouse_name_snapshot,p.supplier_id,p.supplier_code_snapshot,p.supplier_name_snapshot INTO source_state,source_warehouse,warehouse_code,warehouse_name,source_supplier,supplier_code,supplier_name FROM stock_receipts s INNER JOIN goods_receipts g ON g.company_id=s.company_id AND g.id=s.goods_receipt_id INNER JOIN purchase_orders p ON p.company_id=g.company_id AND p.id=g.purchase_order_id WHERE s.company_id=NEW.company_id AND s.id=NEW.stock_receipt_id FOR UPDATE; IF source_state IS NULL OR source_state<>'posted' OR NEW.status<>'posting' OR NEW.posted_at IS NOT NULL OR NEW.warehouse_id<>source_warehouse OR NEW.supplier_id<>source_supplier OR BINARY NEW.warehouse_code_snapshot<>BINARY warehouse_code OR BINARY NEW.warehouse_name_snapshot<>BINARY warehouse_name OR BINARY NEW.supplier_code_snapshot<>BINARY supplier_code OR BINARY NEW.supplier_name_snapshot<>BINARY supplier_name THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Return requires immutable posted source and its warehouse/supplier'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_update_guard` BEFORE UPDATE ON `stock_returns` FOR EACH ROW BEGIN DECLARE finished INT DEFAULT 0; DECLARE movement_id BIGINT; DECLARE source_qty DECIMAL(9,3); DECLARE used_qty DECIMAL(18,3); DECLARE source_state VARCHAR(20); DECLARE line_count INT; DECLARE source_cursor CURSOR FOR SELECT stock_movement_id FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id ORDER BY stock_movement_id; DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished=1; SELECT status INTO source_state FROM stock_receipts WHERE company_id=OLD.company_id AND id=OLD.stock_receipt_id FOR UPDATE; SELECT COUNT(*) INTO line_count FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_return_id=OLD.id FOR UPDATE; IF OLD.status<>'posting' OR NEW.status<>'posted' OR NEW.posted_at IS NULL OR source_state<>'posted' OR line_count<1 OR NEW.company_id<>OLD.company_id OR NEW.stock_receipt_id<>OLD.stock_receipt_id OR NEW.warehouse_id<>OLD.warehouse_id OR NEW.supplier_id<>OLD.supplier_id OR NEW.posted_by_id<>OLD.posted_by_id OR BINARY NEW.code<>BINARY OLD.code OR BINARY NEW.idempotency_key<>BINARY OLD.idempotency_key OR BINARY NEW.content_digest<>BINARY OLD.content_digest OR BINARY NEW.reason<>BINARY OLD.reason OR BINARY NEW.warehouse_code_snapshot<>BINARY OLD.warehouse_code_snapshot OR BINARY NEW.warehouse_name_snapshot<>BINARY OLD.warehouse_name_snapshot OR BINARY NEW.supplier_code_snapshot<>BINARY OLD.supplier_code_snapshot OR BINARY NEW.supplier_name_snapshot<>BINARY OLD.supplier_name_snapshot OR NEW.created_at<>OLD.created_at THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Posted return is immutable and requires lines'; END IF; OPEN source_cursor; source_loop: LOOP FETCH source_cursor INTO movement_id; IF finished=1 THEN LEAVE source_loop; END IF; SELECT quantity INTO source_qty FROM stock_movements WHERE company_id=OLD.company_id AND id=movement_id AND stock_receipt_id=OLD.stock_receipt_id FOR UPDATE; SELECT COALESCE(SUM(quantity),0) INTO used_qty FROM stock_return_lines WHERE company_id=OLD.company_id AND stock_movement_id=movement_id FOR UPDATE; IF source_qty IS NULL OR used_qty>source_qty THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Returned quantity exceeds original movement'; END IF; END LOOP; CLOSE source_cursor; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `stock_return_delete_guard` BEFORE DELETE ON `stock_returns` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Supplier return ledger is immutable'; END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -1540,6 +1695,7 @@ CREATE TABLE `work_shifts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 INSERT INTO `schema_migrations` (version) VALUES
+('20261114000001'),
 ('20261113000004'),
 ('20261113000003'),
 ('20261113000002'),
