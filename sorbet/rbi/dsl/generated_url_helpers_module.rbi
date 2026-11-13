@@ -190,6 +190,12 @@ module GeneratedUrlHelpersModule
   def finalize_pay_run_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def goods_receipt_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def goods_receipts_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def integration_audit_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -239,6 +245,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_employee_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_goods_receipt_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_leave_request_url(*args); end
@@ -332,6 +341,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def procurement_orders_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_receipts_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def procurement_requests_url(*args); end

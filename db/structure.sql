@@ -260,6 +260,144 @@ CREATE TABLE `employees` (
   CONSTRAINT `positive_salary` CHECK ((`salary_cents` >= 0))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `goods_receipt_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `goods_receipt_lines` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_order_id` bigint NOT NULL,
+  `goods_receipt_id` bigint NOT NULL,
+  `purchase_order_line_id` bigint NOT NULL,
+  `quantity` decimal(9,3) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `receipt_unique_order_line` (`goods_receipt_id`,`purchase_order_line_id`),
+  KEY `receipt_line_parent_company` (`company_id`,`purchase_order_id`,`goods_receipt_id`),
+  KEY `receipt_line_order_company` (`company_id`,`purchase_order_id`,`purchase_order_line_id`),
+  CONSTRAINT `receipt_line_order_company` FOREIGN KEY (`company_id`, `purchase_order_id`, `purchase_order_line_id`) REFERENCES `purchase_order_lines` (`company_id`, `purchase_order_id`, `id`) ON DELETE CASCADE,
+  CONSTRAINT `receipt_line_parent_company` FOREIGN KEY (`company_id`, `purchase_order_id`, `goods_receipt_id`) REFERENCES `goods_receipts` (`company_id`, `purchase_order_id`, `id`) ON DELETE CASCADE,
+  CONSTRAINT `receipt_line_positive` CHECK ((`quantity` > 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_line_insert_guard` BEFORE INSERT ON `goods_receipt_lines` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); DECLARE receipt_state VARCHAR(20); DECLARE ordered_qty DECIMAL(9,3); SELECT status INTO parent_state FROM purchase_orders WHERE company_id=NEW.company_id AND id=NEW.purchase_order_id FOR UPDATE; SELECT status INTO receipt_state FROM goods_receipts WHERE company_id=NEW.company_id AND purchase_order_id=NEW.purchase_order_id AND id=NEW.goods_receipt_id FOR UPDATE; SELECT quantity INTO ordered_qty FROM purchase_order_lines WHERE company_id=NEW.company_id AND purchase_order_id=NEW.purchase_order_id AND id=NEW.purchase_order_line_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'issued' OR receipt_state IS NULL OR receipt_state<>'recording' OR ordered_qty IS NULL OR NEW.quantity>ordered_qty THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid or excessive received quantity'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_line_update_guard` BEFORE UPDATE ON `goods_receipt_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Receipt lines are immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_line_delete_guard` BEFORE DELETE ON `goods_receipt_lines` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Receipt lines are immutable'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+DROP TABLE IF EXISTS `goods_receipts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `goods_receipts` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `company_id` bigint NOT NULL,
+  `purchase_order_id` bigint NOT NULL,
+  `received_by_id` bigint NOT NULL,
+  `code` varchar(32) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'recording',
+  `received_on` date NOT NULL,
+  `delivery_reference` text,
+  `idempotency_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `content_digest` varchar(64) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `receipt_idempotency` (`company_id`,`idempotency_key`),
+  UNIQUE KEY `receipt_company_code` (`company_id`,`code`),
+  UNIQUE KEY `receipt_order_identity` (`company_id`,`purchase_order_id`,`id`),
+  KEY `receipt_company_queue` (`company_id`,`status`,`id`),
+  KEY `receipt_actor_company` (`company_id`,`received_by_id`),
+  CONSTRAINT `receipt_actor_company` FOREIGN KEY (`company_id`, `received_by_id`) REFERENCES `users` (`company_id`, `id`),
+  CONSTRAINT `receipt_order_company` FOREIGN KEY (`company_id`, `purchase_order_id`) REFERENCES `purchase_orders` (`company_id`, `id`) ON DELETE CASCADE,
+  CONSTRAINT `receipt_state` CHECK ((`status` in (_utf8mb4'recording',_utf8mb4'recorded')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_insert_guard` BEFORE INSERT ON `goods_receipts` FOR EACH ROW BEGIN DECLARE parent_state VARCHAR(20); SELECT status INTO parent_state FROM purchase_orders WHERE company_id=NEW.company_id AND id=NEW.purchase_order_id FOR UPDATE; IF parent_state IS NULL OR parent_state<>'issued' OR NEW.status<>'recording' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Receiving requires issued PO'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_update_guard` BEFORE UPDATE ON `goods_receipts` FOR EACH ROW BEGIN DECLARE item_count INT; DECLARE over_count INT; SELECT COUNT(*) INTO item_count FROM goods_receipt_lines WHERE company_id=OLD.company_id AND goods_receipt_id=OLD.id FOR UPDATE; SELECT COUNT(*) INTO over_count FROM purchase_order_lines pol WHERE pol.company_id=OLD.company_id AND pol.purchase_order_id=OLD.purchase_order_id AND pol.quantity < (SELECT COALESCE(SUM(grl.quantity),0) FROM goods_receipt_lines grl WHERE grl.company_id=pol.company_id AND grl.purchase_order_line_id=pol.id FOR UPDATE) FOR UPDATE; IF over_count>0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Received quantity exceeds ordered'; END IF; IF OLD.status<>'recording' OR NEW.status<>'recorded' OR item_count<1 OR NEW.company_id<>OLD.company_id OR NEW.purchase_order_id<>OLD.purchase_order_id OR NEW.received_by_id<>OLD.received_by_id OR NEW.code<>OLD.code OR NEW.received_on<>OLD.received_on OR NOT(NEW.delivery_reference<=>OLD.delivery_reference) OR NEW.idempotency_key<>OLD.idempotency_key OR NEW.content_digest<>OLD.content_digest OR NEW.created_at<>OLD.created_at THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Recorded receipt is immutable'; END IF; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `goods_receipt_delete_guard` BEFORE DELETE ON `goods_receipts` FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Receipt history cannot be deleted'; END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 DROP TABLE IF EXISTS `integration_connections`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -711,6 +849,7 @@ CREATE TABLE `purchase_order_lines` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `order_unique_source_line` (`purchase_order_id`,`source_line_id`),
+  UNIQUE KEY `order_line_receiving_identity` (`company_id`,`purchase_order_id`,`id`),
   KEY `order_line_parent_company_source` (`company_id`,`purchase_request_id`,`purchase_order_id`),
   KEY `order_line_original_company_source` (`company_id`,`purchase_request_id`,`source_line_id`),
   CONSTRAINT `order_line_original_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`, `source_line_id`) REFERENCES `purchase_request_lines` (`company_id`, `purchase_request_id`, `id`),
@@ -877,6 +1016,7 @@ CREATE TABLE `purchase_request_lines` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `purchase_line_position` (`purchase_request_id`,`position`),
   UNIQUE KEY `request_line_company_source_identity` (`company_id`,`purchase_request_id`,`id`),
+  KEY `purchase_line_company_source` (`company_id`,`purchase_request_id`),
   CONSTRAINT `purchase_line_company_source` FOREIGN KEY (`company_id`, `purchase_request_id`) REFERENCES `purchase_requests` (`company_id`, `id`) ON DELETE CASCADE,
   CONSTRAINT `purchase_line_amount` CHECK (((`quantity` > 0) and (`estimated_unit_price` >= 0) and (`line_total` = round((`quantity` * `estimated_unit_price`),0)) and (`position` between 1 and 50)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -1178,6 +1318,7 @@ CREATE TABLE `work_shifts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 INSERT INTO `schema_migrations` (version) VALUES
+('20261113000003'),
 ('20261113000002'),
 ('20261113000001'),
 ('20261112000009'),

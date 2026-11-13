@@ -99,7 +99,7 @@ So sánh Laravel → Rails theo từng bước:
 | Eloquent model/observer | PurchaseRequest/Line/Event + ObservableRecord | quan hệ/validation, audit+outbox, lịch sử phiên bản |
 | Blade và route() | ERB + purchase_requests_path/purchase_request_path | giao diện tiếng Việt, KPI chỉ điều hướng tới Query nguồn |
 
-Lát cắt tiếp: nhận hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; phát hành PO chưa tự tạo các nghiệp vụ đó.
+Lát cắt tiếp: tồn kho, trả hàng, đối chiếu hóa đơn, công nợ và thanh toán cần contract/quyền/transaction riêng; phát hành PO chưa tự tạo các nghiệp vụ đó.
 
 ## Đơn mua hàng (PO) từ phiếu đã duyệt
 
@@ -119,8 +119,32 @@ Quyền MySQL mới: `procurement.suppliers.{read,create,update}` và `procureme
 
 `PurchaseOrder` lưu snapshot mã/tiêu đề/tổng phiếu và mã/tên supplier tại lúc tạo, currency VND. `PurchaseOrderLine` giữ FK đến từng source line, snapshot mô tả/đơn vị/số lượng/đơn giá nguồn và giá đặt. Composite FK chặn ghép sai company/source/parent; unique `(company_id,purchase_request_id)` chặn trùng, kể cả SQL bypass. Số lượng không cho sửa; giá đặt nguyên đồng, tính BigDecimal × quantity, từng dòng HALF_UP rồi cộng. Chi tiết hiển thị dự toán, tổng đặt và chênh lệch có dấu. Một dòng đổi giá cũng cần lý do trước phát hành, kể cả tổng chênh bằng 0. Reason/history note mã hóa, form payload bị lọc khỏi log; audit/outbox chỉ metadata cùng transaction, rollback nếu journal lỗi.
 
-Supplier có thể đổi mã/tên/status; snapshot PO lịch sử không thay đổi. Supplier ngừng hoạt động không có trong options tạo mới và bị chặn lúc phát hành (cả khi form mở trước lúc ngừng). PO nháp giữ supplier đã chọn; nếu cần phát hành sau khi supplier ngừng, người có quyền phải xử lý lại catalog theo nghiệp vụ, không có tự đổi vendor hoặc bypass. Menu/KPI dùng company từ profile đăng nhập; không nhận company_id client. PO issued vẫn được đọc khi supplier inactive. Không có delete/cancel/receipt/invoice/AP hoặc API PO mới.
+Supplier có thể đổi mã/tên/status; snapshot PO lịch sử không thay đổi. Supplier ngừng hoạt động không có trong options tạo mới và bị chặn lúc phát hành (cả khi form mở trước lúc ngừng). PO nháp giữ supplier đã chọn; nếu cần phát hành sau khi supplier ngừng, người có quyền phải xử lý lại catalog theo nghiệp vụ, không có tự đổi vendor hoặc bypass. Menu/KPI dùng company từ profile đăng nhập; không nhận company_id client. PO issued vẫn được đọc khi supplier inactive. Không có delete/cancel/invoice/AP hoặc API PO mới; nhận hàng được bổ sung trong lát cắt bên dưới.
 
 Danh sách PO hỗ trợ `q` mã/tiêu đề, `status=draft|issued`, `page`; supplier hỗ trợ q mã/tên, status active/inactive, page. Cả hai 25 dòng/trang; PO detail/edit/back links giữ q/status/page, lịch sử thêm history_page. Queue `awaiting_po` và `review` hiển thị đúng trạng thái cố định, tránh lọc mâu thuẫn. KPI 0 vẫn mở queue rỗng có giải thích và reset. Tạo PO chỉ ở form/command; KPI/link không tự ghi hoặc phát hành.
 
 Trên MySQL/Rails hiện tại, DECIMAL scale 0 có thể đọc thành Integer: form dùng `.to_i.to_s` cho đơn giá VND đã được chuẩn hóa nguyên đồng; quantity scale 3 vẫn BigDecimal. Không gọi Integer#to_s("F"), không dùng Float để tính tiền.
+
+
+## Nhận hàng từng phần từ PO đã phát hành
+
+Menu **Mua hàng → Nhận hàng / PO còn chờ nhận** dùng cùng registry sidebar và Dashboard. Trong Engine procurement hiện có, vẫn 13 Engines / 40 bindings; không tạo nghiệp vụ tồn kho giả.
+
+| Màn hình / thao tác | Route / use case | Điều kiện và dữ liệu nguồn |
+|---|---|---|
+| KPI PO còn chờ nhận | `/procurement/orders?delivery=pending`; Orders → order_workspace | orders.read; PO issued, tồn tại dòng có quantity lớn hơn tổng nhận recorded. Cùng predicate cho count và danh sách; q/status/page giữ trên link chi tiết/quay lại. 0 vẫn mở danh sách rỗng |
+| PO chi tiết | FindOrder | giữ status issued, snapshot giá/số lượng gốc; tổng nhận theo từng dòng, còn lại và Chưa nhận/Nhận một phần/Đã nhận đủ. Quá ngày giao chỉ khi expected_on < hôm nay và còn hàng |
+| Form nhận | GET `/procurement/receipts/new?purchase_order_id=ID`; ReceivingSource | receipts.read + receipts.create + orders.read; PO issued cùng company; Đặt / Đã nhận / Còn lại / Nhận lần này. Để trống/0 để bỏ qua dòng, ít nhất một dòng dương, tối đa 3 số lẻ |
+| Ghi nhận | POST `/procurement/receipts`; ReceiveOrder | kiểm quyền DB hiện hành dưới khóa IAM/company/role/grants → PO → dòng PO theo ID → phiếu/dòng nhận. Đọc hiện hành bằng locking reads, không dùng SUM theo snapshot cũ. Từ chối vượt phần còn lại |
+| Danh sách phiếu | GET `/procurement/receipts`; Receipts | receipts.read, scope company + recorded; tìm mã, phân trang 25 |
+| Phiếu và lịch sử | GET `/procurement/receipts/:id`; FindReceipt | receiver ID/ngày nhận/thời điểm ghi/delivery reference mã hóa + các dòng nguồn. Link PO cần orders.read, link yêu cầu mua cần quyền đọc đúng phiếu nguồn |
+
+GoodsReceipt/GoodsReceiptLine lưu riêng; không sửa PurchaseOrder đã issued. Dòng nhận FK composite đến đúng PO line, header/receiver cùng company. Ngày nhận do người nhận nhập, created_at là thời điểm ghi trên server. Số lượng BigDecimal, không dùng Float; qty DECIMAL(9,3), CHECK >0. Dòng bỏ qua không được lưu thành dòng 0. Không cho thêm/sửa/xóa qua public route sau ghi nhận.
+
+Idempotency key ngẫu nhiên của form, 16–64 ký tự ASCII, unique case-sensitive `(company_id,idempotency_key)`. Digest canonical gồm PO ID/ngày nhận/reference/tập dòng ID và decimal đã normalize, không gồm company từ client. Cùng khóa và nội dung trả phiếu gốc, kể cả PO đã nhận đủ; cùng khóa khác PO/ngày/reference/số lượng trả 409. Dù replay vẫn kiểm grant hiện hành và scope trước trả kết quả. Không đưa khóa vào URL hoặc log; toàn payload form được filter.
+
+Ghi header nội bộ `recording`, autosave lines, chốt `recorded`, audit/outbox chung transaction. Không có màn hình/command commit riêng trạng thái recording. MySQL trigger kiểm issued, ownership qua FK, cấm sửa/xóa trực tiếp receipt/lines đã ghi, chặn thêm dòng sau seal và kiểm tổng nhận khi seal. MySQL không cho locking SELECT trên chính bảng đang INSERT: kiểm tổng chuyển sang header seal với locking reads; không bỏ kiểm tổng hoặc transaction. Những dòng recording do SQL đặc quyền bỏ dở vẫn được tính như phần đã giữ ở write guard, không tự cho nhận vượt; cần operator điều tra, không tự xóa lịch sử.
+
+Quyền MySQL mới `procurement.receipts.read/create`; provision admin/manager, không runtime role bypass. Đọc tiến độ giao thuộc orders.read, đọc chứng từ nhận thuộc receipts.read. Realtime goods_receipt.* yêu cầu receipts.read và realtime.read hiện hành. Audit/outbox chỉ metadata; delivery reference encrypt at rest. Các FK cascade từ parent giữ cơ chế cleanup đặc quyền hiện có: SQL đặc quyền xóa PO có thể cascade lịch sử; ứng dụng không có delete PO/receipt và model chặn. Không xem trigger là cơ chế chống root DB phá dữ liệu.
+
+Backlog: tồn kho/vị trí kho/lô/serial, trả hàng, hủy nhận có bút toán đảo, hóa đơn/đối soát ba bên, công nợ và thanh toán. Nhận hàng hiện tại chỉ là tiến độ giao PO.

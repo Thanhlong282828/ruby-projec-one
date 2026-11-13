@@ -9,7 +9,7 @@ module Procurement
       render plain: error.message, status: :conflict
     end
     def index
-      @workspace = HrmProcurement::Application::Queries::Orders.new.call(actor: current_user, search: params[:q], status: params[:status], page: params[:page])
+      @workspace = HrmProcurement::Application::Queries::Orders.new.call(actor: current_user, search: params[:q], status: params[:status], page: params[:page], delivery: params[:delivery])
     end
     def show
       load_record
@@ -55,6 +55,7 @@ module Procurement
     def list_context
       @list_filters = HrmProcurement::Domain::Services::RequestFilters.read(search: params[:q], page: params[:page])
       @list_filters[:status] = Hrm::ListFilters.choice(params[:status], allowed: %w[draft issued])
+      @list_filters[:delivery] = Hrm::ListFilters.choice(params[:delivery], allowed: %w[pending])
       @list_filters.compact!
     end
     def load_source(id)

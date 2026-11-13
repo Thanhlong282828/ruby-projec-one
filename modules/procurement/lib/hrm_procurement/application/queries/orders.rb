@@ -6,10 +6,11 @@ module HrmProcurement
           super()
           @repository = repository
         end
-        def call(actor:, search: nil, status: nil, page: nil)
+        def call(actor:, search: nil, status: nil, page: nil, delivery: nil)
           authorize!(actor, ::PurchaseOrder, :index?)
           filters = Domain::Services::RequestFilters.read(search: search, page: page)
           filters[:status] = Hrm::ListFilters.choice(status, allowed: %w[draft issued])
+          filters[:delivery] = Hrm::ListFilters.choice(delivery, allowed: %w[pending])
           @repository.order_workspace(actor: actor, filters: filters.compact)
         end
       end

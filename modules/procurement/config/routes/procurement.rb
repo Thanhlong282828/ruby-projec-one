@@ -21,3 +21,7 @@ patch "/procurement/orders/:id", to: "procurement/orders#update"
 put "/procurement/orders/:id", to: "procurement/orders#update"
 get "/procurement/orders/:id", to: "procurement/orders#show", as: :purchase_order
 post "/procurement/orders/:id/issue", to: "procurement/orders#issue", as: :issue_purchase_order
+get "/procurement/receipts", to: "procurement/receipts#index", as: :goods_receipts
+get "/procurement/receipts/new", to: "procurement/receipts#new", as: :new_goods_receipt
+post "/procurement/receipts", to: "procurement/receipts#create"
+get "/procurement/receipts/:id", to: "procurement/receipts#show", as: :goods_receipt

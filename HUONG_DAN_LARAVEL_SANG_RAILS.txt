@@ -558,3 +558,17 @@ KPI Phiếu đã duyệt chờ lập PO mở requests?status=approved&view=await
 RBI: tapioca dsl --environment=test --workers=1 (không chỉ đặt RAILS_ENV).
 Chi tiết grants/routes/so sánh Laravel ở docs/ERP_NAVIGATION.md; bằng chứng ở VERIFICATION.md.
 Nhập kho, hóa đơn và công nợ vẫn là đợt sau; chưa có thanh toán hoặc gửi PO ra ngoài.
+
+
+=== NHẬN HÀNG TỪNG PHẦN — LARAVEL ↔ RAILS (13/11/2026) ===
+Laravel Action + DB::transaction + lockForUpdate() | Rails ReceiveOrder → WriteRepositoryInterface#receive_order! → ReceiptWrites + GoodsReceipt.transaction + .lock.
+Laravel FormRequest                             | Rails ReceiptParameters allowlist + ReceiptContent kiểm ngày/ID/decimal/key, không tin company/tổng client.
+Laravel Policy + query company                  | Rails GoodsReceiptPolicy/Pundit scope; WriteAuthorization đọc lại grant MySQL dưới khóa, cả khi gọi command ngoài HTTP.
+Laravel goods_receipts + items Eloquent         | Rails GoodsReceipt + GoodsReceiptLine Active Record. Thuộc Engine procurement, MVC trong app/, CQRS/contracts/implementation trong lib/hrm_procurement/.
+Laravel unique(company_id,idempotency_key)      | Rails migration unique case-sensitive + digest canonical. Replay cùng nội dung trả phiếu cũ; khác nội dung 409.
+Laravel Observer + outbox trong transaction     | Rails ObservableRecord → RecordObserver → Audit/Outbox repository. Nếu audit/outbox lỗi sau ghi dòng, toàn phiếu rollback.
+Luồng đọc: route → ReceiptsController → Queries::{Receipts,FindReceipt,ReceivingSource} → ReadRepositoryInterface → ReceiptReads/OrderReads → view.
+Luồng ghi: POST /procurement/receipts → ReceiptsController#create → ReceiveOrder → WriteRepositoryInterface → ReceiptWrites → khóa IAM/PO/dòng → save header+lines → seal recorded → commit audit/outbox → redirect chi tiết.
+Ví dụ đặt 10: nhận 4 thì tổng nhận4/còn6/Nhận một phần; nhận6 nữa thì tổng10/còn0/Đã nhận đủ. PO vẫn issued và quantity/price/snapshot giữ nguyên. Hai người cùng nhận6 ở lúc còn6 chỉ một người thành công; người kia phải tải lại số liệu.
+KPI “PO còn chờ nhận” dùng order_workspace(delivery: pending), giống danh sách /procurement/orders?delivery=pending. Link chỉ mở màn hình, không tự nhận hàng. Phiếu nhận bất biến, mỗi lần nhận là phiếu mới. Đây chưa phải nhập kho/hóa đơn/công nợ.
+MySQL trigger không được locking SELECT chính bảng đang INSERT; ứng dụng khóa PO trước, database kiểm aggregate khi seal header. recording là bước nội bộ trong cùng transaction, public query chỉ đọc recorded.

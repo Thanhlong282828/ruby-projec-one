@@ -190,6 +190,12 @@ module GeneratedPathHelpersModule
   def finalize_pay_run_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def goods_receipt_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def goods_receipts_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def integration_audit_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -239,6 +245,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_employee_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_goods_receipt_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_leave_request_path(*args); end
@@ -332,6 +341,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def procurement_orders_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def procurement_receipts_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def procurement_requests_path(*args); end

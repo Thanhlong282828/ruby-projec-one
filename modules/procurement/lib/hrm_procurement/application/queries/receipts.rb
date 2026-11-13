@@ -1,0 +1,16 @@
+module HrmProcurement
+  module Application
+    module Queries
+      class Receipts < Hrm::UseCase
+        def initialize(repository: Hrm::Container.resolve(Domain::Repositories::ReadRepositoryInterface))
+          super()
+          @repository = repository
+        end
+        def call(actor:, search: nil, page: nil)
+          authorize!(actor, ::GoodsReceipt, :index?)
+          @repository.receipt_workspace(actor: actor, filters: Domain::Services::RequestFilters.read(search: search, page: page))
+        end
+      end
+    end
+  end
+end

@@ -17,6 +17,9 @@ module PortableMysqlSchema
       if File.read(filename).include?("purchase_order_insert_guard")
         required += %w[supplier_identity_guard purchase_order_insert_guard purchase_order_update_guard purchase_order_line_insert_guard purchase_order_line_update_guard purchase_order_line_delete_guard]
       end
+      if File.read(filename).include?("goods_receipt_insert_guard")
+        required += %w[goods_receipt_insert_guard goods_receipt_update_guard goods_receipt_delete_guard goods_receipt_line_insert_guard goods_receipt_line_update_guard goods_receipt_line_delete_guard]
+      end
       raise "Schema load missing required security triggers; use the migration role" unless (required - names).empty?
     end
   end

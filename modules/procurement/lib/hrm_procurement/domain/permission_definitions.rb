@@ -2,6 +2,8 @@ module HrmProcurement
   module Domain
     class PermissionDefinitions
       ORDER_DEFINITIONS = {
+        "procurement.receipts.read" => "Xem phiếu nhận hàng",
+        "procurement.receipts.create" => "Ghi nhận hàng",
         "procurement.suppliers.read" => "Xem nhà cung cấp",
         "procurement.suppliers.create" => "Tạo nhà cung cấp",
         "procurement.suppliers.update" => "Sửa nhà cung cấp",

@@ -3,6 +3,7 @@ module HrmProcurement
     module Persistence
       class ActiveRecordReadRepository < Domain::Repositories::ReadRepositoryInterface
         include OrderReads
+        include ReceiptReads
         def workspace(actor:, filters:, recent: false)
           scope = Pundit.policy_scope!(actor, ::PurchaseRequest)
           if filters[:view] == "awaiting_po"

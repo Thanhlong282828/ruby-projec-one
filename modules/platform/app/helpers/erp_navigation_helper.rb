@@ -29,6 +29,8 @@ module ErpNavigationHelper
     ] ],
     [ "Mua hàng", [
       [ "Nhà cung cấp", "/procurement/suppliers", %w[procurement.suppliers.read] ],
+      [ "Nhận hàng", "/procurement/receipts", %w[procurement.receipts.read] ],
+      [ "PO còn chờ nhận", "/procurement/orders?delivery=pending", %w[procurement.orders.read] ],
       [ "Đơn mua hàng", "/procurement/orders", %w[procurement.orders.read] ],
       [ "Phiếu đã duyệt chờ lập PO", "/procurement/requests?status=approved&view=awaiting_po", %w[procurement.orders.read procurement.orders.create], :all ],
       [ "Yêu cầu mua", "/procurement/requests", %w[procurement.requests.read procurement.requests.read_all] ],
@@ -68,6 +70,9 @@ module ErpNavigationHelper
     target, query = path.split("?", 2)
     return false unless request.path == target || request.path.start_with?("#{target}/")
     expected = Rack::Utils.parse_query(query.to_s)
+    if target == "/procurement/orders"
+      return expected["delivery"].to_s == params[:delivery].to_s
+    end
     if target == "/procurement/requests"
       return expected["view"].to_s == params[:view].to_s
     end

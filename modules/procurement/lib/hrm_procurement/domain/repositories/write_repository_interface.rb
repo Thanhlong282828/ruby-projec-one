@@ -2,6 +2,7 @@ module HrmProcurement
   module Domain
     module Repositories
       class WriteRepositoryInterface
+        def receive_order!(actor:, id:, attributes:) = raise(NotImplementedError)
         def save_supplier!(actor:, id:, attributes:, lock_version:) = raise(NotImplementedError)
         def create_order!(actor:, purchase_request_id:, supplier_id:, expected_on:) = raise(NotImplementedError)
         def update_order!(actor:, id:, attributes:, lock_version:) = raise(NotImplementedError)

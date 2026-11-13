@@ -2,6 +2,9 @@ module HrmProcurement
   module Domain
     module Repositories
       class ReadRepositoryInterface
+        def receipt_workspace(actor:, filters:) = raise(NotImplementedError)
+        def find_receipt!(actor:, id:) = raise(NotImplementedError)
+        def receiving_source(actor:, id:) = raise(NotImplementedError)
         def supplier_workspace(actor:, filters:) = raise(NotImplementedError)
         def find_supplier!(actor:, id:) = raise(NotImplementedError)
         def order_workspace(actor:, filters:) = raise(NotImplementedError)

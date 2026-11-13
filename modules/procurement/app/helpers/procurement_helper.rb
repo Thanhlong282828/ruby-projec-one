@@ -1,4 +1,11 @@
 module ProcurementHelper
+  def receipt_input_quantity(input, id)
+    rows = input[:items]
+    rows = rows.values if rows.is_a?(Hash)
+    return nil unless rows.is_a?(Array)
+    rows.find { |row| row["purchase_order_line_id"].to_s == id.to_s }&.fetch("quantity", nil)
+  end
+
   def purchase_status_label(status)
     { "draft" => "Bản nháp", "submitted" => "Chờ duyệt", "approved" => "Đã duyệt", "rejected" => "Bị từ chối" }.fetch(status, status)
   end

@@ -48,6 +48,10 @@ module HrmDashboard
             procurement = Hrm::Container.resolve(HrmProcurement::Domain::Repositories::ReadRepositoryInterface)
             data[:awaiting_orders] = procurement.workspace(actor: actor, filters: { status: "approved", view: "awaiting_po", page: 1 }, recent: true)
           end
+          if Pundit.policy!(actor, ::PurchaseOrder).index?
+            procurement = Hrm::Container.resolve(HrmProcurement::Domain::Repositories::ReadRepositoryInterface)
+            data[:pending_receipts] = procurement.order_workspace(actor: actor, filters: { delivery: "pending", page: 1 })
+          end
           data
         end
       end
