@@ -15,6 +15,8 @@ vi:
       updated: Đã cập nhật bản nháp.
       submitted: Đã gửi duyệt. Nội dung và dòng hàng đã được khóa.
       decided: Đã ghi quyết định và lịch sử.
+      catalog_saved: Đã lưu danh mục kho/mã hàng.
+      stock_posted: Đã ghi sổ nhập kho. Gửi lại cùng nội dung sẽ mở chứng từ đã ghi.
       supplier_saved: Đã lưu nhà cung cấp.
       receipt_created: Đã ghi nhận hàng; nội dung phiếu được giữ nguyên.
       order_created: Đã mở PO nháp từ phiếu đã duyệt. Nếu gửi lặp, hệ thống mở PO đã tạo.

@@ -572,3 +572,17 @@ Luồng ghi: POST /procurement/receipts → ReceiptsController#create → Receiv
 Ví dụ đặt 10: nhận 4 thì tổng nhận4/còn6/Nhận một phần; nhận6 nữa thì tổng10/còn0/Đã nhận đủ. PO vẫn issued và quantity/price/snapshot giữ nguyên. Hai người cùng nhận6 ở lúc còn6 chỉ một người thành công; người kia phải tải lại số liệu.
 KPI “PO còn chờ nhận” dùng order_workspace(delivery: pending), giống danh sách /procurement/orders?delivery=pending. Link chỉ mở màn hình, không tự nhận hàng. Phiếu nhận bất biến, mỗi lần nhận là phiếu mới. Đây chưa phải nhập kho/hóa đơn/công nợ.
 MySQL trigger không được locking SELECT chính bảng đang INSERT; ứng dụng khóa PO trước, database kiểm aggregate khi seal header. recording là bước nội bộ trong cùng transaction, public query chỉ đọc recorded.
+
+
+=== NHẬP KHO TỪ PHIẾU NHẬN — LARAVEL ↔ RAILS ===
+Laravel Model Warehouse/Product                 | Rails Warehouse/StockItem (Active Record) trong modules/procurement/app/models/. SKU ID cộng tồn; code/unit bất biến, tên/status sửa được.
+Laravel FormRequest                             | Rails StockParameters allowlist + StockContent.mapping; chỉ nhận warehouse_id và goods_receipt_line_id→stock_item_id. Quantity/company/actor lấy server.
+Laravel DB::transaction + lockForUpdate          | Rails PostStockReceipt (Application Command) → WriteRepositoryInterface#post_stock_receipt! → StockWrites. Khóa IAM/grants, receipt, catalog; kiểm Policy sau khóa receipt; giữ audit/outbox cùng transaction.
+Laravel unique(company_id,goods_receipt_id)      | Rails unique one_stock_entry_per_receipt + canonical mapping_digest. Bấm hai lần cùng kho/mapping trả phiếu cũ; đổi kho/mapping409; không cộng tồn lần2.
+Laravel inventory_movements()->sum(quantity)     | Rails StockBalances → stock_balances → Pundit scope StockMovement + posted StockReceipt, GROUP warehouse_id/stock_item_id. Không cập nhật tồn bằng += trong controller.
+Laravel Policy/tenant scope                     | Rails StockReceiptPolicy/StockMovementPolicy/InventoryCatalogPolicy. Provider chỉ bind contract, không thay Policy. Grant ở MySQL, không có admin bypass.
+Đường đọc: route inventory → Procurement::*Controller → Application::Queries → ReadRepositoryInterface → StockReads → view. Đường ghi: POST /inventory/receipts → PostStockReceipt → StockWrites → transaction → header posting + movements → posted → audit/outbox → redirect.
+Nhận4 rồi6 là hai GoodsReceipt khác nhau. Nhậpphiếu4 tăng tồn4; nhậpphiếu6 tăng tồn10. Một phiếu phải nhập hết vào một kho, mỗi dòng cần chọn SKU đúng unit. Mô tả PO không phải mã hàng.
+Replay là đọc lại: còn inventory.receipts.read thì cùngmapping trả chứng từ cũ kể cả grant post đã thu hồi/catalog inactive. Ghi mới luôn kiểm inventory.receipts.post + read + procurement.receipts.read; thu hồi entry.read thì replay cũng403.
+Menu Kho: Chờ nhập kho / Lịch sử nhập / Tồn theo kho / Danh mục kho / Mã hàng. KPI dùng cùng pending_stock_workspace, không tự ghi khi bấm card. PR→PO→GR→IN mở nguồn theo quyền từng loại.
+Code nằm trong Engine procurement hiện có, chưa có Engine inventory riêng. PostStockReceipt là command nghiệp vụ, không phải lệnh terminal tương đương Artisan. Trả hàng/đảo bút toán/giá vốn/invoice/AP làm đợt sau.

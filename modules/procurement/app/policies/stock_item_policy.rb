@@ -1,0 +1,2 @@
+class StockItemPolicy < InventoryCatalogPolicy
+end

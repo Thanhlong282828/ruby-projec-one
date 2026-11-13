@@ -2,6 +2,11 @@ module HrmProcurement
   module Domain
     class PermissionDefinitions
       ORDER_DEFINITIONS = {
+        "inventory.catalog.read" => "Xem kho và mã hàng",
+        "inventory.catalog.manage" => "Quản lý kho và mã hàng",
+        "inventory.receipts.read" => "Xem phiếu nhập kho",
+        "inventory.receipts.post" => "Ghi sổ nhập kho",
+        "inventory.balances.read" => "Xem tồn theo kho",
         "procurement.receipts.read" => "Xem phiếu nhận hàng",
         "procurement.receipts.create" => "Ghi nhận hàng",
         "procurement.suppliers.read" => "Xem nhà cung cấp",

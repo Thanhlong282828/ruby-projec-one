@@ -25,3 +25,21 @@ get "/procurement/receipts", to: "procurement/receipts#index", as: :goods_receip
 get "/procurement/receipts/new", to: "procurement/receipts#new", as: :new_goods_receipt
 post "/procurement/receipts", to: "procurement/receipts#create"
 get "/procurement/receipts/:id", to: "procurement/receipts#show", as: :goods_receipt
+get "/inventory/warehouses", to: "procurement/warehouses#index", as: :inventory_warehouses
+get "/inventory/warehouses/new", to: "procurement/warehouses#new", as: :new_inventory_warehouse
+post "/inventory/warehouses", to: "procurement/warehouses#create"
+get "/inventory/warehouses/:id/edit", to: "procurement/warehouses#edit", as: :edit_inventory_warehouse
+patch "/inventory/warehouses/:id", to: "procurement/warehouses#update", as: :inventory_warehouse
+put "/inventory/warehouses/:id", to: "procurement/warehouses#update"
+get "/inventory/items", to: "procurement/stock_items#index", as: :inventory_items
+get "/inventory/items/new", to: "procurement/stock_items#new", as: :new_inventory_item
+post "/inventory/items", to: "procurement/stock_items#create"
+get "/inventory/items/:id/edit", to: "procurement/stock_items#edit", as: :edit_inventory_item
+patch "/inventory/items/:id", to: "procurement/stock_items#update", as: :inventory_item
+put "/inventory/items/:id", to: "procurement/stock_items#update"
+get "/inventory/receipts/pending", to: "procurement/stock_receipts#pending", as: :pending_stock_receipts
+get "/inventory/receipts", to: "procurement/stock_receipts#index", as: :stock_receipts
+get "/inventory/receipts/new", to: "procurement/stock_receipts#new", as: :new_stock_receipt
+post "/inventory/receipts", to: "procurement/stock_receipts#create"
+get "/inventory/receipts/:id", to: "procurement/stock_receipts#show", as: :stock_receipt
+get "/inventory/balances", to: "procurement/stock_balances#index", as: :stock_balances

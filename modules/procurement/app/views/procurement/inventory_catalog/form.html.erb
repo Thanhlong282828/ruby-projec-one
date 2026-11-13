@@ -1,0 +1,9 @@
+<div class="page-heading"><h1><%= @record.persisted? ? "Sửa" : "Tạo" %> <%= @kind == :warehouse ? "kho" : "mã hàng" %></h1><%= link_to "← Danh mục", inventory_catalog_url(@kind) %></div>
+<% if @errors %><div class="errors" role="alert"><%= @errors %></div><% end %>
+<%= form_with url: inventory_catalog_url(@kind, action: @record.persisted? ? :record : :index, id: @record.id), method: @record.persisted? ? :patch : :post, class: "panel field" do %>
+<% if @record.persisted? %><%= hidden_field_tag :lock_version, @record.lock_version %><% end %>
+<label for="catalog_code">Mã ổn định</label><%= text_field_tag "inventory_catalog[code]", @input[:code], id: "catalog_code", maxlength: 40, required: true, readonly: @record.persisted? %>
+<label for="catalog_name">Tên</label><%= text_field_tag "inventory_catalog[name]", @input[:name], id: "catalog_name", maxlength: 200, required: true %>
+<% if @kind == :item %><label for="catalog_unit">Đơn vị (khớp chính xác PO)</label><%= text_field_tag "inventory_catalog[unit]", @input[:unit], id: "catalog_unit", maxlength: 30, required: true, readonly: @record.persisted? %><% end %>
+<label for="catalog_status">Trạng thái</label><%= select_tag "inventory_catalog[status]", options_for_select([["Hoạt động", "active"], ["Ngừng hoạt động", "inactive"]], @input[:status]), id: "catalog_status" %>
+<p>Mã và đơn vị được giữ ổn định. Ngừng hoạt động chỉ chặn ghi mới; lịch sử và tồn đã ghi vẫn xem được.</p><%= submit_tag "Lưu danh mục" %><% end %>

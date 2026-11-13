@@ -163,6 +163,12 @@ module GeneratedPathHelpersModule
   def edit_employee_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def edit_inventory_item_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def edit_inventory_warehouse_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def edit_procurement_supplier_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -211,6 +217,21 @@ module GeneratedPathHelpersModule
   def integration_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def inventory_item_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def inventory_items_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def inventory_receipts_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def inventory_warehouse_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def inventory_warehouses_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def issue_purchase_order_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -250,6 +271,12 @@ module GeneratedPathHelpersModule
   def new_goods_receipt_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def new_inventory_item_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_inventory_warehouse_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def new_leave_request_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -269,6 +296,9 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def new_shift_assignment_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def new_stock_receipt_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def new_work_shift_path(*args); end
@@ -337,6 +367,9 @@ module GeneratedPathHelpersModule
   def payroll_exports_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def pending_stock_receipts_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def preview_work_shift_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -386,6 +419,15 @@ module GeneratedPathHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def shift_assignments_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_balances_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_receipt_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def stock_receipts_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def submit_purchase_request_path(*args); end

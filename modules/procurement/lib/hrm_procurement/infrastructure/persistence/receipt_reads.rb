@@ -9,7 +9,8 @@ module HrmProcurement
         def find_receipt!(actor:, id:)
           record = Pundit.policy_scope!(actor, ::GoodsReceipt).includes(lines: :purchase_order_line, purchase_order: :purchase_request).find(Domain::Services::RequestFilters.id(id))
           Pundit.authorize(actor, record, :show?)
-          { record: record, order_visible: Pundit.policy!(actor, record.purchase_order).show?, source_visible: Pundit.policy!(actor, record.purchase_order.purchase_request).show? }
+          entry = Pundit.policy_scope!(actor, ::StockReceipt).find_by(goods_receipt_id: record.id)
+          { record: record, stock_receipt: entry, can_post_stock: Pundit.policy!(actor, ::StockReceipt).create? && !::StockReceipt.exists?(company_id: actor.company_id, goods_receipt_id: record.id), order_visible: Pundit.policy!(actor, record.purchase_order).show?, source_visible: Pundit.policy!(actor, record.purchase_order.purchase_request).show? }
         end
         def receiving_source(actor:, id:)
           Pundit.authorize(actor, ::GoodsReceipt, :create?)

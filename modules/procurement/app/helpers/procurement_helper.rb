@@ -1,4 +1,20 @@
 module ProcurementHelper
+  def inventory_catalog_url(kind, action: :index, id: nil, filters: {})
+    warehouse = kind == :warehouse
+    case action
+    when :new then warehouse ? new_inventory_warehouse_path : new_inventory_item_path
+    when :edit then warehouse ? edit_inventory_warehouse_path(id) : edit_inventory_item_path(id)
+    when :record then warehouse ? inventory_warehouse_path(id) : inventory_item_path(id)
+    else warehouse ? inventory_warehouses_path(filters) : inventory_items_path(filters)
+    end
+  end
+  def stock_selected_item(input, line_id)
+    rows = input[:items]
+    rows = rows.values if rows.is_a?(Hash)
+    return nil unless rows.is_a?(Array)
+    rows.find { |row| row["goods_receipt_line_id"].to_s == line_id.to_s }&.fetch("stock_item_id", nil)
+  end
+
   def receipt_input_quantity(input, id)
     rows = input[:items]
     rows = rows.values if rows.is_a?(Hash)

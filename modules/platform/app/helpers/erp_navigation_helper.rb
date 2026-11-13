@@ -37,6 +37,13 @@ module ErpNavigationHelper
       [ "Yêu cầu của tôi", "/procurement/requests?view=mine", %w[procurement.requests.read procurement.requests.read_all] ],
       [ "Chờ tôi duyệt", "/procurement/requests?status=submitted&view=review", %w[procurement.requests.read_all procurement.requests.review], :all ]
     ] ],
+    [ "Kho", [
+      [ "Chờ nhập kho", "/inventory/receipts/pending", %w[inventory.receipts.read inventory.receipts.post procurement.receipts.read], :all ],
+      [ "Lịch sử nhập", "/inventory/receipts", %w[inventory.receipts.read] ],
+      [ "Tồn theo kho", "/inventory/balances", %w[inventory.balances.read] ],
+      [ "Danh mục kho", "/inventory/warehouses", %w[inventory.catalog.read] ],
+      [ "Mã hàng", "/inventory/items", %w[inventory.catalog.read] ]
+    ] ],
     [ "Tuyển dụng", [ [ "Ứng viên", "/candidates", %w[recruitment.read] ] ] ],
     [ "Onboarding", [ [ "Tiếp nhận nhân viên", "/onboarding/cases", %w[onboarding.read onboarding.read_all] ] ] ],
     [ "Tích hợp", [
@@ -69,6 +76,8 @@ module ErpNavigationHelper
   def erp_navigation_active?(path)
     target, query = path.split("?", 2)
     return false unless request.path == target || request.path.start_with?("#{target}/")
+    return !request.path.start_with?("/inventory/receipts/pending") if target == "/inventory/receipts"
+    return request.path == target if target == "/inventory/receipts/pending"
     expected = Rack::Utils.parse_query(query.to_s)
     if target == "/procurement/orders"
       return expected["delivery"].to_s == params[:delivery].to_s

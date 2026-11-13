@@ -4,6 +4,7 @@ module HrmProcurement
       class ActiveRecordWriteRepository < Domain::Repositories::WriteRepositoryInterface
         include OrderWrites
         include ReceiptWrites
+        include StockWrites
         def create!(actor:, attributes:)
           ::PurchaseRequest.transaction do
             ActiveRecord::Base.uncached do

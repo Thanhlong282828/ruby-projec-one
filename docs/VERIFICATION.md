@@ -1,3 +1,32 @@
+# Nhập kho từ phiếu nhận — 13/11/2026
+
+Nhánh `codex/procurement-stock-receipts`, baseline **e47812f7ce05014dc45d861d3bcd4158f923de2e**, origin Thanhlong282828/ruby-projec-one. Đã đọc AGENTS/ERP_NAVIGATION/VERIFICATION/schema/models/policies/commands; không có warehouse/item/stock ledger trước đợt này. Giữ26thay đổi local học tập/inventory/make, bao gồm127dòng hướng dẫn cũ. Baseline chạy lại bằng image app bytes e478-compatible: **413 tests /2.903 assertions**, 0 lỗi,91,958892s. Ruby3.4.12/Bundler2.6.9 giữ nguyên, **21file Sorbet strict** không mở rộng.
+
+## Đã triển khai
+
+Warehouse/StockItem/StockReceipt/StockMovement trong Engine procurement hiện có; catalog stablecode/unit, active/inactive, version; PostStockReceipt/SaveStockCatalog + Queries catalogue/pending/source/history/balances, contracts Read/Write mở rộng, StockReads/StockWrites include; vẫn13Engines/40bindings. Menu Kho, KPI pending cùng query, form ánh xạ/quantityserver, chứng từ và links PR→PO→GR→IN theo quyền, tồn ledger theo warehouse/SKU, search/page. Các chi tiết quyền/replay/scope/locking/giới hạn ở ERP_NAVIGATION.
+
+Migration20261113000004:4tables, compositeFK/unique/CHECK,8triggers (toàn BEGIN/END tránh lỗi development annotation của đợt trước), unique company/receipt; seal phải đầy đủ receivedlines, movementqty=sourceqty, activecurrentwarehouse/SKU và exactunit. Không sửa PO/GR. Audit/outbox cùng transaction kể cả lỗi sau ghi movements. Post grant bị thu hồi chặn ghi mới; replay read-only chỉ đòi current entry.read, khác kho/map409; read bị thu hồi chặn replay.
+
+## Kiểm chứng đã có
+
+- Focused nhập kho **21 tests /179 assertions**,0fail/error/skip:4+6→4/10, decimal1.125+.001, SKU ổn định, nhiều dòng cùng SKU, clientqtyignored, đủmap, replay/conflict, realMySQLrace, oldsnapshotgrant/existingentry, pending/KPI hai company, source/warehouse/SKU IDOR, inactive/unitcase, rollback cuối transaction, immutableSQL, HTTP/catalog/search, realtime và CSRF bật thật.
+- Full source lượt đầu434tests/3093assertions,1failure duy nhất Dashboard hardcode10nhóm thay vì11sau thêm Kho; đã sửa expectation và thêm assert menu/link Kho có thật. Chạy lại Dashboard+nhập kho **26tests/239assertions**,0lỗi. Không lấy lượt full fail làm pass.
+- FreshSQL scratch đạt **36CHECK/102FK/47PK/73UNIQUE/375indexparts/27triggers/21versions**; definitionSHA256 **c49ee8eacb1ac1d940cfe6c619af0264211088cf2dc4e997c2d014a4cc22e1b0**. Scratch đã drop. Canonical structure.sql có đủ trigger, không schema.rb; RBI sinh bằng Tapioca dsl --environment=test --workers=1, không hand edit.
+- Upgrade dùng `git show e47812f:db/structure.sql` trong MySQL8.4/network/volume hrm-stock-upgrade* riêng, không hostMySQLport; CA trong volume, root migrationngắn hạn, appTLSverifyhostname. Trước migration00003:2companies, mỗiPO10/10000VND/2history +2GRrecorded4/6, encryptedreference/sourcepurpose. Sau migration00004: nguồn/lịch sử/mã hóa đọc được; company1 nhập4→10, same-map replay cùngID không cộng thêm, pending0, cross-company denied; company2 pending2/stock0 dànhbrowser. Definition upgrade đối chiếu fresh bằng cùng query column/index/FK/CHECK/trigger/version (kết quả log /private/tmp/stock-upgrade-ddl.log).
+
+## Kết quả snapshot sạch cuối
+
+`docker build -t hrm-ci:stock-reviewed /private/tmp/hrm-stock-reviewed`; `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=$PWD/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-ci:stock-reviewed sh -c 'ruby -v && bundle --version && bundle check && bin/quality && bundle exec rails test'`: **434 tests /3.099 assertions**,0fail/error/skip,149,347340s. Ruby3.4.12/Bundler2.6.9/bundle check đạt; RuboCop **660files/0offenses**, explicit routes14files, architecture **57controllers/13Engines/40bindings**, Sorbet+3negativeprobes, gem/DSL RBI/preflight13Engines/check-shims, Zeitwerk, gitleaks **1145publishablefiles** no leak, Brakeman **47models/93templates/0errors/0warnings**, bundler-audit1359/no vulnerability đều đạt. Receiver8tests và actionlint1.7.7 đạt.
+
+Image arm64 **sha256:d3a971742a96135521da403bb927170a038069bfe3689101cf33ee6747050581**; đây là local image ID, không registry digest. `ruby bin/smoke-image hrm-ci:stock-reviewed` đạt UID1000, structure.sql có, schema.rb/private env/key không có, /up200/session/new200/pay_runs302. Sau sửa cuối chỉ validation nil catalog/menu-active và test Dashboard, đã diễn tập lại toàn bộ baseline e47812f→00004 bằng image sạch: old source/encryption/history đọc được,4→10/replay/IDOR đúng; definitionSHA256c49ee8… khớp fresh. Baseline DDL SHA256 **ce86b344cb56a5b04be795620dc0de1cd685cb743eb48c0c02d4f75f80e21ffe** có nguồn Git xác định.
+
+Browser trên image sạch/DB dùng một lần: company2 KPI2→queue2→GR4→chọnMAIN/SKU001unitcái→Tab có outline solid/Enter ghi→IN4→balance4/KPI1; GR6→IN6→balance10/KPI0→queue rỗng. Detail PR/PO/GR/IN links đúng; catalog edit code/unit readonly; logincompany1 cập nhật tên/ID/account và balance10 độc lập, URL entrycompany2 không tìm thấy. Đo innerWidth=scrollWidth=390 cho dashboard/queue/form/detail/history/balances/catalog; đã quan sát screenshot nội bộ, không lưu ảnh repo; không tuyên bố auditWCAG đầy đủ.
+
+Review staged68files đúng phạm vi, filename không env/key/dump/CSV/log, SQL chỉ canonicalDDL; gitleaks snapshot19,02MB/diff384,70KB redact100% không leak. Phụ lục hướng dẫn chỉ stage phần mới;127dòng cũ vẫn ngoài index. Development backup ignored0600 nonempty rồi migrate additive/verify27guards; dump development không còn SQL annotation trong trigger, không seed fixture thật. Reload đúng PID1 Puma/container xinviec-hrm-web-1, không recreate VSCode. Stack/volume/secrets rehearsal đã dọn. Remote CI đúng SHA **chờ commit/push**, chưa dùng kết quả e47812f làm bằng chứng source mới. Không GHCR, không main/production. Chưa có return/reversal/valuation/invoice/AP; xem backlog. Logs local /private/tmp/stock-{baseline,focused,focused-final,focused-polished,full-source,fresh-schema,upgrade-before,upgrade-migrate,upgrade-after,upgrade-ddl,rbi,actionlint}.log. Không seed dữ liệu mẫu vào development.
+
+---
+
 # Nhận hàng — biên nhận GitHub Actions đúng SHA
 
 Source **`41be2e6f869e5b91fc1cde98e280b91f216531b4`**, nhánh `codex/procurement-partial-receipts`, repo `Thanhlong282828/ruby-projec-one`. [Actions run 43367920788](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43367920788) **completed/success**. Đã đọc headSha, metadata từng step và log; cả hai job và mọi step đều success, không required gate nào skip.
