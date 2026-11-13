@@ -1,3 +1,22 @@
+# Trả nhà cung cấp — biên nhận GitHub Actions đúng SHA
+
+Source **a4bc5ce93bec22ae0ce3ddc2fd5f6c61b85d3113**, nhánh **codex/inventory-supplier-returns**, repo **Thanhlong282828/ruby-projec-one**. [Actions run43491022391](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43491022391) **completed/success**, đã đối chiếu headSha, từng step và số test trong log, không required step nào skip.
+
+| Job trên GitHub | Kết quả thực tế |
+|---|---|
+| Ruby / Rails lint and format | **679files/0offenses**; explicit routes,59controllers/13Engines/40bindings; actionlint; Sorbet21strict+3negativeprobes; report; **11steps success** |
+| MySQL tests / autoload / security | **459tests/3.310assertions**,0fail/error/skip; authenticated MySQL readiness + migration +33guards; receiver8tests; dependency/DSL RBI/shim/preflight; secret scanner/negative/redaction; fresh SQL definition match; no-source-mount image smoke; zeitwerk; Brakeman0; bundler-audit no vulnerabilities; lockfile unchanged; cleanup; **16steps success** |
+
+CI Dockerfile x86_64 local imageID **sha256:6c1d8cc02861da6289b559104a76853b4d91f281a17dee9a0d3fdcbbb7dcf134** (không registry digest); UID1000, SQL schema có/schema.rb/env/key vắng; HTTP /up200/session/new200/pay_runs302. Fresh definitionSHA256 **49c01f3fa052075e0821f8717e47a9d7c031668637835905fd93b5ed21f8ed50**, khớp local; giữ collation case-sensitive và FK RESTRICT.
+
+Local image **hrm-ci:supplier-returns-reviewed** build từ snapshot index sạch đúng sourcea4bc5ce bằng Dockerfile repo, arm64 ID **sha256:4e3e00b2e22b479112071620be718fb59717bf4f10ac967a102031186d7e0422**, smoke không source mount đạt. **1.116 file ứng dụng** SHA256 khớp giữa index/commit và cả image này lẫn image đã chạy fullsuite. Snapshot19,28MB và staged diff278,59KB quét Gitleaks redact100% không leak. Net diff46files, không TXT. Bộ số liệu local/baseline/upgrade/browser ở dưới là kết quả đã chạy.
+
+Theo yêu cầu phát sinh Cmd+S, checkout Desktop đang mở VS Code được sửa riêng `.vscode/settings.json` (Ruby LSP/RuboCop format-on-save) và `.rubocop.yml` (4 quy tắc thụt lề). Đã dùng native VS Code Dev Container Ruby3.4.12/LSP0.26.11 kiểm Cmd+S từ code lệch thành2space/spacing đúng; hai probe tạm đã đóng/xóa. **Hai config này là thay đổi local ngoài nhánh trả hàng, không nằm sourcea4bc5ce hay bằng chứng CI trên**; không format hàng loạt. 27 thay đổi học tập gốc vẫn khớp manifest từng byte, không TXT bị sửa/stage.
+
+Biên nhận này là commit Markdown sau sourcea4bc5ce; run của SHA bàn giao cuối sẽ kiểm riêng trước kết luận, không giả source run là final run. Không sửa main/production, không push omega, không GHCR release. Log đã che URL querystrings ở `/private/tmp/returns-source-ci.log`, JSON job/SHA ở`returns-source-ci.json`.
+
+---
+
 # Trả nhà cung cấp — bản cuối local trước push
 
 Source bản cuối trên `codex/inventory-supplier-returns` đã review **46 file**, không TXT trong staged/net diff; snapshot staged và cả diff (kể cả dòng xóa) quét Gitleaks `--redact=100`: **no leaks**. 27 thay đổi local ở checkout Desktop khớp manifest SHA256 ban đầu từng byte. Không đưa env/private keys/dump/CSV/log vào commit.
