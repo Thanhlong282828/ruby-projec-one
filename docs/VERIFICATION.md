@@ -1,3 +1,22 @@
+# Sổ biến động — biên nhận GitHub Actions đúng SHA
+
+Source **`b8f434b17db00c83eb4150105af06375c53dae80`**, nhánh **`codex/inventory-stock-ledger`**, repo `Thanhlong282828/ruby-projec-one`. [Actions run43444086156](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43444086156) **completed/success**, attempt1. Đã đối chiếu headSha và log từng job/step, không required step nào skip.
+
+| Job trên GitHub | Kết quả thực tế |
+|---|---|
+| Ruby / Rails lint and format | **663files/0offenses**, routes14, architecture58controllers/13Engines/40bindings, actionlint, Sorbet21strictfiles và3negativeprobes đạt;11steps success |
+| MySQL tests / autoload / security | **438tests/3.140assertions**,0fail/error/skip; MySQL readiness/provision/migration/27guards, receiver8tests, RBI/preflight13Engines/bindings/shims, secret negative/redaction, fresh SQL, no-source-mount smoke, autoload, Brakeman0, dependency audit no vulnerabilities, lockfile unchanged và cleanup đều success;16steps success |
+
+CI Dockerfile image x86_64 ID **sha256:3b6425533bafb0acdbd9a7c29a9d78f588f1d1cc9652f5b4709509f5920e302a** (không registry digest), UID1000, schema SQL có/schema.rb/private env/key vắng, HTTP /up200/session/new200/pay_runs302. Fresh definitionSHA256 **c49ee8eacb1ac1d940cfe6c619af0264211088cf2dc4e997c2d014a4cc22e1b0**, không thay schema so với base.
+
+Local image **`hrm-ci:ledger-no-txt`** build từ snapshot index sạch đúng sourceb8f434b, arm64 ID **sha256:25c415c743829be670e6edbdfbda948d579f423c45b8fc092c7403a283afc3a2**, smoke đạt; **1.088file ứng dụng** khớp SHA256 Git commit qua stdin manifest, không source mount. Full quality+438/3140 chạy trên application/test bytes giống hệt ở ledger-final trước khi gỡ TXT thuần tài liệu. Browser390px/Tab/Enter/phân trang/quyền trên image cuối được ghi bên dưới.
+
+Net diff so với6a35312 gồm **13files**, không thay đổi TXT; 26thay đổi học tập ngoài phạm vi vẫn nguyên working tree (127dòng cũ HUONG_DAN vẫn unstaged). Phụ lục TXT từng nằm trong75f330f đã gỡ ởb8f434b theo yêu cầu mới, không force-push/rewrite lịch sử. Stack test dùng một lần/secrets đã dọn, không đổi DB development hoặc container VS Code. Logs /private/tmp/ledger-ci-b8f434b.{json,log} đã che URL querystrings.
+
+Biên nhận này thuộc commit tài liệu sau sourceb8f434b; run commit bàn giao cuối được kiểm đúng SHA trước khi báo hoàn thành. Không dùng run source làm bằng chứng cho run bàn giao, không sửa main/production, không GHCR release.
+
+---
+
 # Sổ biến động — bản cuối local và browser 13/11/2026
 
 Nhánh `codex/inventory-stock-ledger`, base `6a35312d2320694770eb069a7870164715f36bc4`, origin xác nhận `git@github.com:Thanhlong282828/ruby-projec-one.git`. Không push omega/main, không release GHCR. Giữ 26 thay đổi học tập ngoài phạm vi. Theo yêu cầu bổ sung của người dùng, đã gỡ phần TXT mới của đợt này khỏi hai file hướng dẫn; nội dung có sẵn giữ nguyên. Net diff hai TXT so với base bằng 0; không rewrite lịch sử commit đã push.
@@ -26,7 +45,7 @@ Remote CI của base không thay thế diff mới. SHA/run nguồn sẽ được
 
 ---
 
-# Truy vết tồn kho — kiểm chứng local 13/11/2026
+# Lịch sử trước hoàn tất — kiểm chứng local 13/11/2026
 
 Base HEAD `6a35312d2320694770eb069a7870164715f36bc4`, working tree trên `codex/procurement-stock-receipts`. Đợt mới chưa commit/push, không dùng CI xanh của base làm bằng chứng cho thay đổi mới. Giữ các thay đổi local ngoài phạm vi.
 
