@@ -173,3 +173,11 @@ Replay cùng receipt, kho và tập mapping (chuẩn hóa ID/sắp xếp dòng) 
 Catalog read/manage, receipts.read/post, balances.read là grants MySQL riêng, provision admin/manager, không suy từ role enum runtime. Người được ghi nhưng thiếu catalog.read chỉ nhận projection tối thiểu active kho/SKU cho form, không vào trang quản lý catalog. Người chỉ xem tồn không tự được mở chứng từ nguồn. Realtime warehouse./stock_item. yêu cầu catalog.read; stock_receipt. yêu cầu receipts.read, kèm realtime.read hiện hành. Payload form/catalog được filter khỏi log; outbox/audit chỉ metadata.
 
 Trả hàng, xuất/chuyển/kiểm kê, giá vốn/định giá tồn, lô/serial/vị trí, chuyển đổi đơn vị, đảo bút toán, invoice/AP/đối soát ba bên còn backlog. Tồn đợt này chỉ là số lượng nhập từ GR đã ghi sổ, chưa phải đầy đủ WMS hoặc kế toán kho.
+
+## Truy vết tồn kho theo cặp kho / mã hàng
+
+- Từ số lượng ở `/inventory/balances`, mở `/inventory/ledger?warehouse_id=ID&stock_item_id=ID`. Route helper `stock_ledger_path`; Query `HrmProcurement::Application::Queries::StockLedger` gọi ReadRepositoryInterface → StockReads. Không truy vấn trong controller/view.
+- Quyền `inventory.balances.read`; company lấy từ actor. Cả warehouse và stock_item phải tồn tại trong công ty hiện hành, ID malformed/cross-company trả 404. Chỉ lấy movements của phiếu `posted`, đúng cặp kho/mã hàng; tổng tất cả trang, 25 dòng/trang mới nhất trước.
+- Dòng hiển thị thời điểm ghi sổ, mã phiếu nhập, snapshot mã/tên/đơn vị và tham chiếu dòng nhận/PO. Link phiếu nhập chỉ hiện khi còn `inventory.receipts.read`; quyền đọc tồn không tự cấp quyền mở chứng từ. Thu quyền đọc tồn chặn cả URL trực tiếp và Query.
+- Phân trang giữ warehouse_id + stock_item_id. Cặp hợp lệ chưa nhập hiển thị tổng 0/danh sách rỗng; không biến ID khác công ty thành màn hình rỗng. Không có mutation, export hay lũy kế giả. Sổ hiện chỉ gồm nhập từ GR, chưa phải WMS đầy đủ.
+- Bảng ledger có region tên “Các dòng biến động kho”, `tabindex=0` và focus-visible; Tab vào rồi dùng trái/phải để cuộn cột trong màn hình hẹp. Khung bảng cuộn riêng, không kéo cả phần tổng/link về kho.

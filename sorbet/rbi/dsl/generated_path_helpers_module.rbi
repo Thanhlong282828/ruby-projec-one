@@ -424,6 +424,9 @@ module GeneratedPathHelpersModule
   def stock_balances_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def stock_ledger_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def stock_receipt_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }

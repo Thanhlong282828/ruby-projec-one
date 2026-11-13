@@ -43,3 +43,5 @@ get "/inventory/receipts/new", to: "procurement/stock_receipts#new", as: :new_st
 post "/inventory/receipts", to: "procurement/stock_receipts#create"
 get "/inventory/receipts/:id", to: "procurement/stock_receipts#show", as: :stock_receipt
 get "/inventory/balances", to: "procurement/stock_balances#index", as: :stock_balances
+
+get "/inventory/ledger", to: "procurement/stock_ledger#index", as: :stock_ledger

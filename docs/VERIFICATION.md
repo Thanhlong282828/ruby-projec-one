@@ -1,3 +1,48 @@
+# Sổ biến động — bản cuối local và browser 13/11/2026
+
+Nhánh `codex/inventory-stock-ledger`, base `6a35312d2320694770eb069a7870164715f36bc4`, origin xác nhận `git@github.com:Thanhlong282828/ruby-projec-one.git`. Không push omega/main, không release GHCR. Giữ 26 thay đổi học tập ngoài phạm vi; chỉ index phụ lục mới của HOC_MODULE và HUONG_DAN_LARAVEL_SANG_RAILS, không stage phần cũ.
+
+Diff hoàn tất: route GET /inventory/ledger; StockLedgerController → StockLedger Query → ReadRepositoryInterface#stock_ledger → StockReads, ERB; link số tồn theo warehouse/item, scope posted/company/current grant; generated route RBI. Review thêm region cuộn bảng có tabindex/aria-label/focus-visible và CSS scoped, giúp người dùng bàn phím xem cột bị khuất ở 390px. Không sửa schema, permission defaults hay command nhập kho.
+
+**Browser thật trên image bản cuối `hrm-ci:ledger-final`, MySQL8.4 hrm_test/network/volume hrm-ledger-browser riêng, không source mount:**
+- Hai công ty mẫu, mỗi công ty có kho MAIN/SKU001, hai phiếu nhập4+6. Công ty1 thêm mã PAGED với26 dòng1cái dùng command nghiệp vụ để có trang2 thật. Dữ liệu giả không đưa vào development.
+- Công ty1 admin: số tồn10 → Tab từ Xem tồn, Enter vào đúng warehouse1/item1; hai dòng+6/+4, tổng10. Tab tới link mở đúng phiếu nhập2(+6), phiếu1(+4), chuỗi PR/PO/GR/IN đúng; browser Back giữ pair, Về tồn theo kho giữ warehouse1.
+- PAGED: trang1 có25 dòng, Trang tiếp bằng Enter có1dòng, Trang trước quay lại25; cả hai tổng26. URL page=1/2 giữ warehouse1/item2.
+- Nhân viên chỉ được cấp inventory.balances.read, không inventory.receipts.read: tồn10 và ledger+4/+6 đọc được, tbody không có link phiếu, gõ URL phiếu cùng công ty trả trang từ chối. Admin công ty1 gõ URL phiếu công ty2 trả Không tìm thấy dữ liệu; hồi quy HTTP xác nhận404, thiếu grant403.
+- Đo CSS innerWidth=documentElement.scrollWidth=390 ở balances/ledger/page2/phiếu nguồn. Screenshot nội bộ xác nhận bố cục, không lưu ảnh vào repo. Tab vào region Các dòng biến động kho có outline solid; Right cuộn tới cột+6/+4, không tràn trang. Đã lặp luồng admin và pagination/IDOR sau thay đổi region, nhân viên được kiểm region và quyền trên image cuối. Viewport đã reset, tab test đóng. Không tuyên bố WCAG audit đầy đủ.
+
+**Kiểm thử bản cuối, thay cho mốc437/3124:**
+- Focused `docker compose exec -T -e RAILS_ENV=test web bundle exec rails test modules/procurement/test/integration/stock_ledger_test.rb`: **4 tests /40 assertions**,0fail/error/skip. Thêm hồi quy phân trang26dòng/thật, foreign SKU/sourceURL, revoked source read, region focusable.
+- `docker build -t hrm-ci:ledger-final .`; Dockerfile repo, Ruby **3.4.12**, Bundler **2.6.9**, bundle check đạt. `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=$PWD/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-ci:ledger-final sh -c 'ruby -v && bundle --version && bundle check && bin/quality && bundle exec rails test'`: **438 tests /3.140 assertions**,0fail/error/skip,130.857813s.
+- RuboCop **663files/0offenses**, explicit routes14, architecture58controllers/13Engines/40bindings; Sorbet21strictfiles+3negativeprobes, RBI/preflight/shims/zeitwerk, Gitleaks1182publishablefiles/redact100%, Brakeman0warnings và bundler-audit1359/no vulnerabilities đều đạt. Query budgets unchanged9/20/49 ở1và20employees.
+- `/usr/bin/ruby bin/smoke-image hrm-ci:ledger-final`: nonrootUID1000, structure.sql có/schema.rb/private env/key vắng, /up200/session/new200/pay_runs302, không source mount. Local image ID **sha256:fce6ba0107d81d6474e88e429c14f85694d75ed824238c66fc0fdfe42c231ea0**; không registry digest. Host system Ruby chỉ điều phối Docker, ứng dụng chạy3.4.12. Image này build working tree qua .dockerignore, có tài liệu ngoài phạm vi; snapshot index/commit được kiểm riêng trước push, không giả toàn image cũ khớp commit mới.
+- `git diff --check`: đạt. Logs /private/tmp/ledger-final-{focused,quality-full,smoke}.log; fixture script /private/tmp/ledger-browser-seed.rb chỉ dùng test. Lần trước437/3124 là lịch sử, không dùng cho code mới.
+
+Snapshot index sạch `/private/tmp/hrm-ledger-reviewed` được quét Gitleaks redact100%:19,06MB source và43,98KB staged diff, không leak; filename staged không env/key/dump/CSV/log. Image `hrm-ci:ledger-reviewed` build từ snapshot này, smoke không source mount đạt, ID **sha256:7cb450ec82a5cf6b5acc3618f0ac2ecd50fe70f91adb72663635a0bb90f95fd1**. Manifest SHA256 đối chiếu toàn bộ file ứng dụng trong index với image đã chạy fullsuite và image sạch đều đạt (log /private/tmp/ledger-index-parity.log). Stack/volume/network browser đã dọn, runtime.env dùng một lần đã xóa; container VS Code và dữ liệu development giữ nguyên.
+
+Remote CI của base không thay thế diff mới. SHA/run nguồn sẽ được ghi bằng biên nhận sau khi CI thực sự kết thúc; không tự giả commit chứa link run tương lai.
+
+---
+
+# Truy vết tồn kho — kiểm chứng local 13/11/2026
+
+Base HEAD `6a35312d2320694770eb069a7870164715f36bc4`, working tree trên `codex/procurement-stock-receipts`. Đợt mới chưa commit/push, không dùng CI xanh của base làm bằng chứng cho thay đổi mới. Giữ các thay đổi local ngoài phạm vi.
+
+Đã thêm Query StockLedger, ReadRepositoryInterface#stock_ledger / StockReads, StockLedgerController/index/view, route GET tường minh, link số tồn → cặp kho/mã hàng và route-helper RBI sinh bằng Tapioca test. Không thay schema, không migration/seed/reset development. Dữ liệu nguồn là ledger posted, tổng tất cả trang, 25 dòng/trang; scope company và quyền inventory.balances.read, link phiếu cần receipts.read riêng.
+
+Lệnh và kết quả:
+- `docker compose exec -T -e RAILS_ENV=test web bundle exec tapioca dsl --environment=test --workers=1`: đạt, cập nhật hai route-helper RBI.
+- Focused `bundle exec rails test modules/procurement/test/integration/stock_ledger_test.rb` trong container test: **3 test /24 assertions**,0fail/error/skip. Bao phủ4+6→10, link pair/source, trang rỗng nhưng tổng không đổi, giữ filters, zero pair, foreign warehouse/malformed ID, quyền đọc phiếu và tồn thu hồi.
+- Quality trong container web cũ dừng tại scanner vì Gitleaks không tạo report; không tính là PASS. Build lại bằng `docker build -t hrm-ci:stock-ledger .`; context working tree qua .dockerignore, gồm tài liệu local không thuộc đợt, không tuyên bố image khớp một commit mới.
+- `docker run --rm --env-file .env --network xinviec-hrm_default --mount type=bind,src=$PWD/tmp/mysql-schema-client/ca.pem,dst=/run/mysql-ca.pem,readonly -e DATABASE_SSL_CA=/run/mysql-ca.pem -e RAILS_ENV=test hrm-ci:stock-ledger sh -c 'ruby -v && bundle --version && bin/quality && bundle exec rails test'`: Ruby **3.4.12**, Bundler **2.6.9**, **437 tests /3.124 assertions**,0fail/error/skip,108.890463s. Baseline434/3099; số assertions của test cũ có thể thay đổi theo tập thứ tự/fixture.
+- RuboCop **663files/0offenses**; routes14; architecture58controllers/13Engines/40bindings; Sorbet+3negativeprobes đạt, giữ21strictfiles; RBI/preflight/shims/zeitwerk đạt; Gitleaks1182publishablefiles/redacted không leak; Brakeman0warnings và bundler-audit no vulnerabilities.
+- `ruby bin/smoke-image` trên Mac bị rbenv chặn vì chưa cài Ruby3.4.12. Chạy script điều phối bằng `/usr/bin/ruby bin/smoke-image hrm-ci:stock-ledger`: PASS, ứng dụng bên trong vẫn Ruby3.4.12. Không source mount, UID1000, structure có/schema.rb và private env/key vắng, /up200/session/new200/pay_runs302. Local image ID **sha256:e4cfd7ecc7b59d95c342b8c5c72a32eed89dbee647c32b3ff4cc4cc6ffe22ecc**, không registry digest.
+- `git diff --check`: đạt. Log `/private/tmp/stock-ledger-{focused,image-quality-full,smoke}.log`.
+
+Giới hạn: chưa chạy browser Tab/Enter/390px riêng cho màn hình mới; dùng layout/table overflow và focus sẵn có, không lấy browser evidence đợt trước thay thế. Chưa commit/push/remote CI cho diff mới; không GHCR. Không mở rộng xuất/trả/chuyển kho, định giá hay công nợ.
+
+---
+
 # Nhập kho — biên nhận CI đúng SHA
 
 Source **`b64133a515ce96e39e5c1f3c83298fc5fad9596d`**, nhánh `codex/procurement-stock-receipts`, repo `Thanhlong282828/ruby-projec-one`. [Actions run 43392111459](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43392111459) **completed/success**. Đã đọc headSha, metadata mọi step và log; hai job/mọi step success, không required gate nào skip.

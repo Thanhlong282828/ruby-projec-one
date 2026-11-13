@@ -1,0 +1,15 @@
+<div class="page-heading"><div><div class="eyebrow">KHO / TRUY VẾT TỒN</div><h1>Sổ biến động kho</h1><p><%= current_user.company.name %> · <%= @workspace[:warehouse].code %> · <%= @workspace[:item].code %> — <%= @workspace[:item].name %></p></div></div>
+<section class="panel">
+  <p>Tổng nhập đã ghi sổ: <strong><%= @workspace[:quantity].to_s("F") %> <%= @workspace[:item].unit %></strong> · <%= @workspace[:count] %> dòng. Mới nhất trước; tổng bao gồm tất cả các trang.</p>
+  <p>Sổ hiện chỉ có nhập từ phiếu nhận, chưa bao gồm xuất, trả hàng hoặc điều chỉnh tồn.</p>
+  <%= link_to "Về tồn theo kho", stock_balances_path(warehouse_id: @workspace[:warehouse].id) %>
+  <div class="stock-ledger-scroll" tabindex="0" role="region" aria-label="Các dòng biến động kho">
+  <table><thead><tr><th>Ghi sổ</th><th>Phiếu nhập</th><th>Mã / tên lúc ghi</th><th>Dòng nhận / PO</th><th>Số lượng nhập</th></tr></thead><tbody>
+    <% @workspace[:records].each do |line| %>
+      <tr><td><%= l(line.stock_receipt.posted_at, format: :short) %></td><td><% if @workspace[:receipts_visible] %><%= link_to line.stock_receipt.code, stock_receipt_path(line.stock_receipt) %><% else %><%= line.stock_receipt.code %><% end %></td><td><%= line.item_code_snapshot %> · <%= line.item_name_snapshot %></td><td>#<%= line.goods_receipt_line_id %> / #<%= line.purchase_order_line_id %></td><td>+<%= line.quantity.to_s("F") %> <%= line.unit %></td></tr>
+    <% end %>
+  </tbody></table>
+  </div>
+  <% if @workspace[:records].empty? %><p class="empty">Chưa có biến động đã ghi sổ cho kho và mã hàng này.</p><% end %>
+</section>
+<%= render "procurement/orders/pagination", workspace: @workspace, destination: :stock_ledger_path %>

@@ -48,6 +48,15 @@ module HrmProcurement
           rows = records.map { |row| { warehouse: warehouses.fetch(row.warehouse_id), item: items.fetch(row.stock_item_id), quantity: row[:balance_quantity] } }
           { records: rows, count: count, filters: filters, warehouses: ::Warehouse.where(company_id: actor.company_id).order(:code).pluck(:name, :code, :id, :status) }
         end
+        def stock_ledger(actor:, filters:)
+          Pundit.authorize(actor, ::StockMovement, :index?)
+          warehouse = ::Warehouse.where(company_id: actor.company_id).find(filters.fetch(:warehouse_id))
+          item = ::StockItem.where(company_id: actor.company_id).find(filters.fetch(:stock_item_id))
+          scope = Pundit.policy_scope!(actor, ::StockMovement).where(warehouse_id: warehouse.id, stock_item_id: item.id)
+          records = scope.includes(:stock_receipt).order(id: :desc).limit(25).offset((filters.fetch(:page) - 1) * 25).to_a
+          { records: records, count: scope.count, quantity: scope.sum(:quantity), warehouse: warehouse, item: item,
+            filters: filters, receipts_visible: Pundit.policy!(actor, ::StockReceipt).index? }
+        end
         private
         def stock_read_model(kind)
           case kind

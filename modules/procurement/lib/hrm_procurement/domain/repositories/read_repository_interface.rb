@@ -8,6 +8,7 @@ module HrmProcurement
         def stock_receipt_workspace(actor:, filters:) = raise(NotImplementedError)
         def find_stock_receipt!(actor:, id:) = raise(NotImplementedError)
         def stock_source(actor:, id:, item_search: nil, warehouse_search: nil) = raise(NotImplementedError)
+        def stock_ledger(actor:, filters:) = raise(NotImplementedError)
         def stock_balances(actor:, filters:) = raise(NotImplementedError)
         def receipt_workspace(actor:, filters:) = raise(NotImplementedError)
         def find_receipt!(actor:, id:) = raise(NotImplementedError)

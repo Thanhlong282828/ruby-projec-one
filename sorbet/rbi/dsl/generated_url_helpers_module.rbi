@@ -424,6 +424,9 @@ module GeneratedUrlHelpersModule
   def stock_balances_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def stock_ledger_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def stock_receipt_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
