@@ -1,6 +1,6 @@
 # Sổ biến động — bản cuối local và browser 13/11/2026
 
-Nhánh `codex/inventory-stock-ledger`, base `6a35312d2320694770eb069a7870164715f36bc4`, origin xác nhận `git@github.com:Thanhlong282828/ruby-projec-one.git`. Không push omega/main, không release GHCR. Giữ 26 thay đổi học tập ngoài phạm vi; chỉ index phụ lục mới của HOC_MODULE và HUONG_DAN_LARAVEL_SANG_RAILS, không stage phần cũ.
+Nhánh `codex/inventory-stock-ledger`, base `6a35312d2320694770eb069a7870164715f36bc4`, origin xác nhận `git@github.com:Thanhlong282828/ruby-projec-one.git`. Không push omega/main, không release GHCR. Giữ 26 thay đổi học tập ngoài phạm vi. Theo yêu cầu bổ sung của người dùng, đã gỡ phần TXT mới của đợt này khỏi hai file hướng dẫn; nội dung có sẵn giữ nguyên. Net diff hai TXT so với base bằng 0; không rewrite lịch sử commit đã push.
 
 Diff hoàn tất: route GET /inventory/ledger; StockLedgerController → StockLedger Query → ReadRepositoryInterface#stock_ledger → StockReads, ERB; link số tồn theo warehouse/item, scope posted/company/current grant; generated route RBI. Review thêm region cuộn bảng có tabindex/aria-label/focus-visible và CSS scoped, giúp người dùng bàn phím xem cột bị khuất ở 390px. Không sửa schema, permission defaults hay command nhập kho.
 
@@ -19,6 +19,8 @@ Diff hoàn tất: route GET /inventory/ledger; StockLedgerController → StockLe
 - `git diff --check`: đạt. Logs /private/tmp/ledger-final-{focused,quality-full,smoke}.log; fixture script /private/tmp/ledger-browser-seed.rb chỉ dùng test. Lần trước437/3124 là lịch sử, không dùng cho code mới.
 
 Snapshot index sạch `/private/tmp/hrm-ledger-reviewed` được quét Gitleaks redact100%:19,06MB source và43,98KB staged diff, không leak; filename staged không env/key/dump/CSV/log. Image `hrm-ci:ledger-reviewed` build từ snapshot này, smoke không source mount đạt, ID **sha256:7cb450ec82a5cf6b5acc3618f0ac2ecd50fe70f91adb72663635a0bb90f95fd1**. Manifest SHA256 đối chiếu toàn bộ file ứng dụng trong index với image đã chạy fullsuite và image sạch đều đạt (log /private/tmp/ledger-index-parity.log). Stack/volume/network browser đã dọn, runtime.env dùng một lần đã xóa; container VS Code và dữ liệu development giữ nguyên.
+
+Commit75f330f ban đầu có phụ lục TXT; commit tiếp theo chỉ gỡ phụ lục này theo yêu cầu mới và cập nhật biên nhận, không đổi application/test bytes. Không cần chạy lại fullsuite cho thay đổi thuần tài liệu; CI vẫn phải đạt trên SHA cuối.
 
 Remote CI của base không thay thế diff mới. SHA/run nguồn sẽ được ghi bằng biên nhận sau khi CI thực sự kết thúc; không tự giả commit chứa link run tương lai.
 

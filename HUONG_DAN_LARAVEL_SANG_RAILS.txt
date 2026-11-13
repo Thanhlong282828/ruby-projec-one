@@ -586,9 +586,3 @@ Nhận4 rồi6 là hai GoodsReceipt khác nhau. Nhậpphiếu4 tăng tồn4; nh�
 Replay là đọc lại: còn inventory.receipts.read thì cùngmapping trả chứng từ cũ kể cả grant post đã thu hồi/catalog inactive. Ghi mới luôn kiểm inventory.receipts.post + read + procurement.receipts.read; thu hồi entry.read thì replay cũng403.
 Menu Kho: Chờ nhập kho / Lịch sử nhập / Tồn theo kho / Danh mục kho / Mã hàng. KPI dùng cùng pending_stock_workspace, không tự ghi khi bấm card. PR→PO→GR→IN mở nguồn theo quyền từng loại.
 Code nằm trong Engine procurement hiện có, chưa có Engine inventory riêng. PostStockReceipt là command nghiệp vụ, không phải lệnh terminal tương đương Artisan. Trả hàng/đảo bút toán/giá vốn/invoice/AP làm đợt sau.
-
-TRUY VET TON KHO: LARAVEL <-> RAILS
-Laravel: route GET -> Controller -> Query/Service -> repository Eloquent -> Blade.
-Rails: config/routes/procurement.rb GET /inventory/ledger -> Procurement::StockLedgerController#index -> Application::Queries::StockLedger -> ReadRepositoryInterface#stock_ledger -> Infrastructure::Persistence::StockReads -> views/procurement/stock_ledger/index.html.erb.
-Laravel where(company_id, auth user company), where kho/ma hang va sum(quantity): Rails Pundit.policy_scope!(actor, StockMovement).where(warehouse_id:, stock_item_id:).sum(:quantity). Scope chi gom phieu posted. Controller khong viet SQL.
-Bam so ton mo dung cap kho/ma hang; tong tinh tren tat ca trang, danh sach 25 dong/trang. Quyen doc ton inventory.balances.read khac quyen doc phieu inventory.receipts.read: co the xem bien dong nhung khong co link mo phieu. Company lay tu actor server, khong tin company_id tu URL.
