@@ -1,3 +1,22 @@
+# PO — biên nhận CI trên commit đã push
+
+Source **`a4be8a165b7d738f4ed19e7fc3cb4cac063f8a4f`**, nhánh `codex/procurement-purchase-orders`, repo `Thanhlong282828/ruby-projec-one`. [Actions run 43359453361](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43359453361) completed/success; đã đọc headSha, metadata từng step và log. Không required step nào bị skip.
+
+| Job GitHub Actions | Bằng chứng đúng SHA |
+|---|---|
+| Ruby / Rails lint and format | **613 files / 0 offenses**, routes/architecture/actionlint đạt; Sorbet + 3 negative probes đạt |
+| MySQL tests / autoload / security | **397 tests / 2.757 assertions**, 0 failures/errors/skips; MySQL readiness/provision/migration/13 guards, receiver8 tests, gem/DSL RBI, secret scan negative/redaction, fresh SQL, image smoke, Zeitwerk, Brakeman0, bundler-audit, unchanged lockfile và cleanup đều chạy và đạt |
+
+CI image build từ Dockerfile repo (không GHCR publication), image ID **`sha256:0c4c55ad0ba3a6fbb6a28513e4964b51b890463b5b378a26499b12f271bbd789`** trên x86_64; không gọi đây là registry manifest digest. Smoke không source mount đạt /up200 /session/new200 /pay_runs302, UID1000, structure.sql có, schema.rb/private env/key không có.
+
+Local cùng commit: export Git index sạch → `docker build -t hrm-ci:po-reviewed /private/tmp/hrm-po-reviewed`; image ID **`sha256:c4eb54ba52013450e7a99aee4daad6f478cf0d96a2e5c2813ee4e12ff5f1157a`** trên arm64. SHA256 của **1.021 file ứng dụng** (modules/config/db/bin/test/sorbet/Gemfile/lock/Dockerfile/Ruby version) trong image khớp Git commit qua metadata stdin, không mount source. `bundle check && bin/quality && bundle exec rails test`: **397/2757**, 0 lỗi, 91,891115 giây; smoke không source mount đạt. 21 strict files giữ nguyên; PO gradual typing, không nhận vơ strict toàn app.
+
+Staged 68 file đã review tên/nội dung và gitleaks100% redacted: snapshot18,50MB/diff418,97KB, không leak. Các TXT/inventory/make cũ vẫn ngoài commit; phụ lục PO trong hướng dẫn chỉ stage phần mới, giữ 127 dòng local trước đó. Source code không phát sinh diff sau commit. Stack rehearsal/browser dùng một lần và secrets tạm đã dọn; backup development vẫn ở tmp bị ignore. Local /session/new HTTP200, container VS Code giữ nguyên.
+
+Biên nhận này viết sau run a4be8a1, thuộc commit tài liệu bàn giao tiếp theo; không giả rằng source commit tự chứa SHA/run của chính nó. Commit bàn giao chỉ cập nhật tài liệu; đối chiếu run cuối theo branch trên Actions. Không sửa main, không phát hành GHCR. Toàn bộ nghiệp vụ/kết quả/migration/browser và giới hạn ở phần bên dưới.
+
+---
+
 # PO từ yêu cầu mua đã duyệt — 13/11/2026
 
 Nhánh `codex/procurement-purchase-orders`, baseline **bc6084e06a9a93a3539916e08fd5b0aabca20859** / repo `Thanhlong282828/ruby-projec-one`. Đã đọc AGENTS, toàn bộ diff hiện có, ERP_NAVIGATION và evidence cũ; giữ 26 thay đổi học tập/inventory/make ngoài phạm vi. Baseline chạy lại bằng image baseline trên hrm_test: **379 tests / 2.591 assertions**, 0 failures/errors/skips, 76,195313 giây. Source vẫn **21 file typed: strict**; không mở rộng strict trong đợt PO.
@@ -17,7 +36,7 @@ Ruby **3.4.12**, Bundler **2.6.9**, MySQL **8.4**, bundle check đạt. `docker 
 
 | Gate | Kết quả |
 |---|---|
-| Full suite sau sửa lỗi form browser | **396 tests / 2.748 assertions**, 0 failures/errors/skips, 99,274180 giây; thêm một regression realtime sau lượt này đạt riêng 1 test / 9 assertions. Full snapshot tổng sẽ được chốt trước bàn giao |
+| Full suite sau sửa lỗi form browser | **397 tests / 2.757 assertions**, 0 failures/errors/skips, 91,891115 giây trên snapshot sạch đúng a4be8a1 (gồm regression realtime); lượt trước sau sửa form396/2748, 99,274180 giây |
 | RuboCop | **613 files / 0 offenses** |
 | Routes / architecture | 14 route files; 51 controllers, 13 Engines, 40 bindings |
 | Sorbet / RBI / autoload | 21 strict files giữ nguyên; 3 negative probes bị từ chối và file tạm đã xóa; gem/DSL verify/check-shims đạt, Zeitwerk đạt |
