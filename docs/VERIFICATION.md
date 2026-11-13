@@ -1,3 +1,20 @@
+# Đảo phiếu trả — biên nhận GitHub Actions đúng SHA
+
+Source **db4dac21b51eb9355601093db5fbe35fccadb3a0**, nhánh **codex/inventory-supplier-return-reversals**, repo **Thanhlong282828/ruby-projec-one**. [Actions run43499183038](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43499183038) **completed/success**. Đã đối chiếu headSha, từng required step và số test trong log, không skip.
+
+| Job | Kết quả thực tế trên GitHub |
+|---|---|
+| Ruby / Rails lint and format | **696files/0offenses**, explicit route check14files, architecture60controllers/13Engines/40bindings; actionlint; Sorbet21strict+3negativeprobes; report, **11steps success** |
+| MySQL tests / autoload / security | **481tests/3.475assertions**,0fail/error/skip; real MySQL readiness/provision/migrate/39guards; receiver8tests; dependency/DSL RBI/preflight/shims; secret scanner/negative/redaction; fresh SQL; no-source-mount smoke; zeitwerk; Brakeman0; dependency audit no vulnerabilities; lockfile unchanged; cleanup, **16steps success** |
+
+CI Dockerfile x86_64 image ID **sha256:0dcda0dff9f5f68fb639cb1cbcc12b36038ae2a5db1ef02ad2c2787325da992f** (local image ID, không registry digest). UID1000, SQL schema có/schema.rb/private env/key vắng; /up200,/session/new200,/pay_runs302. Fresh definitionSHA256 **2d2778025bb4256ff1b0fee9265dec6fa86d84a1c7296cd1eb9f34ff43c5fd84**, khớp local schema nâng cấp/fresh. Ruby3.4.12/Bundler2.6.9 theo repo, không GHCR release.
+
+Net source diff50files, không TXT; source/index secret scan redaction đạt. Local image tested và reviewed có **1.138file ứng dụng** SHA256 khớp; review/image/upgrade/browser/focused/full evidence chi tiết ở dưới. Worktree riêng, checkout Desktop giữ29file học tập/Cmd+S nguyên byte, không đổi main/production/omega.
+
+Biên nhận này là commit Markdown sau source db4dac2. Run của SHA bàn giao cuối được kiểm riêng trước khi báo hoàn thành; không lấy source run thay final run. Logs đã che URL querystrings: `/private/tmp/reversals-source-ci.log`, metadata SHA/jobs ở `reversals-source-ci.json`. Các kết quả local bên dưới là lịch sử đã chạy, không giả remote CI cho snapshot chưa push.
+
+---
+
 # Đảo phiếu trả nhà cung cấp — local 14/11/2026
 
 Worktree riêng `/private/tmp/ruby-return-reversals`, nhánh `codex/inventory-supplier-return-reversals`, base chính xác **1f80a41152b6291c4b4e40fe790ed689092f0bac**. Origin `git@github.com:Thanhlong282828/ruby-projec-one.git`; không push omega/main/production, không GHCR. Manifest giữ **29 file** học tập/Cmd+S ở checkout Desktop từng byte; không sửa/stage TXT. Baseline CI run43492593823 không thay cho bằng chứng diff mới.
