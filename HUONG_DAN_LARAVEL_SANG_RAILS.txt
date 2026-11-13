@@ -513,3 +513,25 @@ contract cần thiết, không tạo Write Repository giả cho module chỉ đ�
 đa công ty/ca làm/tăng ca/thuế đã được chuyển sang Ruby.
 
 Tài liệu đối chiếu nguồn DJI: docs/DJI_ARCHITECTURE_MAPPING.md.
+
+
+=== BỔ SUNG 13/11/2026: LUỒNG YÊU CẦU MUA HÀNG ===
+Project hiện có 13 Engines. Mua hàng nằm tại modules/procurement.
+So sánh từng bước cho người biết Laravel:
+Laravel route -> Controller -> Action -> interface/provider -> Eloquent repository.
+Rails ở đây: config/routes/procurement.rb -> Procurement::RequestsController
+  -> Application::Commands (ghi) hoặc Queries (đọc) -> Domain repository contract
+  -> ProcurementServiceProvider bind -> ActiveRecord repository -> MySQL.
+Provider chỉ nối dependency; PurchaseRequestPolicy mới kiểm quyền MySQL/company.
+Company lấy từ phiên đăng nhập; không lấy company_id trên form làm tenant.
+Nháp -> sửa dòng -> xác nhận gửi -> người khác duyệt/từ chối -> lịch sử.
+Từ chối phải ghi lý do. Người tạo không tự duyệt; gửi rồi khóa nội dung.
+Tiền dùng BigDecimal, nguyên VND; làm tròn từng dòng HALF_UP rồi cộng ở server.
+Tương đương DB::transaction + lockForUpdate: transaction + .lock ở WriteRepository.
+Repository khóa quyền hiện hành, khóa phiếu, kiểm lock_version/trạng thái rồi ghi.
+Audit/outbox/lịch sử cùng transaction: lỗi thì rollback toàn bộ.
+Menu Mua hàng có Yêu cầu mua / Yêu cầu của tôi / Chờ tôi duyệt.
+KPI mở purchase_requests_path(status: submitted, view: review), không duyệt tự động.
+Phạm vi queue loại phiếu tự tạo và chỉ hiện khi có read_all + review trong MySQL.
+Xem bảng Laravel/Rails, file và backlog chi tiết tại docs/ERP_NAVIGATION.md
+và modules/procurement/README.md. Chưa có đơn mua hàng/nhập kho/công nợ tự động.

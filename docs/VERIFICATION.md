@@ -1,15 +1,32 @@
+# Mua hàng — biên nhận GitHub Actions đúng SHA
+
+Commit **`0b3566314f81baba05aaf20c731b7924792cbccf`**, nhánh `codex/procurement-request-workflow`, repo `Thanhlong282828/ruby-projec-one`. [Actions run 43352273439](https://github.com/Thanhlong282828/ruby-projec-one/actions/runs/43352273439) completed/success. Đã đối chiếu headSha, toàn bộ step conclusion và log; không có required step bị skip.
+
+| Job remote | Kết quả đã đọc trong log |
+|---|---|
+| Ruby / Rails lint and format | 588 files / 0 offenses; routes, architecture, actionlint, Sorbet và 3 negative probes đạt |
+| MySQL tests / autoload / security | **379 tests / 2.591 assertions**, 0 failures/errors/skips; MySQL readiness/provision/migration/7 guards, 8 receiver tests, RBI, secret negative/redaction scan, fresh SQL, image smoke, Zeitwerk, Brakeman, dependency audit, lockfile và cleanup đều đạt |
+
+CI build từ Dockerfile repo, không source mount: /up 200, /session/new 200, /pay_runs 302; non-root, structure.sql có, legacy schema/env/private keys không có. CI image ID **`sha256:1c7f29bdacb0a1d03f1f5a66aa414212976ea9de5b40fd0eaaecebafc409bf8e`** (x86_64 image ID; không registry digest). Local build lại từ Git index sạch đúng commit này: **`hrm-ci:procurement-commit`**, image ID **`sha256:2ea635c247fb4ed71af4cbd2c51d4402267ce2ed2611f8fa0b063d018a291d7a`**; bundle check + bin/quality + full MySQL suite **379/2591**, 0 lỗi, 77,963998 giây; smoke không source mount đạt. Snapshot sạch không chứa các TXT/inventory/make ngoài phạm vi.
+
+Schema đã nâng cấp trong MySQL dùng một lần cũng được so toàn bộ định nghĩa FK/CHECK/index/trigger/column/migration bằng cùng query của bin/verify-test-schema: SHA256 **19f90cb9bc4cc569bf9131b7baf2d554edb040fac6b093b6e6358c70c4d8fd48**, khớp fresh schema. Container/server test, Redis, network, volume và secrets tạm đã dọn; backup development giữ trong tmp bị ignore. Web local /session/new trả 200, container VS Code giữ nguyên.
+
+Biên nhận này được viết sau run của 0b35663, thuộc commit tài liệu bàn giao tiếp theo; không giả rằng 0b35663 tự chứa SHA/run của chính nó. Tài liệu bàn giao không thay đổi application code/migration/RBI. Run của commit tài liệu có thể đối chiếu theo branch trên Actions; kết quả code được dẫn cụ thể ở trên. Không sửa main, không push remote Omega, không release/GHCR.
+
+---
+
 # Mua hàng — yêu cầu mua, kiểm chứng local 13/11/2026
 
-Nhánh `codex/procurement-request-workflow` tách từ Dashboard CI xanh `635f6887b9aa2ad9efaa538b0fe51fcc21827f68`. Phần Dashboard được chốt trước khi triển khai nghiệp vụ mới. Quy ước trọn hành trình đã hợp nhất trong AGENTS.md. Remote CI của phần Mua hàng chưa xác nhận tại thời điểm ghi phần local này; không lấy run Dashboard làm bằng chứng cho feature mới.
+Nhánh `codex/procurement-request-workflow` tách từ Dashboard CI xanh `635f6887b9aa2ad9efaa538b0fe51fcc21827f68`. Phần Dashboard được chốt trước khi triển khai nghiệp vụ mới. Quy ước trọn hành trình đã hợp nhất trong AGENTS.md. Phần dưới ghi kiểm chứng local trước khi push; biên nhận CI ở đầu tài liệu đã xác nhận feature trên đúng SHA, không dùng run Dashboard thay thế.
 
 ## Đã triển khai và quyết định chủ động
 
 - Engine `modules/procurement` (Engine thứ 13), MVC + CQRS, 2 repository bindings; 40 bindings toàn app. Tạo/sửa nháp có 1–50 dòng, gửi xác nhận, người khác duyệt hoặc từ chối bắt buộc lý do; lịch sử từng phiên bản, actor ID và thời điểm. Actor ID/“Bạn” tránh đọc email ngoài scope. Nội dung/định danh không đổi sau gửi; không có chức năng xóa.
 - Menu Mua hàng: Yêu cầu mua, Yêu cầu của tôi (`view=mine`), Chờ tôi duyệt (`status=submitted&view=review`). Tìm mã/tiêu đề, trạng thái, phân trang25; giữ context khi mở chi tiết/sửa/gửi/quay lại. Lịch sử phân trang25. Menu chỉ active đúng queue.
-- KPI “Yêu cầu mua chờ duyệt” và widget5phiếu mới nhất dùng Read contract nguồn; cùng company/grant/submitted và loại maker. Card/Xem tất cả → `purchase_requests_path(status: "submitted", view: "review")`; dòng → `purchase_request_path` giữ bộ lọc. Số0 → danh sách rỗng; không mutation từ dashboard.
-- Tiền VND chính xác qua BigDecimal, số lượng3số lẻ, đơn giá nguyên đồng12chữ số, từng dòng HALF_UP rồi cộng tổng18chữ số. Không tin total/status/currency/company của client. Mục đích/lý do encrypt; lọc payload khỏi log; realtime metadata yêu cầu read_all.
-- MySQL grants 6key `procurement.requests.{read,read_all,create,update,submit,review}`. Defaults chỉ provision; quyền hiện hành đọc MySQL, deny thắng, custom role không tự thêm. Maker-checker; write khóa identity/profile/company/role/grants rồi phiếu và kiểm version/state. Locking reads tránh grant cũ trong caller REPEATABLE READ. Audit/outbox/history cùng transaction.
-- 3 bảng mới, composite company FK, index queue/code/version, CHECK tiền/trạng thái/maker-checker và5trigger mới bảo vệ state/nội dung/dòng. App/model không xóa; privileged SQL có thể purge lịch sử rồi parent cascade, không tuyên bố chống sửa DB đặc quyền.
+- KPI “Yêu cầu mua chờ duyệt” và widget5 phiếu mới nhất dùng Read contract nguồn; cùng company/grant/submitted và loại maker. Card/Xem tất cả → `purchase_requests_path(status: "submitted", view: "review")`; dòng → `purchase_request_path` giữ bộ lọc. Số0 → danh sách rỗng; không mutation từ dashboard.
+- Tiền VND chính xác qua BigDecimal, số lượng3 số lẻ, đơn giá nguyên đồng12 chữ số, từng dòng HALF_UP rồi cộng tổng18 chữ số. Không tin total/status/currency/company của client. Mục đích/lý do encrypt; lọc payload khỏi log; realtime metadata yêu cầu read_all.
+- MySQL grants 6 key `procurement.requests.{read,read_all,create,update,submit,review}`. Defaults chỉ provision; quyền hiện hành đọc MySQL, deny thắng, custom role không tự thêm. Maker-checker; write khóa identity/profile/company/role/grants rồi phiếu và kiểm version/state. Locking reads tránh grant cũ trong caller REPEATABLE READ. Audit/outbox/history cùng transaction.
+- 3 bảng mới, composite company FK, index queue/code/version, CHECK tiền/trạng thái/maker-checker và5 trigger mới bảo vệ state/nội dung/dòng. App/model không xóa; privileged SQL có thể purge lịch sử rồi parent cascade, không tuyên bố chống sửa DB đặc quyền.
 - Chủ động bổ sung queue, empty state/reset, version conflict409, lịch sử phân trang, thêm/bỏ dòng có focus/aria-live và chỉ active một queue để giảm nhầm thao tác. Không thêm PO/nhập kho/AP/chi tiền tự động khi duyệt yêu cầu.
 
 ## Kết quả local trên source đóng gói
@@ -20,27 +37,27 @@ Ruby **3.4.12**, Bundler **2.6.9**, MySQL **8.4**, bundle check đạt. `docker 
 |---|---|
 | Full MySQL suite | **379 tests / 2.591 assertions**, 0 failures/errors/skips, 79,381108s; mốc trước367/2461 |
 | RuboCop | **588 files / 0 offenses**, mốc557file của Dashboard |
-| Routes / architecture | 14routingfiles; 49controllers, 13Engines, 40bindings; manifest khớp chính xác tên Engine, không chỉ count |
-| Sorbet / RBI | **21 strict files giữ nguyên**, compiler đạt, cả3negative contract probes bị từ chối và xóa file tạm; gem/DSL verify + check-shims đạt trên hrm_test, nạp đủ13Engine/bindings. Procurement hiện gradual typing, không claim strict mới |
+| Routes / architecture | 14routingfiles; 49controllers, 13 Engines, 40 bindings; manifest khớp chính xác tên Engine, không chỉ count |
+| Sorbet / RBI | **21 strict files giữ nguyên**, compiler đạt, cả3 negative contract probes bị từ chối và xóa file tạm; gem/DSL verify + check-shims đạt trên hrm_test, nạp đủ13 Engine/bindings. Procurement hiện gradual typing, không claim strict mới |
 | Autoload / scanners | Zeitwerk đạt; Brakeman0warnings; bundler-audit1359advisories tại4d71b123428e33f694e805ce15351ee3d8d62ef7, không vulnerability; gitleaks source/staged snapshot/staged diff redacted100%, không leak |
 | Workflow / receiver | actionlint1.7.7 đạt; receiver8tests đạt |
-| Fresh SQL | `RAILS_ENV=test ruby bin/verify-test-schema`: definitions SHA256 `19f90cb9bc4cc569bf9131b7baf2d554edb040fac6b093b6e6358c70c4d8fd48`, 25CHECK/81FK/37PK/49UNIQUE/258indexparts/18versions; đủ7trigger; schema tạm đã drop |
+| Fresh SQL | `RAILS_ENV=test ruby bin/verify-test-schema`: definitions SHA256 `19f90cb9bc4cc569bf9131b7baf2d554edb040fac6b093b6e6358c70c4d8fd48`, 25CHECK/81FK/37PK/49UNIQUE/258indexparts/18versions; đủ7 trigger; schema tạm đã drop |
 | Image smoke | `ruby bin/smoke-image hrm-ci:procurement-review`: UID1000, structure.sql có, schema.rb/env/private keys không có; /up200 /session/new200 /pay_runs302. Localarm64imageID `sha256:967de2c419340fe5db794737f901582a487c7f9c14f5ac3c506c59f08dc02c37`, không registry digest/GHCR |
 | Query budget hiện có | 1và20nhân viên: employees9/reconciliation20/export49 SQL queries, không tăng theo số nhân viên trong fixture này |
 
-12test Mua hàng /115assertions gồm exact money, sai kiểu, 51dòng, CSRF bật thật, cross-company IDOR, role/override revoked, own scope, maker-checker, audit/outbox rollback, immutable content SQL, 2reviewers đồng thời, và grant bị thu hồi sau snapshot đọc cũ. Full suite lần đầu phát hiện3test nền cố định12Engines/38bindings/fixtureengine-set; đã sửa đối chiếu manifest/tăng contract count40, không xóa assertion. Browser phát hiện thông báo localeen thiếu: notice Mua hàng dùng localevi rõ ràng, thêm regression assertion. Không đổi locale toàn project.
+12 test Mua hàng /115 assertions gồm exact money, sai kiểu, 51dòng, CSRF bật thật, cross-company IDOR, role/override revoked, own scope, maker-checker, audit/outbox rollback, immutable content SQL, 2 reviewers đồng thời, và grant bị thu hồi sau snapshot đọc cũ. Full suite lần đầu phát hiện3 test nền cố định12 Engines/38 bindings/fixtureengine-set; đã sửa đối chiếu manifest/tăng contract count40, không xóa assertion. Browser phát hiện thông báo locale en thiếu: notice Mua hàng dùng locale vi rõ ràng, thêm regression assertion. Không đổi locale toàn project.
 
 ## Diễn tập nâng cấp schema có nguồn xác định
 
 - Baseline `git show 635f688:db/structure.sql`, SHA256 **79d2115b036cb27f52b9b1c063c60ca25f4f979d1253953429a8fe3875c2212d**; latestmigration trước **20261112000009**. Đây là schema Dashboard ngay trước thay đổi, phù hợp chứng minh migration Mua hàng; không claim nâng từ mọi bản lịch sử ERP.
-- Docker MySQL8.4 riêng `hrm-procurement-upgrade-mysql`, network/volume riêng, không host port; DBhrm_test. CA riêng/privatekeys trong volume, chứng chỉ SANmysql, app verify_identity; root chỉ dùng migration process tạo trigger, không cấp SUPER app.
-- Image Dashboard `hrm-ci:dashboard-review` nạp2company/2employee và2kỳ lươngfinalized trước nâng cấp. Sau `rails db:migrate db:verify_tenant_guards` bằng image Procurement: latest **20261113000001**, đủ7guard, không pendingmigration. Hồ sơ cũ và snapshotemployee_name/net lương cũ giữ nguyên; cả2company tạo/chốt kỳ mới, xem kỳ và tải CSV HTTP200; yêu cầu mua draft→submitted→approved, đúng tiền và3historyevents.
+- Docker MySQL8.4 riêng `hrm-procurement-upgrade-mysql`, network/volume riêng, không host port; DB hrm_test. CA riêng/privatekeys trong volume, chứng chỉ SANmysql, app verify_identity; root chỉ dùng migration process tạo trigger, không cấp SUPER app.
+- Image Dashboard `hrm-ci:dashboard-review` nạp2 company/2 employee và2kỳ lươngfinalized trước nâng cấp. Sau `rails db:migrate db:verify_tenant_guards` bằng image Procurement: latest **20261113000001**, đủ7 guard, không pendingmigration. Hồ sơ cũ và snapshotemployee_name/net lương cũ giữ nguyên; cả2 company tạo/chốt kỳ mới, xem kỳ và tải CSV HTTP200; yêu cầu mua draft→submitted→approved, đúng tiền và3 history events.
 - Fresh structure so định nghĩa thực tế FK/CHECK/index/trigger/migration với DB đã migrate, không chỉ đếm bảng. Không reset development/Laravel. Development đã backup0600 trong tmp bị ignore rồi chạy additive migration này và provision quyền mặc định; backup không vào Git/image. Lần gọi Compose ban đầu đã recreate riêng MySQL service theo healthcheck hiện có nhưng giữ volume, không recreate web VSCode.
-- Evidence local: `/private/tmp/hrm-procurement-upgrade-{setup,before,migrate,after}.log`, `/private/tmp/hrm-procurement-fresh-schema.log`; harness tạm ở `/private/tmp/hrm-procurement-upgrade/` không chứa dữ liệu thực. Một lần harness thiếu REDIS_URL, một lần gọi association không tồn tại và executor Runner bọc HTTP bị xung đột; đã sửa harness (runner --skip-executor), kết quả AFTER cả2company đạt. Không sửa protection của app để qua rehearsal.
+- Evidence local: `/private/tmp/hrm-procurement-upgrade-{setup,before,migrate,after}.log`, `/private/tmp/hrm-procurement-fresh-schema.log`; harness tạm ở `/private/tmp/hrm-procurement-upgrade/` không chứa dữ liệu thực. Một lần harness thiếu REDIS_URL, một lần gọi association không tồn tại và executor Runner bọc HTTP bị xung đột; đã sửa harness (runner --skip-executor), kết quả AFTER cả2 company đạt. Không sửa protection của app để qua rehearsal.
 
 ## Browser smoke
 
-Server image test riênglocalhost3111 với DB rehearsal; admin maker + manager checker,2company mẫu. Tạo qua form, thêm/bỏ dòng bằng Enter và focus vào dòng mới; gửi xong không còn nút sửa/tự duyệt; manager thấyKPI1/widget đúng phiếu → list1 → chi tiết → Enter duyệt →3historyentries/thông báo tiếng Việt/KPI0. Công ty#2 hiện đúng context, mở URLphiếu#3 của công ty#1 trảkhông tìmthấy. Width390px, document.scrollWidth390 ở form/list/detail/dashboard; Tab tới nút từ chối có outline solid. Không phải auditWCAG đầy đủ; reject/permissionrevocation/race thêm bằng testHTTP/MySQL.
+Server image test riênglocalhost:3111 với DB rehearsal; admin maker + manager checker,2 company mẫu. Tạo qua form, thêm/bỏ dòng bằng Enter và focus vào dòng mới; gửi xong không còn nút sửa/tự duyệt; manager thấyKPI 1/widget đúng phiếu → list1 → chi tiết → Enter duyệt →3 history entries/thông báo tiếng Việt/KPI 0. Công ty #2 hiện đúng context, mở URLphiếu #3 của công ty #1 trảkhông tìmthấy. Width 390px, document.scrollWidth390 ở form/list/detail/dashboard; Tab tới nút từ chối có outline solid. Không phải auditWCAG đầy đủ; reject/permissionrevocation/race thêm bằng testHTTP/MySQL.
 
 Backlog: PO/nhà cung cấp, nhận hàng, invoice matching/AP và các miền ERP khác ở `docs/ERP_NAVIGATION.md`. Yêu cầu mua được duyệt chưa là cam kết mua/thanh toán. Không release GHCR hoặc sửa nhánh mặc định.
 
