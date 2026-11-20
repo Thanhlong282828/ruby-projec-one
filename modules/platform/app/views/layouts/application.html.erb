@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <title>XinViec • ERP</title>
+  <title>Aureon ERP · Quản trị doanh nghiệp</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <%= csrf_meta_tags %><%= csp_meta_tag %>
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -11,8 +11,8 @@
 <a class="skip-link" href="#main-content">Bỏ qua menu, đến nội dung</a>
 <% if current_user %>
 <aside class="sidebar">
-  <a class="brand" href="/">x<span>v</span> <small>ERP WORKSPACE</small></a>
-  <div class="workspace"><%= current_user.company.code %> <span>WORKSPACE</span></div>
+  <%= link_to root_path, class: "brand", aria: { label: "Aureon ERP — Trang chủ" } do %><span class="brand-symbol" aria-hidden="true">A</span><span class="brand-wordmark">AUREON<small>ERP · QUẢN TRỊ DOANH NGHIỆP</small></span><% end %>
+  <div class="workspace"><%= current_user.company.name %> <span>CÔNG TY ĐANG LÀM VIỆC</span></div>
   <nav aria-label="Menu nghiệp vụ ERP">
     <% if current_user.allowed?("dashboard.view") %><%= link_to "◈ Dashboard tổng", root_path, class: (request.path == "/" ? "active" : nil), aria: { current: (request.path == "/" ? "page" : nil) } %><% end %>
     <% erp_navigation_groups.each do |group| %>

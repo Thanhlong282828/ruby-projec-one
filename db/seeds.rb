@@ -3,7 +3,7 @@ raise "Seeding demo data is disabled in production" if Rails.env.production?
 password = ENV.fetch("SEED_ADMIN_PASSWORD")
 raise "Seed password needs 12+ characters" if password.length < 12
 ActiveRecord::Base.transaction do
-  company = Company.find_or_create_by!(code: "XINVIEC") { |record| record.name = "Xin Viec" }
+  company = Company.find_or_create_by!(code: "XINVIEC") { |record| record.name = "Aureon" }
   admin = User.find_or_initialize_by(email: "admin@hrm.local")
   admin.assign_attributes(company: company, password: password, role: :admin, active: true)
   admin.save!
